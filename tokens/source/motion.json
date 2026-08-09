@@ -1,0 +1,28 @@
+{
+  "$description": "Motion. The house rule is fades: opacity transitions at --dur-base. Transform motion is permitted only where a surface enters or leaves the viewport — a drawer sliding in, a command palette rising on open — because that movement tells the reader where the surface came from. It is prohibited on any surface already on screen: no movement on hover, focus, selection, or state change. No bounce, spring, scale, or blur in any context. Amended August 2026 from an unqualified fades-only rule, which two entering surfaces had always contravened; the rule now describes what the system does and stays enforceable.",
+  "ease-soft": {
+    "$value": "cubic-bezier(0.22,1,0.36,1)",
+    "$type": "cubicBezier",
+    "$description": "Default soft-out easing. Fades, hovers, and popover drifts."
+  },
+  "ease-crisp": {
+    "$value": "cubic-bezier(0.4,0,0.2,1)",
+    "$type": "cubicBezier",
+    "$description": "Sharper standard easing, for mechanical movement."
+  },
+  "dur-fast": {
+    "$value": "140ms",
+    "$type": "duration",
+    "$description": "Hovers and small interface shifts."
+  },
+  "dur-base": {
+    "$value": "220ms",
+    "$type": "duration",
+    "$description": "The default. Fades and panel transitions."
+  },
+  "dur-slow": {
+    "$value": "380ms",
+    "$type": "duration",
+    "$description": "Large reveals, and surfaces entering or leaving the viewport."
+  }
+}

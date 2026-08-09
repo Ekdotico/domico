@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" role="img" aria-label="Ekdotico — εκδοτικό">
+  <defs>
+    
+  </defs>
+  <g transform="translate(10 32)" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round">
+    <path d="M2 40 C 12 10, 28 10, 36 40"></path>
+    <path d="M36 40 C 44 10, 60 10, 70 40"></path>
+    <line x1="36" y1="14" x2="36" y2="44"></line>
+  </g>
+  <text x="92" y="66" class="latin" fill="currentColor">Ekdotico</text>
+  <text x="94" y="92" class="greek" fill="currentColor" opacity="0.55">ε κ δ ο τ ι κ ό</text>
+</svg>

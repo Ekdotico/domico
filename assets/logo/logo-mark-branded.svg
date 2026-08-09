@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Ekdotico mark">
+  <g stroke="#5a4a7a" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 60.7 C 30.2 36, 43.4 36, 50 60.7"/>
+    <path d="M50 60.7 C 56.6 36, 69.8 36, 78 60.7"/>
+    <line x1="50" y1="39.3" x2="50" y2="62.6"/>
+  </g>
+</svg>

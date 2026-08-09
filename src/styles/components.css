@@ -1,0 +1,722 @@
+/* ===========================================================================
+   Ekdotico shared components.
+
+   Styles for the components exported from @ekdotico/design-system/components.
+   Import after the tokens and the base layer:
+
+     import '@ekdotico/design-system/tokens.css';
+     import '@ekdotico/design-system/styles.css';
+
+   Every colour, type, radius, and motion value resolves to a token.
+
+   Known debt: a number of calibrated pixel dimensions survive as literals —
+   table cell padding (10px 14px, 9px 14px), the section rule's 52px lead,
+   the 480px table min-width, and 1px/2px hairlines. They were carried across
+   byte-faithful rather than remapped, because an extraction that quietly
+   changes values is how visual regressions get introduced. Several map exactly
+   onto the spacing scale and can be migrated in a later release with a visual
+   diff to prove no movement; the rest are off-scale and need a design decision
+   before they become tokens.
+   =========================================================================== */
+
+/* --- Section rule -------------------------------------------------------- */
+
+SECTION RULE (gilt + hairline)
+   ============================================================ */
+.sect-rule {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 52px 0 24px;
+}
+.sect-rule-gilt { width: 40px; height: 1px; background: var(--gilt); }
+.sect-rule-line { flex: 1; height: 1px; background: var(--rule); }
+
+/* ============================================================
+
+/* --- Tables -------------------------------------------------------------- */
+
+TABLES (used both via MDX + components)
+   ============================================================ */
+.tbl-wrap {
+  /* No overflow at desktop — having overflow-x: auto would force the
+     browser to compute overflow-y: auto too, making .tbl-wrap an implicit
+     Y-scroll container that breaks position: sticky on descendant <th>
+     (sticky would resolve to .tbl-wrap's top, not the page, creating an
+     offset-at-rest gap). At desktop the content column is 760px and the
+     table's min-width (480px) fits comfortably — overflow is unneeded. */
+  margin: 14px 0 24px;
+  border-radius: var(--radius-lg);
+  /* Outline is no longer drawn by the wrap. Each header th carries its
+     own top + side borders so they meet at the rounded top corner; body
+     cells continue the side outline downward and the last row closes
+     it off at the rounded bottom corner. The wrap keeps only the depth
+     shadow. */
+  box-shadow: var(--shadow-1);
+}
+.tbl-wrap table { width: 100%; min-width: 480px; border-collapse: separate; border-spacing: 0; font-size: var(--fs-xs); }
+.tbl-wrap thead th {
+  background: var(--bg-surface-2);
+  color: var(--fg-3);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--fs-3xs);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 10px 14px;
+  text-align: left;
+  border-top: 2px solid var(--rule);
+  border-bottom: 2px solid var(--rule);
+  white-space: nowrap;
+  /* Sticky header — resolves to the page scroll because no ancestor
+     establishes a scroll container. Parks flush against the topbar's
+     lower edge; the topbar's opaque --bg-canvas (z-index 5) masks
+     anything scrolling beneath it, so no per-th mask is needed. */
+  position: sticky;
+  top: var(--table-sticky-offset, 0px);
+  z-index: 3;
+}
+/* The first/last th own the top corner: their side border meets the
+   top border at the rounded corner, so the curve is drawn by the cell
+   itself rather than by an external ring. */
+.tbl-wrap thead tr th:first-child {
+  border-top-left-radius: var(--radius-lg);
+  border-inline-start: 2px solid var(--rule);
+}
+.tbl-wrap thead tr th:last-child {
+  border-top-right-radius: var(--radius-lg);
+  border-inline-end: 2px solid var(--rule);
+}
+.tbl-wrap tbody td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  color: var(--fg-2);
+  line-height: 1.45;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+/* Side outline continues down the body so the card stays closed. */
+.tbl-wrap tbody tr td:first-child { border-inline-start: 2px solid var(--rule); }
+.tbl-wrap tbody tr td:last-child  { border-inline-end: 2px solid var(--rule); }
+/* Bottom outline + rounded bottom corners on the last row. */
+.tbl-wrap tbody tr:last-child td { border-bottom: 2px solid var(--rule); }
+.tbl-wrap tbody tr:last-child td:first-child { border-bottom-left-radius: var(--radius-lg); }
+.tbl-wrap tbody tr:last-child td:last-child  { border-bottom-right-radius: var(--radius-lg); }
+.tbl-wrap tbody tr:hover td { background: color-mix(in srgb, var(--bg-surface-2) 60%, transparent); }
+.td-id {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  color: var(--accent);
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* --- Table caption ------------------------------------------------------- */
+
+/* Optional caption row above a table. Owns the rounded top edge of the
+   card so the thead beneath can drop its own top border + corner radii
+   — otherwise the table renders as a second card nested inside .tbl-wrap. */
+.tbl-wrap .tbl-caption {
+  padding: 10px 14px;
+  background: var(--bg-surface-2);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--fs-3xs);
+  color: var(--fg-3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border-top: 2px solid var(--rule);
+  border-inline-start: 2px solid var(--rule);
+  border-inline-end: 2px solid var(--rule);
+  border-bottom: 1px solid var(--rule-soft);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+.tbl-wrap .tbl-caption + table thead th {
+  border-top: none;
+}
+.tbl-wrap .tbl-caption + table thead tr th:first-child {
+  border-top-left-radius: 0;
+}
+.tbl-wrap .tbl-caption + table thead tr th:last-child {
+  border-top-right-radius: 0;
+}
+
+/* --- Badges -------------------------------------------------------------- */
+
+BADGES
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-sans);
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
+/* Optical centring when a badge sits next to large heading text.
+   The badge has a fixed 11px font, so vertical-align: middle places it on
+   the parent's x-height midpoint — visually a bit low next to capital
+   letters. A small upward positional nudge lifts it onto the cap-height
+   optical centre without affecting line-box flow. */
+:is(h1, h2, h3, h4, h5, h6) .badge {
+  vertical-align: middle;
+  position: relative;
+  top: var(--badge-cap-rise);
+  margin-inline-start: var(--badge-cap-gap);
+}
+.badge-M { background: var(--ok-soft); color: var(--ok); }
+.badge-S { background: var(--accent-soft); color: var(--accent); }
+.badge-C { background: var(--warn-soft); color: var(--warn); }
+.badge-High { background: var(--danger-soft); color: var(--danger); }
+.badge-Medium { background: var(--warn-soft); color: var(--warn); }
+.badge-Low { background: var(--ok-soft); color: var(--ok); }
+.badge-critical { background: var(--danger-soft); color: var(--danger); }
+.badge-non-critical { background: var(--bg-surface-2); color: var(--fg-3); }
+.badge-info { background: var(--info-soft); color: var(--info); }
+.badge-new { background: var(--gilt-soft); color: var(--gilt); font-style: italic; }
+.badge-verified    { background: var(--ok-soft);     color: var(--ok); }
+.badge-review      { background: var(--warn-soft);   color: var(--warn); }
+.badge-flagged     { background: var(--danger-soft); color: var(--danger); }
+.badge-ai          { background: var(--info-soft);   color: var(--info); }
+.badge-draft       { background: var(--accent-soft); color: var(--accent); }
+.badge-unpublished { background: var(--bg-surface-2); color: var(--fg-3); }
+
+/* ============================================================
+
+/* --- Key-value list ------------------------------------------------------ */
+
+KEY-VALUE LIST (semantic <dl>/<dt>/<dd>)
+   Used for structured term/definition pairs — persona attributes,
+   glossary entries, ADR metadata, etc. Two variants:
+     .kv-list-card    — boxed surface (default for standalone use)
+     .kv-list-inline  — flush, no surface (for nesting inside cards)
+   ============================================================ */
+.kv-list {
+  display: flex;
+  flex-direction: column;
+  margin: 14px 0 24px;
+  padding: 0;
+}
+.kv-list-card {
+  padding: 20px 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+.kv-list-inline {
+  padding: 0;
+}
+.kv-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 4px 28px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.kv-row:first-child { padding-top: 0; }
+.kv-row:last-child  { padding-bottom: 0; border-bottom: none; }
+.kv-key {
+  font-family: var(--font-sans);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--fg-3);
+  margin: 4px 0 0;
+  align-self: start;
+}
+.kv-val {
+  font-family: var(--font-serif);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-prose);
+  color: var(--fg-1);
+  margin: 0;
+}
+.kv-val > p:first-child { margin-top: 0; }
+.kv-val > p:last-child  { margin-bottom: 0; }
+@media (max-width: 760px) {
+  .kv-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+/* KV tone variants — opt-in semantic color washes per row.
+   Use when the labels are categorical (e.g. persona attributes:
+   technical proficiency = info, primary goals = ok, constraints = warn,
+   access conditions = accent). Keep neutral for non-categorical lists. */
+.kv-row[data-tone]:not([data-tone="neutral"]) {
+  position: relative;
+  padding: 14px 16px 14px 24px;
+  border-bottom: none;
+  border-radius: var(--radius-md);
+  margin: 4px 0;
+}
+.kv-row[data-tone]:not([data-tone="neutral"]):first-child { margin-top: 0; }
+.kv-row[data-tone]:not([data-tone="neutral"]):last-child  { margin-bottom: 0; }
+.kv-row[data-tone]:not([data-tone="neutral"])::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  border-radius: var(--radius-pill);
+}
+.kv-row[data-tone="info"]    { background: var(--info-soft); }
+.kv-row[data-tone="info"]::before    { background: var(--info); }
+.kv-row[data-tone="info"]    .kv-key { color: var(--info); }
+
+.kv-row[data-tone="ok"]      { background: var(--ok-soft); }
+.kv-row[data-tone="ok"]::before      { background: var(--ok); }
+.kv-row[data-tone="ok"]      .kv-key { color: var(--ok); }
+
+.kv-row[data-tone="warn"]    { background: var(--warn-soft); }
+.kv-row[data-tone="warn"]::before    { background: var(--warn); }
+.kv-row[data-tone="warn"]    .kv-key { color: var(--warn); }
+
+.kv-row[data-tone="danger"]  { background: var(--danger-soft); }
+.kv-row[data-tone="danger"]::before  { background: var(--danger); }
+.kv-row[data-tone="danger"]  .kv-key { color: var(--danger); }
+
+.kv-row[data-tone="accent"]  { background: var(--accent-soft); }
+.kv-row[data-tone="accent"]::before  { background: var(--accent); }
+.kv-row[data-tone="accent"]  .kv-key { color: var(--accent); }
+
+.kv-row[data-tone="gilt"]    { background: var(--gilt-soft); }
+.kv-row[data-tone="gilt"]::before    { background: var(--gilt); }
+.kv-row[data-tone="gilt"]    .kv-key { color: var(--gilt); }
+
+/* ============================================================
+
+/* --- Callout ------------------------------------------------------------- */
+
+CALLOUT (editorial aside)
+   Tinted/bordered <aside> with optional title row and a thin
+   left-edge stripe (suppressed for the quietest 'note' variant).
+   Six type variants map to semantic token pairs:
+     note   — neutral surface, no stripe (--bg-surface-2)
+     info   — --info / --info-soft
+     tip    — --ok / --ok-soft
+     warn   — --warn / --warn-soft
+     danger — --danger / --danger-soft
+     quote  — --burgundy / --burgundy-soft, italic serif body
+   Distinct from <blockquote>, which is reserved for source
+   quotations (already gilt-striped). Do not use as a marketing
+   banner. Stacking three or more in a row dilutes their value.
+   Signaling sits on the surface + stripe + title (not body color)
+   so the Mono theme — where --accent is pure black — still reads
+   correctly without color-only cues.
+   ============================================================ */
+.callout {
+  position: relative;
+  margin: 18px 0 22px;
+  padding: 14px 18px 14px 22px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-0);
+  overflow: hidden;
+}
+.callout-title {
+  font-family: var(--font-sans);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tr-wider);
+  color: var(--fg-3);
+  margin: 0 0 6px;
+}
+.callout-body {
+  font-family: var(--font-serif);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-prose);
+  color: var(--fg-1);
+}
+
+/* Body prose — overrides `.content-inner p` so paragraphs inside a
+   callout use the editorial serif rather than the default UI sans. */
+.content-inner .callout-body p {
+  font-family: var(--font-serif);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-prose);
+  color: var(--fg-1);
+  margin: 0 0 8px;
+}
+.content-inner .callout-body > p:first-child { margin-top: 0; }
+.content-inner .callout-body > p:last-child  { margin-bottom: 0; }
+
+/* Left-edge accent stripe — present on all variants except 'note',
+   which keeps a quieter neutral surface for routine asides. */
+.callout:not([data-type="note"])::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+}
+
+/* Per-type tints + stripe + title color. Body color stays --fg-1. */
+.callout[data-type="info"]   { background: var(--info-soft);   border-color: var(--info-soft); }
+.callout[data-type="info"]::before   { background: var(--info); }
+.callout[data-type="info"] .callout-title   { color: var(--info); }
+
+.callout[data-type="tip"]    { background: var(--ok-soft);     border-color: var(--ok-soft); }
+.callout[data-type="tip"]::before    { background: var(--ok); }
+.callout[data-type="tip"] .callout-title    { color: var(--ok); }
+
+.callout[data-type="warn"]   { background: var(--warn-soft);   border-color: var(--warn-soft); }
+.callout[data-type="warn"]::before   { background: var(--warn); }
+.callout[data-type="warn"] .callout-title   { color: var(--warn); }
+
+.callout[data-type="danger"] { background: var(--danger-soft); border-color: var(--danger-soft); }
+.callout[data-type="danger"]::before { background: var(--danger); }
+.callout[data-type="danger"] .callout-title { color: var(--danger); }
+
+.callout[data-type="quote"]  { background: var(--burgundy-soft); border-color: var(--burgundy-soft); }
+.callout[data-type="quote"]::before  { background: var(--burgundy); }
+.callout[data-type="quote"] .callout-title  { color: var(--burgundy); }
+.callout[data-type="quote"] .callout-body,
+.content-inner .callout[data-type="quote"] .callout-body p { font-style: italic; }
+
+@media (max-width: 760px) {
+  .callout { padding: 12px 14px 12px 18px; }
+}
+
+/* ============================================================
+
+/* --- Figure -------------------------------------------------------------- */
+
+FIGURE (image with caption + optional credit)
+   Semantic <figure>/<figcaption> pair. The image gets a soft
+   hairline + radius-lg by default — establishes the "cabinet
+   card" feel of an archived plate. Caption sits below in a
+   muted serif, with the credit line italicised one step down.
+   `data-align` is reserved for future breakout layouts; today
+   `center` and `wide` render the same width within the column.
+   ============================================================ */
+.figure {
+  margin: 24px 0 32px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.figure-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+}
+.figure-caption {
+  margin-top: 10px;
+  font-family: var(--font-serif);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-snug);
+  color: var(--fg-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 100%;
+}
+.figure-caption-text {
+  color: var(--fg-2);
+}
+.figure-credit {
+  font-style: italic;
+  font-size: var(--fs-xs);
+  color: var(--fg-4);
+}
+
+/* ============================================================
+
+/* --- Tabs ---------------------------------------------------------------- */
+
+TABS (WAI-ARIA tab panel)
+   Horizontal tab list with hairline underline; the active tab
+   carries a 2px accent underline. The panel below mirrors the
+   Persona surface treatment (--bg-surface + --rule + radius-lg
+   + --shadow-1). Focus ring sits inside the tab's bounding box
+   so it remains visible against the underline. Mono-theme safe:
+   the active state is signaled by underline presence, not hue.
+   ============================================================ */
+.tabs {
+  margin: 18px 0 24px;
+}
+.tabs-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 1px solid var(--rule);
+  margin: 0 0 16px;
+  padding: 0;
+}
+.tabs-tab {
+  position: relative;
+  padding: 8px 14px 9px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: var(--tr-wide);
+  color: var(--fg-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: color var(--dur-fast) var(--ease-soft);
+}
+.tabs-tab:hover { color: var(--fg-1); }
+.tabs-tab[data-active] {
+  color: var(--fg-1);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 7px;
+}
+.tabs-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--radius-xs);
+}
+.tabs-panel {
+  padding: 20px 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+.tabs-panel[hidden] { display: none; }
+.tabs-panel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.content-inner .tabs-panel > p:first-child,
+.content-inner .tabs-panel > ul:first-child,
+.content-inner .tabs-panel > ol:first-child { margin-top: 0; }
+.content-inner .tabs-panel > p:last-child,
+.content-inner .tabs-panel > ul:last-child,
+.content-inner .tabs-panel > ol:last-child { margin-bottom: 0; }
+
+@media (max-width: 760px) {
+  .tabs-tab { padding: 7px 10px 8px; }
+  .tabs-panel { padding: 16px 18px; }
+}
+
+/* ============================================================
+
+/* --- Stat and stat grid -------------------------------------------------- */
+
+STAT + STAT GRID (single load-bearing numbers)
+   Large serif value over a small uppercase sans label, with an
+   optional italic serif sub-line. The Grid lays stats out in 2/3/4
+   columns above 760px, collapsing to 2 then 1 on narrower screens.
+   ============================================================ */
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+}
+.stat-value {
+  font-family: var(--font-serif);
+  font-size: var(--fs-3xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-tight);
+  color: var(--fg-1);
+  font-variation-settings: "opsz" 32;
+}
+.stat-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tr-wider);
+  color: var(--fg-3);
+}
+.stat-sub {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--fs-sm);
+  color: var(--fg-3);
+}
+
+.stat-grid {
+  display: grid;
+  gap: 24px 32px;
+  margin: 20px 0 24px;
+}
+.stat-grid[data-columns="2"] { grid-template-columns: repeat(2, 1fr); }
+.stat-grid[data-columns="3"] { grid-template-columns: repeat(3, 1fr); }
+.stat-grid[data-columns="4"] { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 760px) {
+  .stat-grid[data-columns="3"],
+  .stat-grid[data-columns="4"] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .stat-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+
+/* --- Theme switcher ------------------------------------------------------ */
+
+THEME SWITCHER
+   ============================================================ */
+.theme-switcher {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+}
+.theme-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px;
+  border: none;
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-soft);
+}
+.theme-btn:hover { color: var(--fg-1); }
+.theme-btn:hover .theme-swatch { border-color: var(--fg-3); }
+.theme-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  box-shadow: var(--shadow-swatch-ring);
+  transition: border-color var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
+}
+.theme-name {
+  font-family: var(--font-sans);
+  font-size: var(--fs-3xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.04em;
+}
+.theme-btn.active {
+  color: var(--fg-1);
+}
+.theme-btn.active .theme-swatch {
+  border-color: var(--gilt);
+  box-shadow: 0 0 0 1px var(--gilt-soft);
+}
+.theme-btn.active .theme-name {
+  font-style: italic;
+  font-family: var(--font-serif);
+  font-size: var(--fs-2xs);
+  letter-spacing: var(--tr-tight);
+  font-variation-settings: "opsz" 12;
+}
+
+/* ============================================================
+   THEME HEADER ROW — label on the left, mode pill on the right
+   ============================================================ */
+.theme-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.theme-header-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-3xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-4);
+}
+
+/* ============================================================
+
+/* --- Mode switcher ------------------------------------------------------- */
+
+MODE SWITCHER — segmented pill: sun / monitor / moon
+   ============================================================ */
+.mode-switcher {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface-2);
+  padding: 2px;
+  gap: 0;
+}
+.mode-btn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  /* WCAG 2.2 SC 2.5.8 — 24px minimum target size. The buttons sit adjacent
+     (gap:0) so the spacing exception does not apply (A11Y-6). */
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-4);
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  transition:
+    background 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.mode-btn:hover {
+  color: var(--fg-2);
+}
+.mode-btn.active {
+  background: var(--bg-canvas);
+  color: var(--fg-1);
+  box-shadow: var(--shadow-inset);
+}
+.mode-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ============================================================
+
+/* --- Logo lockup --------------------------------------------------------- */
+
+LOGO LOCKUP
+   ============================================================ */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-1);
+}
+.logo-mark {
+  width: 22px;
+  height: 22px;
+  color: var(--fg-1);
+}
+.logo-wordmark {
+  font-family: var(--font-serif);
+  font-size: var(--fs-md);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--fg-1);
+}
+
+/* ============================================================

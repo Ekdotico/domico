@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ekdoti.co/schema/expression/prohibited.schema.json",
+  "title": "Ekdotico prohibited terms",
+  "description": "Schema for expression/prohibited.json. Validated in CI. The `replacement` field is required on every rule: a finding that reports a violation without saying what to use instead is an incomplete error message, which is itself a System Feedback register violation.",
+  "type": "object",
+  "required": ["version", "description", "registers", "rules", "allowlist", "notEnforced"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Must match the version in vocabulary.json and the guidelines header."
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "registers": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": { "$ref": "#/$defs/register" },
+      "description": "The five registers. A sixth would be a guidelines amendment, not a data change."
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/rule" }
+    },
+    "allowlist": { "$ref": "#/$defs/allowlist" },
+    "notEnforced": {
+      "type": "object",
+      "required": ["description", "rules"],
+      "additionalProperties": false,
+      "description": "Rules deliberately not modelled, because they need judgement pattern matching cannot supply. Recorded so the omission is a decision rather than an oversight, and so coverage can be stated honestly.",
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "rules": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+      }
+    }
+  },
+  "$defs": {
+    "register": {
+      "type": "string",
+      "enum": [
+        "functional",
+        "instructional",
+        "system-feedback",
+        "provenance-institutional",
+        "marketing-awareness"
+      ]
+    },
+    "rule": {
+      "type": "object",
+      "required": ["id", "match", "registers", "severity", "reason", "replacement"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "match": {
+          "type": "object",
+          "required": ["kind", "patterns"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "type": "string", "enum": ["word", "phrase", "regex", "unicode-range"] },
+            "patterns": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true
+            },
+            "caseSensitive": { "type": "boolean" }
+          }
+        },
+        "registers": {
+          "oneOf": [
+            { "type": "string", "const": "all" },
+            { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/register" }, "uniqueItems": true }
+          ]
+        },
+        "severity": { "type": "string", "enum": ["blocking", "substantive", "minor"] },
+        "reason": {
+          "type": "string",
+          "minLength": 20,
+          "description": "Why it is a violation, in the words a reviewer will read."
+        },
+        "replacement": {
+          "type": "string",
+          "minLength": 5,
+          "description": "What to use instead. Never omitted."
+        },
+        "note": { "type": "string" },
+        "requiresJudgement": {
+          "type": "boolean",
+          "description": "True where a match is necessary but not sufficient and a human must confirm."
+        }
+      }
+    },
+    "allowlist": {
+      "type": "object",
+      "required": ["description", "patterns", "contexts"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "patterns": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Identifiers, standards references, and citation keys that look like violations to a matcher but are data."
+        },
+        "contexts": {
+          "type": "object",
+          "required": ["description", "skip", "marker"],
+          "additionalProperties": false,
+          "properties": {
+            "description": { "type": "string", "minLength": 1 },
+            "skip": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+            "marker": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    }
+  }
+}

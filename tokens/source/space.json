@@ -1,0 +1,54 @@
+{
+  "sp-0": {
+    "$value": "0",
+    "$type": "dimension"
+  },
+  "sp-1": {
+    "$value": "4px",
+    "$type": "dimension"
+  },
+  "sp-2": {
+    "$value": "8px",
+    "$type": "dimension"
+  },
+  "sp-3": {
+    "$value": "12px",
+    "$type": "dimension"
+  },
+  "sp-4": {
+    "$value": "16px",
+    "$type": "dimension"
+  },
+  "sp-5": {
+    "$value": "20px",
+    "$type": "dimension"
+  },
+  "sp-6": {
+    "$value": "24px",
+    "$type": "dimension"
+  },
+  "sp-7": {
+    "$value": "32px",
+    "$type": "dimension"
+  },
+  "sp-8": {
+    "$value": "40px",
+    "$type": "dimension"
+  },
+  "sp-9": {
+    "$value": "56px",
+    "$type": "dimension"
+  },
+  "sp-10": {
+    "$value": "72px",
+    "$type": "dimension"
+  },
+  "sp-11": {
+    "$value": "96px",
+    "$type": "dimension"
+  },
+  "sp-12": {
+    "$value": "128px",
+    "$type": "dimension"
+  }
+}

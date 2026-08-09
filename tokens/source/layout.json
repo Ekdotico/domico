@@ -1,0 +1,38 @@
+{
+  "$description": "Layout geometry. Theme-invariant: these do not change between themes or modes. Reading geometry is house style — the measure in particular is an inclusive-design decision, not a preference, and it is the reason this set ships with the package rather than being left to each application. Application chrome dimensions are defaults; a consumer overrides them on :root without touching anything else.",
+  "page-w": {
+    "$value": "1180px",
+    "$type": "dimension",
+    "$description": "Maximum page width, including any rails."
+  },
+  "content-w": {
+    "$value": "760px",
+    "$type": "dimension",
+    "$description": "The content column. Wider than the editor's own 680px so tables, code blocks, and diagrams can use the full width while prose stays capped by --measure."
+  },
+  "measure": {
+    "$value": "72ch",
+    "$type": "dimension",
+    "$description": "Prose line-length cap, 72 characters. The column itself stays at --content-w; only running prose is constrained. Long lines cost re-reading effort for every reader and disproportionately for dyslexic readers, so this is a hard constraint rather than a stylistic one. Corrected from 68ch in August 2026: the published design system and the accessibility rationale both specified 72, and the implementation was the outlier."
+  },
+  "gutter": {
+    "$value": "24px",
+    "$type": "dimension",
+    "$description": "Horizontal breathing room between the content column and the viewport edge at narrow widths. Equal to --sp-6."
+  },
+  "sidebar-w": {
+    "$value": "260px",
+    "$type": "dimension",
+    "$description": "Navigation rail width. A default: an application with a different rail overrides this."
+  },
+  "topbar-h": {
+    "$value": "56px",
+    "$type": "dimension",
+    "$description": "Fixed top bar height. A default, and the value most applications will want to set --table-sticky-offset to."
+  },
+  "table-sticky-offset": {
+    "$value": "0px",
+    "$type": "dimension",
+    "$description": "How far below the viewport top a sticky table header parks. Defaults to no offset, because the package cannot know whether a consumer has fixed chrome. An application with a top bar sets this to its own height."
+  }
+}

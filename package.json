@@ -1,0 +1,117 @@
+{
+  "name": "@ekdotico/design-system",
+  "version": "0.1.0",
+  "private": false,
+  "description": "The Ekdotico house style: design tokens, base styles, shared components, and the Expression Guidelines with their machine-readable vocabulary and prohibited terms.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Ekdotico",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ekdotico/ekdotico-design-system.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "type": "module",
+  "bin": {
+    "ekdotico-lint": "./dist/src/lint/cli.js"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "dist",
+    "tokens/generated",
+    "assets",
+    "expression/*.md",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    "./tokens": {
+      "types": "./dist/tokens/generated/tokens.d.ts",
+      "default": "./dist/tokens/generated/tokens.js"
+    },
+    "./tokens.css": "./tokens/generated/tokens.css",
+    "./mermaid": {
+      "types": "./dist/tokens/generated/mermaid.d.ts",
+      "default": "./dist/tokens/generated/mermaid.js"
+    },
+    "./styles.css": "./dist/styles/base.css",
+    "./components": {
+      "types": "./dist/src/components/index.d.ts",
+      "default": "./dist/src/components/index.js"
+    },
+    "./icons": {
+      "types": "./dist/src/components/icons.d.ts",
+      "default": "./dist/src/components/icons.js"
+    },
+    "./theme": {
+      "types": "./dist/src/theme/index.d.ts",
+      "default": "./dist/src/theme/index.js"
+    },
+    "./fonts": {
+      "types": "./dist/src/fonts/index.d.ts",
+      "default": "./dist/src/fonts/index.js"
+    },
+    "./assets": {
+      "types": "./dist/src/assets/index.d.ts",
+      "default": "./dist/src/assets/index.js"
+    },
+    "./expression": {
+      "types": "./dist/src/expression/index.d.ts",
+      "default": "./dist/src/expression/index.js"
+    },
+    "./lint": {
+      "types": "./dist/src/lint/index.d.ts",
+      "default": "./dist/src/lint/index.js"
+    },
+    "./expression/vocabulary.json": "./dist/expression/vocabulary.json",
+    "./expression/prohibited.json": "./dist/expression/prohibited.json",
+    "./expression/guidelines.md": "./expression/guidelines.md",
+    "./expression/registers.md": "./expression/registers.md",
+    "./assets/*": "./assets/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build:tokens": "node tokens/build.mjs",
+    "build:styles": "node scripts/build-styles.mjs",
+    "build:expression": "node scripts/build-expression.mjs",
+    "build:ts": "tsc -p tsconfig.build.json",
+    "build": "pnpm build:tokens && pnpm build:expression && pnpm build:ts && pnpm build:styles",
+    "check:generated": "node scripts/check-generated.mjs",
+    "check:expression": "node scripts/check-expression-sync.mjs",
+    "lint:copy": "node dist/src/lint/cli.js",
+    "lint:fixture": "node scripts/check-lint-fixture.mjs",
+    "check": "pnpm check:generated && pnpm check:expression && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
+    "release": "changeset publish"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.8",
+    "@types/node": "^22",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "ajv": "^8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "style-dictionary": "^5.5.1",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.12.3"
+}

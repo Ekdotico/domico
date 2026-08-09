@@ -1,0 +1,23 @@
+{
+  "$description": "Brand-fixed values. Unlike every other colour token these do NOT change between themes or modes: the logo tile has to read as the same mark on any canvas, so it carries its own contrast pair rather than inheriting the palette. Use these only for the mark. Anything else that needs a surface or an ink colour uses the theme tokens.",
+  "logo-tile-dark-bg": {
+    "$value": "oklch(23.762% 0.0305 292.52)",
+    "$type": "color",
+    "$description": "Deep plum tile. Used when the mark sits on a light canvas."
+  },
+  "logo-tile-dark-ink": {
+    "$value": "oklch(93.691% 0.0247 91.62)",
+    "$type": "color",
+    "$description": "Cream stroke on the dark tile."
+  },
+  "logo-tile-light-bg": {
+    "$value": "oklch(95.877% 0.0127 86.83)",
+    "$type": "color",
+    "$description": "Parchment tile. Used when the mark sits on a dark canvas."
+  },
+  "logo-tile-light-ink": {
+    "$value": "oklch(28.427% 0.0036 106.63)",
+    "$type": "color",
+    "$description": "Primary ink stroke on the light tile."
+  }
+}

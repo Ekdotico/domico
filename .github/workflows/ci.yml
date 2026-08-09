@@ -1,0 +1,107 @@
+name: Build and publish
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Build and verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+
+      - run: pnpm install --frozen-lockfile
+
+      # Build first, so the checks below compare committed artefacts against a
+      # real rebuild rather than against nothing.
+      - name: Build
+        run: pnpm build
+
+      # Fails if a generated token artefact was edited by hand, or if the token
+      # source changed without a rebuild.
+      - name: Generated token artefacts are in sync with the source
+        run: pnpm check:generated
+
+      # Fails if the prose guidelines and the structured expression data
+      # disagree, including the case both files claim the same version while
+      # saying different things.
+      - name: Expression data is in sync with the guidelines
+        run: pnpm check:expression
+
+      # Asserts the linter fails when it should and, more importantly, stays
+      # quiet where it should: false positives are what get a linter switched
+      # off, and the structural exemptions would rot silently without this.
+      - name: Linter behaves as specified
+        run: pnpm lint:fixture
+
+      # The guidelines must pass their own rules. A governing document that
+      # violates its own prohibitions undermines every enforcement action taken
+      # under it.
+      - name: Package copy is compliant
+        run: pnpm lint:copy
+
+      - name: Types
+        run: pnpm exec tsc -p tsconfig.json --noEmit
+
+      # A build that leaves the working tree dirty means something is generated
+      # but not committed. Catch it here rather than at publish.
+      - name: Working tree is clean after build
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "The build modified committed files:"
+            git status --porcelain
+            git diff
+            exit 1
+          fi
+
+  publish:
+    name: Publish to GitHub Packages
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      # Opens or updates a release pull request while changesets are pending;
+      # publishes once that pull request is merged. Nothing is published from
+      # a commit that carries no changeset.
+      - name: Release
+        uses: changesets/action@v1
+        with:
+          publish: pnpm release
+          version: pnpm exec changeset version
+          commit: "chore(release): version packages"
+          title: "chore(release): version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

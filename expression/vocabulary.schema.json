@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ekdoti.co/schema/expression/vocabulary.schema.json",
+  "title": "Ekdotico controlled vocabulary",
+  "description": "Schema for expression/vocabulary.json. Validated in CI, so a malformed term fails the build rather than silently disabling a rule the linter would otherwise enforce.",
+  "type": "object",
+  "required": ["version", "description", "terms"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Must match the version in prohibited.json and the guidelines header."
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "notes": {
+      "type": "object",
+      "description": "Explanations of the optional term fields, kept beside the data rather than only in the prose document.",
+      "additionalProperties": { "type": "string" }
+    },
+    "terms": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/term" }
+    },
+    "gaps": { "$ref": "#/$defs/gaps" }
+  },
+  "$defs": {
+    "term": {
+      "type": "object",
+      "required": ["id", "concept", "canonical", "shorthand", "variants", "rationale", "since"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "Stable identifier. Forms the linter rule id as vocabulary/<id>, so renaming one breaks existing overrides."
+        },
+        "concept": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the term names, phrased so it reads correctly inside a finding message."
+        },
+        "canonical": { "type": "string", "minLength": 1 },
+        "shorthand": {
+          "type": ["string", "null"],
+          "description": "Permitted only after the canonical term has appeared once in the same document or screen."
+        },
+        "variants": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Unambiguous non-canonical forms. A match is a blocking finding."
+        },
+        "ambiguousVariants": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Forms that are also ordinary English or legitimate domain terms. A match is substantive and asks for human confirmation."
+        },
+        "notDetectable": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Known non-canonical forms the linter deliberately does not match. Requires notDetectableReason."
+        },
+        "notDetectableReason": { "type": "string", "minLength": 20 },
+        "allowedCompounds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Longer forms that remain correct, typically a module title rather than a product surface."
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["specification-only"],
+          "description": "Canonical in specification and engineering contexts but not a user-facing label. Requires scopeNote."
+        },
+        "scopeNote": { "type": "string", "minLength": 20 },
+        "rationale": {
+          "type": "string",
+          "minLength": 20,
+          "description": "Why this term and not another. A term without a recorded reason cannot be defended when someone proposes changing it."
+        },
+        "since": { "type": "string", "pattern": "^\\d+\\.\\d+$" }
+      },
+      "dependentRequired": {
+        "notDetectable": ["notDetectableReason"],
+        "scope": ["scopeNote"]
+      }
+    },
+    "gaps": {
+      "type": "object",
+      "required": ["description", "concepts"],
+      "additionalProperties": false,
+      "description": "Concepts that recur without a canonical term. Gaps in the guidelines, not failures of the content; the linter does not flag them.",
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "concepts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["concept", "observed", "modules"],
+            "additionalProperties": false,
+            "properties": {
+              "concept": { "type": "string", "minLength": 1 },
+              "observed": {
+                "type": "array",
+                "minItems": 2,
+                "items": { "type": "string" },
+                "description": "At least two forms in circulation. One form is a term, not a gap."
+              },
+              "modules": { "type": "array", "items": { "type": "string" } },
+              "note": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

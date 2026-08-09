@@ -1,0 +1,333 @@
+{
+  "$schema": "./prohibited.schema.json",
+  "version": "0.3",
+  "description": "Prohibited terms and patterns. Every entry carries the reason it is prohibited and what to use instead: a linter that reports a violation without a replacement is an incomplete error message, which is itself a System Feedback register violation. Register scope is modelled explicitly so a rule that applies only to the provenance/institutional register is never fired against marketing copy.",
+  "registers": [
+    "functional",
+    "instructional",
+    "system-feedback",
+    "provenance-institutional",
+    "marketing-awareness"
+  ],
+  "rules": [
+    {
+      "id": "humanize",
+      "match": { "kind": "word", "patterns": ["humanize", "humanise", "humanized", "humanised", "humanizing", "humanising"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Founder decision. Implies AI-generated content is the default state of the text.",
+      "replacement": "Prose Refine, or /refine for the slash command form."
+    },
+    {
+      "id": "product-name-spelling",
+      "match": { "kind": "word", "patterns": ["Ekdotiko", "Ekdotiko's", "ekdotiko"], "caseSensitive": false },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Superseded spelling of the product name.",
+      "replacement": "Ekdotico"
+    },
+    {
+      "id": "special-needs",
+      "match": { "kind": "phrase", "patterns": ["special needs"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Deficit framing, and perceived as patronising by autistic and disabled communities (Bottema-Beutel et al., 2021).",
+      "replacement": "Describe the specific relevant need."
+    },
+    {
+      "id": "are-you-sure",
+      "match": { "kind": "phrase", "patterns": ["Are you sure?"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Provides no information about consequences. Violates System Feedback rule 6.",
+      "replacement": "A warning that describes the specific, factual consequence, using the confirmation dialog formula."
+    },
+    {
+      "id": "trivialising-interjections",
+      "match": { "kind": "word", "patterns": ["Oops", "Uh oh", "Hmm", "Whoops"] },
+      "registers": ["system-feedback"],
+      "severity": "blocking",
+      "reason": "Trivialises errors and is inconsistent with a measured, precise tone.",
+      "replacement": "A plain-language description of what happened."
+    },
+    {
+      "id": "assistive",
+      "match": { "kind": "word", "patterns": ["assistive"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "The assistive-by-design principle (P5) is internal only and is never named in the product.",
+      "replacement": "Describe the specific feature or capability."
+    },
+    {
+      "id": "ai-generated-accusation",
+      "match": { "kind": "phrase", "patterns": ["AI-generated"] },
+      "registers": "all",
+      "severity": "substantive",
+      "reason": "Prohibited where applied to student work as an accusation or characterisation. Inconsistent with Ekdotico's position that AI-assisted writing is a process to disclose, not a charge. Acceptable when describing generated output in a neutral technical context, so this needs a human read.",
+      "replacement": "AI-assisted, with disclosure context.",
+      "requiresJudgement": true
+    },
+    {
+      "id": "minimising-modifiers",
+      "match": { "kind": "word", "patterns": ["simply", "just", "easily", "quickly", "merely"] },
+      "registers": ["instructional", "system-feedback", "functional", "marketing-awareness"],
+      "severity": "substantive",
+      "reason": "Condescending. Implies the user is failing if they find it difficult. W3C COGA (2021) guidance.",
+      "replacement": "Remove the modifier. The instruction is clear without it.",
+      "note": "Flags only where the word modifies an action or instruction. \"Just\" in its temporal or exact sense (\"just before sealing\") is not a violation.",
+      "requiresJudgement": true
+    },
+    {
+      "id": "assumed-knowledge",
+      "match": { "kind": "phrase", "patterns": ["obviously", "of course", "as you know", "needless to say"] },
+      "registers": "all",
+      "severity": "substantive",
+      "reason": "Implies prior knowledge and can make the user feel inadequate.",
+      "replacement": "Remove it and provide the information directly."
+    },
+    {
+      "id": "dont-forget",
+      "match": { "kind": "phrase", "patterns": ["Don't forget to", "Do not forget to", "Remember to"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Controlling language. Implies surveillance of the user's omissions.",
+      "replacement": "State the action directly, for example \"Save before closing\"."
+    },
+    {
+      "id": "controlling-obligation",
+      "match": { "kind": "phrase", "patterns": ["You need to", "You must", "You have to", "You should"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Controlling language that undermines autonomy (Deci & Ryan, 1985, 2000). Legally required compliance contexts are the sole exception and must be recorded as an override.",
+      "replacement": "State the consequence, for example \"Saving is required before exporting\"."
+    },
+    {
+      "id": "surveillance-framing",
+      "match": { "kind": "phrase", "patterns": ["We've noticed", "We have noticed", "We can see", "We detected", "We've detected"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Surveillance framing. Violates principle P3.",
+      "replacement": "Describe the state directly, for example \"This document has unsaved changes\"."
+    },
+    {
+      "id": "please-wait",
+      "match": { "kind": "phrase", "patterns": ["Please wait"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Impatience framing. Implies the user is an inconvenience.",
+      "replacement": "An action description, for example \"Creating provenance record...\"."
+    },
+    {
+      "id": "something-went-wrong",
+      "match": { "kind": "phrase", "patterns": ["Something went wrong", "An error occurred", "Unknown error"] },
+      "registers": ["system-feedback"],
+      "severity": "blocking",
+      "reason": "Provides no information about what failed.",
+      "replacement": "A specific description of what could not complete, followed by what to do next."
+    },
+    {
+      "id": "praise",
+      "match": { "kind": "phrase", "patterns": ["Great!", "Excellent!", "Well done!", "Perfect!", "Nice work!", "Awesome!"] },
+      "registers": ["system-feedback"],
+      "severity": "blocking",
+      "reason": "Praise in system feedback. Controlling positive feedback undermines intrinsic motivation (Ryan, 1982).",
+      "replacement": "Describe the completed action, for example \"Document sealed. Provenance record created.\"."
+    },
+    {
+      "id": "almost-there",
+      "match": { "kind": "phrase", "patterns": ["Almost there", "Almost done", "Nearly there"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Inaccurate unless the system knows the completion percentage.",
+      "replacement": "An action description with factual time context."
+    },
+    {
+      "id": "session-expiry-without-reason",
+      "match": { "kind": "phrase", "patterns": ["Your session is about to expire", "Session expiring"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Urgency without basis.",
+      "replacement": "\"For security, sessions end after [duration of inactivity]. Your work is saved.\""
+    },
+    {
+      "id": "normal-baseline",
+      "match": { "kind": "word", "patterns": ["normal"] },
+      "registers": "all",
+      "severity": "substantive",
+      "reason": "Prohibited as a baseline for writing behaviour. Non-deficit framing violation; implies abnormality. Permitted in unrelated technical senses such as \"normal form\" or CSS \"normal\".",
+      "replacement": "\"Typical\" with a specific description, or remove the comparison.",
+      "requiresJudgement": true
+    },
+    {
+      "id": "inferred-quality-metric",
+      "match": { "kind": "phrase", "patterns": ["Writing fluency", "writing quality score", "effort score", "engagement score"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Inferences from process data presented as facts. Violates provenance/institutional rule 7.",
+      "replacement": "Report the underlying data, for example \"Production rate: [value] words per hour of active time\"."
+    },
+    {
+      "id": "human-composition-comparison",
+      "match": { "kind": "phrase", "patterns": ["consistent with human composition", "consistent with human writing"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Comparative inference, not a factual statement. Violates provenance/institutional rule 11.",
+      "replacement": "Report the underlying data without the comparison."
+    },
+    {
+      "id": "authorship-proof",
+      "match": { "kind": "phrase", "patterns": ["proves you wrote", "proves authorship", "proof of authorship", "indicates authentic authorship"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "A claim the provenance record cannot make. The record documents process, not authorship intent.",
+      "replacement": "\"Documents your writing sessions, revision history, and AI tool usage\"."
+    },
+    {
+      "id": "unsubstantiated-superlative",
+      "match": { "kind": "word", "patterns": ["powerful", "robust", "best-in-class", "world-class", "cutting-edge", "state-of-the-art", "revolutionary", "seamless"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Unsubstantiated superlatives.",
+      "replacement": "Describe the specific capability and its limits."
+    },
+    {
+      "id": "unverifiable-ease-claim",
+      "match": { "kind": "phrase", "patterns": ["intuitive", "easy to use", "user-friendly", "effortless", "no learning curve"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "Unverifiable claims. Also implies that users who struggle are at fault.",
+      "replacement": "Describe what the feature does and what it requires of the user."
+    },
+    {
+      "id": "click-here",
+      "match": { "kind": "phrase", "patterns": ["Click here", "Click this", "Tap here"] },
+      "registers": ["instructional"],
+      "severity": "substantive",
+      "reason": "Provides no orientation and does not help the user predict the outcome of an action. Also a link-text accessibility failure.",
+      "replacement": "Describe the action and its result, for example \"Selecting a passage activates Prose Refine in the right panel\"."
+    },
+    {
+      "id": "make-adjective-toggle",
+      "match": { "kind": "regex", "patterns": ["\\bMake (private|public|shared|visible|hidden)\\b"] },
+      "registers": ["functional"],
+      "severity": "substantive",
+      "reason": "Toggles label the current state, not the action that would change it. Functional rule 11.",
+      "replacement": "Label the current state, for example \"Private\"."
+    },
+    {
+      "id": "second-person-in-record",
+      "match": { "kind": "regex", "patterns": ["\\b(you|your|you're|yours)\\b"], "caseSensitive": false },
+      "registers": ["provenance-institutional"],
+      "severity": "substantive",
+      "reason": "The record is a formal document and does not address the student directly. Provenance/institutional rule 13.",
+      "replacement": "Third person or a passive construction, for example \"14 sessions were recorded\".",
+      "requiresJudgement": true
+    },
+    {
+      "id": "hedging-in-record",
+      "match": { "kind": "phrase", "patterns": ["we think", "it appears", "it seems", "probably", "likely indicates"] },
+      "registers": ["provenance-institutional"],
+      "severity": "substantive",
+      "reason": "The record is strictly factual; hedging undermines its defensibility in integrity proceedings.",
+      "replacement": "State the fact, or omit the claim."
+    },
+    {
+      "id": "coming-soon",
+      "match": { "kind": "phrase", "patterns": ["Coming soon", "Beta", "Early access"] },
+      "registers": ["marketing-awareness"],
+      "severity": "substantive",
+      "reason": "Pre-launch status is named explicitly, not softened, deferred, or implied. \"Coming soon\" is indefinite, \"Beta\" implies a maturity level not yet defined, and \"Early access\" implies exclusivity pricing.",
+      "replacement": "\"Ekdotico is in pre-launch development.\""
+    },
+    {
+      "id": "emoji",
+      "match": { "kind": "unicode-range", "patterns": ["1F300-1FAFF", "2600-27BF", "2B00-2BFF", "FE0F", "1F000-1F02F"] },
+      "registers": "all",
+      "severity": "blocking",
+      "reason": "No emoji anywhere in the product or its documentation.",
+      "replacement": "Remove it. Where a status marker is needed, use a Badge."
+    },
+    {
+      "id": "exclamation-mark",
+      "match": { "kind": "regex", "patterns": ["[a-z0-9)\\]\"']!"] },
+      "registers": "all",
+      "severity": "minor",
+      "reason": "No exclamation marks in product-facing copy.",
+      "replacement": "A full stop."
+    },
+    {
+      "id": "contraction",
+      "match": { "kind": "regex", "patterns": ["\\b\\w+n't\\b", "\\b(I|you|we|they|it|he|she|that|there|here|what|who|let)'(s|re|ve|ll|d|m)\\b"], "caseSensitive": false },
+      "registers": "all",
+      "severity": "minor",
+      "reason": "No contractions in primary UI copy or formal documentation.",
+      "replacement": "Expand the contraction, for example \"do not\" rather than \"don't\"."
+    },
+    {
+      "id": "hyphen-in-numeric-range",
+      "match": { "kind": "regex", "patterns": ["(?<![\\w.-])\\d{1,3}-\\d{1,3}(?![\\w.-])"] },
+      "registers": "all",
+      "severity": "minor",
+      "reason": "En dash, not hyphen, for ranges.",
+      "replacement": "An en dash, for example \"Sessions 1–5\".",
+      "note": "Identifiers are excluded by the allowlist below. This rule has a meaningful false-positive rate and should be reviewed rather than auto-fixed.",
+      "requiresJudgement": true
+    },
+    {
+      "id": "spaced-hyphen-interruption",
+      "match": { "kind": "regex", "patterns": ["(?<=\\S) - (?=\\S)"] },
+      "registers": "all",
+      "severity": "minor",
+      "reason": "Em dash, not hyphen, for interruption.",
+      "replacement": "An em dash, for example \"The record — once sealed — cannot be modified.\""
+    }
+  ],
+  "allowlist": {
+    "description": "Patterns that must never be flagged. Identifiers, standards references, and citation keys look like violations to a pattern matcher but are data. The check and cross marks sit in the Dingbats block alongside genuine emoji, but they are typographic marks carrying values in comparison tables rather than decoration, and the emoji prohibition is aimed at decoration.",
+    "patterns": [
+      "SHA-256",
+      "Ed25519",
+      "UTF-8",
+      "WCAG",
+      "ISO 8601",
+      "AGPL-3.0",
+      "OFL-1.1",
+      "APA 7",
+      "MLA",
+      "\\b10\\.\\d{4,}/\\S+\\b",
+      "\\bFR-[A-Z]{2}-\\d+\\b",
+      "\\bNFR-[A-Z]{2}-\\d+\\b",
+      "\\bD-S\\d+-\\d+\\b",
+      "\\b\\d{3,4}-\\d{1,4}\\b",
+      "\\bChicago Notes-Bibliography\\b",
+      "\\bChicago Author-Date\\b",
+      "[✓✔✗✘✕✖✦]"
+    ],
+    "contexts": {
+      "description": "Structural contexts the linter must not scan. The Expression Guidelines necessarily contain every term they prohibit, always as cited counter-examples in a prohibited/correct table or a marked example block. Without these exemptions the one document that must pass cleanest fails hardest.",
+      "skip": [
+        "fenced-code",
+        "inline-code",
+        "table-cell-in-prohibited-table",
+        "blockquote-marked-example",
+        "html-comment"
+      ],
+      "marker": "<!-- eg:cite -->"
+    }
+  },
+  "notEnforced": {
+    "description": "Rules in the Expression Guidelines that this data deliberately does not model, because they require judgement that pattern matching cannot supply. Listed here so the omission is a recorded decision rather than an oversight, and so the README can state coverage honestly.",
+    "rules": [
+      "Register classification (§5.6). Requires reading purpose and context.",
+      "Evaluative inference (P2, instructional rule 16, provenance rules 1, 6, and 7). \"Relevant results\" and \"ranked results\" are lexically near-identical; only one is evaluative.",
+      "Comparative inference (provenance rule 11) beyond the fixed phrases above.",
+      "Deficit framing (P4). Requires knowing whether a norm is being asserted.",
+      "Anthropomorphism (instructional rule 15). \"The workspace searches\" is correct; \"Ekdotico learns\" is not.",
+      "Error message completeness (system feedback rule 1). Requires judging whether a path forward is actionable.",
+      "Confirmation dialog formula (system feedback rule 13).",
+      "Substantiability of claims (§4.3, marketing rules 7, 10, and 11). Requires checking against the provenance record and the SRS.",
+      "Factual currency. Whether copy describes an architecture that still exists.",
+      "Empty states orienting rather than rebuking (instructional rule 6)."
+    ]
+  }
+}

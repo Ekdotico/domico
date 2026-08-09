@@ -1,0 +1,18 @@
+{
+  "$description": "The three house typefaces. Each role token points at a CSS variable that the consuming application defines when it loads the family (see src/fonts). The fallback stacks are metric-sympathetic to their primary so a swap during font load does not reflow the reading column. Amended 2026-08-09: the earlier specification named Source Serif 4, Inter Tight, and JetBrains Mono. The core team confirmed the families below as canonical, and the specification was amended to match rather than the implementation reverted.",
+  "font-serif": {
+    "$value": "var(--font-crimson-pro), 'Iowan Old Style', 'Apple Garamond', 'Baskerville', 'Times New Roman', serif",
+    "$type": "fontFamily",
+    "$description": "Display and reading. Crimson Pro."
+  },
+  "font-sans": {
+    "$value": "var(--font-commissioner), -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+    "$type": "fontFamily",
+    "$description": "Interface and labels. Commissioner."
+  },
+  "font-mono": {
+    "$value": "var(--font-fira-code), ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
+    "$type": "fontFamily",
+    "$description": "Identifiers, hashes, timestamps, and code. Fira Code. Expression Guidelines §5.4 rule 5 requires this token — not a named family — for all cryptographic identifiers in the provenance/institutional register, so the rule follows the role rather than breaking when the family changes."
+  }
+}

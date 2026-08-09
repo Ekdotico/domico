@@ -1,0 +1,174 @@
+{
+  "bg-canvas": {
+    "$value": "oklch(19.996% 0.0154 47.93)",
+    "$type": "color"
+  },
+  "bg-surface": {
+    "$value": "oklch(22.81% 0.0195 52.41)",
+    "$type": "color"
+  },
+  "bg-surface-2": {
+    "$value": "oklch(25.852% 0.0212 54.01)",
+    "$type": "color"
+  },
+  "bg-raised": {
+    "$value": "oklch(28.058% 0.0212 47.95)",
+    "$type": "color"
+  },
+  "bg-inset": {
+    "$value": "oklch(17.788% 0.0116 60.62)",
+    "$type": "color"
+  },
+  "bg-elevated": {
+    "$value": "var(--bg-surface-2)",
+    "$type": "color"
+  },
+  "fg-1": {
+    "$value": "oklch(89.303% 0.036 75.53)",
+    "$type": "color"
+  },
+  "fg-2": {
+    "$value": "oklch(78.885% 0.0464 82.54)",
+    "$type": "color"
+  },
+  "fg-3": {
+    "$value": "oklch(64.411% 0.0465 76.04)",
+    "$type": "color"
+  },
+  "fg-4": {
+    "$value": "oklch(64.027% 0.0442 81.54)",
+    "$type": "color"
+  },
+  "fg-5": {
+    "$value": "oklch(35.474% 0.0269 75.98)",
+    "$type": "color"
+  },
+  "rule-strong": {
+    "$value": "oklch(36.125% 0.0344 66.38)",
+    "$type": "color"
+  },
+  "rule": {
+    "$value": "oklch(30.796% 0.0291 66.39)",
+    "$type": "color"
+  },
+  "rule-soft": {
+    "$value": "oklch(24.94% 0.0247 63.59)",
+    "$type": "color"
+  },
+  "accent": {
+    "$value": "oklch(68.817% 0.1151 48.86)",
+    "$type": "color"
+  },
+  "accent-hover": {
+    "$value": "oklch(74.939% 0.1129 52.68)",
+    "$type": "color"
+  },
+  "accent-soft": {
+    "$value": "oklch(28.014% 0.0412 43.3)",
+    "$type": "color"
+  },
+  "accent-ink": {
+    "$value": "oklch(23.082% 0.0327 44.65)",
+    "$type": "color"
+  },
+  "gilt": {
+    "$value": "oklch(73.707% 0.1007 82.71)",
+    "$type": "color"
+  },
+  "gilt-soft": {
+    "$value": "oklch(25.198% 0.0248 68.99)",
+    "$type": "color"
+  },
+  "burgundy": {
+    "$value": "oklch(71.902% 0.0885 42.33)",
+    "$type": "color"
+  },
+  "burgundy-soft": {
+    "$value": "oklch(27.622% 0.0422 33.77)",
+    "$type": "color"
+  },
+  "ok": {
+    "$value": "oklch(74.626% 0.0954 117.24)",
+    "$type": "color"
+  },
+  "ok-soft": {
+    "$value": "oklch(26.921% 0.025 117.94)",
+    "$type": "color"
+  },
+  "warn": {
+    "$value": "oklch(75.649% 0.1058 79.08)",
+    "$type": "color"
+  },
+  "warn-soft": {
+    "$value": "oklch(26.498% 0.0283 82.61)",
+    "$type": "color"
+  },
+  "danger": {
+    "$value": "oklch(69.378% 0.1035 37)",
+    "$type": "color"
+  },
+  "danger-soft": {
+    "$value": "oklch(27.195% 0.0448 28.96)",
+    "$type": "color"
+  },
+  "info": {
+    "$value": "oklch(69.056% 0.0704 269.62)",
+    "$type": "color"
+  },
+  "info-soft": {
+    "$value": "oklch(26.46% 0.026 265.37)",
+    "$type": "color"
+  },
+  "hl-quote": {
+    "$value": "oklch(26.571% 0.0241 77.51)",
+    "$type": "color"
+  },
+  "hl-citation": {
+    "$value": "oklch(26.921% 0.025 117.94)",
+    "$type": "color"
+  },
+  "hl-warn": {
+    "$value": "oklch(26.498% 0.0283 82.61)",
+    "$type": "color"
+  },
+  "hl-danger": {
+    "$value": "oklch(27.195% 0.0448 28.96)",
+    "$type": "color"
+  },
+  "hl-ai": {
+    "$value": "oklch(26.725% 0.0279 310.38)",
+    "$type": "color"
+  },
+  "accent-xref": {
+    "$value": "oklch(72.468% 0.0562 246.92)",
+    "$type": "color"
+  },
+  "fg-xref": {
+    "$value": "oklch(79.088% 0.0585 251.77)",
+    "$type": "color"
+  },
+  "shadow-0": {
+    "$value": "0 0 0 1px rgba(255,255,255,0.04)",
+    "$type": "shadow"
+  },
+  "shadow-1": {
+    "$value": "0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04)",
+    "$type": "shadow"
+  },
+  "shadow-2": {
+    "$value": "0 2px 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.05)",
+    "$type": "shadow"
+  },
+  "shadow-3": {
+    "$value": "0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)",
+    "$type": "shadow"
+  },
+  "shadow-inset": {
+    "$value": "inset 0 1px 2px rgba(0,0,0,0.4)",
+    "$type": "shadow"
+  },
+  "overlay-scrim": {
+    "$value": "rgba(0,0,0,0.55)",
+    "$type": "color"
+  }
+}

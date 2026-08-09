@@ -1,0 +1,64 @@
+{
+  "files": ["expression/*.md", "README.md"],
+  "failOn": "substantive",
+  "registers": {
+    "expression/*.md": "instructional",
+    "README.md": "instructional"
+  },
+  "overrides": [
+    {
+      "files": "expression/*.md",
+      "rules": ["assistive"],
+      "reason": "The guidelines define this prohibition and cannot state it without naming the word. Principle P5 is internal-only; a document explaining that is not itself a user-facing surface."
+    },
+    {
+      "files": "expression/*.md",
+      "rules": [
+        "vocabulary/supervisor",
+        "vocabulary/sealed",
+        "vocabulary/document",
+        "vocabulary/prose-refine",
+        "vocabulary/planning-canvas",
+        "vocabulary/session",
+        "vocabulary/provenance-record",
+        "vocabulary/branch"
+      ],
+      "reason": "A controlled-vocabulary document names terms as terms. The distinction between canonical and non-canonical forms is its subject matter, so it necessarily contains both."
+    },
+    {
+      "files": "expression/*.md",
+      "rules": [
+        "controlling-obligation",
+        "dont-forget",
+        "surveillance-framing",
+        "please-wait",
+        "almost-there",
+        "session-expiry-without-reason",
+        "inferred-quality-metric",
+        "human-composition-comparison",
+        "authorship-proof",
+        "trivialising-interjections",
+        "praise",
+        "something-went-wrong",
+        "are-you-sure",
+        "unsubstantiated-superlative",
+        "unverifiable-ease-claim",
+        "minimising-modifiers",
+        "assumed-knowledge",
+        "normal-baseline",
+        "coming-soon",
+        "click-here",
+        "humanize",
+        "product-name-spelling",
+        "special-needs",
+        "ai-generated-accusation"
+      ],
+      "reason": "Cited as prohibited forms inside the rule prose that defines them. The structural exemptions cover tables, code, and quoted counter-examples; these are the residue where a term is discussed in running prose without quotation."
+    },
+    {
+      "files": "expression/*.md",
+      "rules": ["contraction", "exclamation-mark", "hyphen-in-numeric-range"],
+      "reason": "Present only inside cited counter-examples and identifiers. The guidelines demonstrate incorrect typography in order to prohibit it."
+    }
+  ]
+}

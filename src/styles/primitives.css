@@ -1,0 +1,81 @@
+/* ===========================================================================
+   Layout primitives.
+
+   Container, Stack, and Cluster. Spacing is addressed by scale step rather
+   than by value, so an off-scale gap cannot be introduced by accident.
+   =========================================================================== */
+
+/* --- Container ------------------------------------------------------------ */
+
+.ekd-container {
+  margin-inline: auto;
+  width: 100%;
+}
+
+.ekd-container[data-width="page"] { max-width: var(--page-w); }
+.ekd-container[data-width="content"] { max-width: var(--content-w); }
+
+/* Prose gets the character cap, but never exceeds the content column: on a
+   narrow viewport `min()` yields the column, on a wide one the measure. */
+.ekd-container[data-width="measure"] {
+  max-width: min(var(--measure), var(--content-w));
+}
+
+.ekd-container--gutter {
+  padding-inline: var(--gutter);
+}
+
+/* --- Stack ---------------------------------------------------------------- */
+
+/* `flex column` + `gap` rather than margins on children: gaps do not collapse,
+   do not leak past the first and last child, and do not need a lobotomised-owl
+   selector to undo. */
+.ekd-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.ekd-stack[data-gap="0"] { gap: var(--sp-0); }
+.ekd-stack[data-gap="1"] { gap: var(--sp-1); }
+.ekd-stack[data-gap="2"] { gap: var(--sp-2); }
+.ekd-stack[data-gap="3"] { gap: var(--sp-3); }
+.ekd-stack[data-gap="4"] { gap: var(--sp-4); }
+.ekd-stack[data-gap="5"] { gap: var(--sp-5); }
+.ekd-stack[data-gap="6"] { gap: var(--sp-6); }
+.ekd-stack[data-gap="7"] { gap: var(--sp-7); }
+.ekd-stack[data-gap="8"] { gap: var(--sp-8); }
+.ekd-stack[data-gap="9"] { gap: var(--sp-9); }
+.ekd-stack[data-gap="10"] { gap: var(--sp-10); }
+.ekd-stack[data-gap="11"] { gap: var(--sp-11); }
+.ekd-stack[data-gap="12"] { gap: var(--sp-12); }
+
+/* --- Cluster -------------------------------------------------------------- */
+
+.ekd-cluster {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.ekd-cluster[data-gap="0"] { gap: var(--sp-0); }
+.ekd-cluster[data-gap="1"] { gap: var(--sp-1); }
+.ekd-cluster[data-gap="2"] { gap: var(--sp-2); }
+.ekd-cluster[data-gap="3"] { gap: var(--sp-3); }
+.ekd-cluster[data-gap="4"] { gap: var(--sp-4); }
+.ekd-cluster[data-gap="5"] { gap: var(--sp-5); }
+.ekd-cluster[data-gap="6"] { gap: var(--sp-6); }
+.ekd-cluster[data-gap="7"] { gap: var(--sp-7); }
+.ekd-cluster[data-gap="8"] { gap: var(--sp-8); }
+.ekd-cluster[data-gap="9"] { gap: var(--sp-9); }
+.ekd-cluster[data-gap="10"] { gap: var(--sp-10); }
+.ekd-cluster[data-gap="11"] { gap: var(--sp-11); }
+.ekd-cluster[data-gap="12"] { gap: var(--sp-12); }
+
+.ekd-cluster[data-align="start"] { align-items: flex-start; }
+.ekd-cluster[data-align="center"] { align-items: center; }
+.ekd-cluster[data-align="end"] { align-items: flex-end; }
+.ekd-cluster[data-align="baseline"] { align-items: baseline; }
+
+.ekd-cluster[data-justify="start"] { justify-content: flex-start; }
+.ekd-cluster[data-justify="center"] { justify-content: center; }
+.ekd-cluster[data-justify="end"] { justify-content: flex-end; }
+.ekd-cluster[data-justify="between"] { justify-content: space-between; }

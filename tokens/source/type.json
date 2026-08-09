@@ -1,0 +1,126 @@
+{
+  "fs-3xs": {
+    "$value": "0.625rem",
+    "$type": "dimension"
+  },
+  "fs-2xs": {
+    "$value": "0.6875rem",
+    "$type": "dimension"
+  },
+  "fs-xs": {
+    "$value": "0.75rem",
+    "$type": "dimension"
+  },
+  "fs-sm": {
+    "$value": "0.8125rem",
+    "$type": "dimension"
+  },
+  "fs-base": {
+    "$value": "0.9375rem",
+    "$type": "dimension"
+  },
+  "fs-md": {
+    "$value": "1.0625rem",
+    "$type": "dimension"
+  },
+  "fs-lg": {
+    "$value": "1.25rem",
+    "$type": "dimension"
+  },
+  "fs-xl": {
+    "$value": "1.5rem",
+    "$type": "dimension"
+  },
+  "fs-2xl": {
+    "$value": "1.875rem",
+    "$type": "dimension"
+  },
+  "fs-3xl": {
+    "$value": "2.375rem",
+    "$type": "dimension"
+  },
+  "fs-4xl": {
+    "$value": "3rem",
+    "$type": "dimension"
+  },
+  "fs-5xl": {
+    "$value": "3.75rem",
+    "$type": "dimension"
+  },
+  "fs-6xl": {
+    "$value": "4.75rem",
+    "$type": "dimension"
+  },
+  "lh-tight": {
+    "$value": "1.12",
+    "$type": "dimension"
+  },
+  "lh-snug": {
+    "$value": "1.28",
+    "$type": "dimension"
+  },
+  "lh-normal": {
+    "$value": "1.5",
+    "$type": "dimension"
+  },
+  "lh-prose": {
+    "$value": "1.65",
+    "$type": "dimension"
+  },
+  "lh-loose": {
+    "$value": "1.8",
+    "$type": "dimension"
+  },
+  "tr-tighter": {
+    "$value": "-0.025em",
+    "$type": "dimension"
+  },
+  "tr-tight": {
+    "$value": "-0.012em",
+    "$type": "dimension"
+  },
+  "tr-normal": {
+    "$value": "0",
+    "$type": "dimension"
+  },
+  "tr-wide": {
+    "$value": "0.02em",
+    "$type": "dimension"
+  },
+  "tr-wider": {
+    "$value": "0.08em",
+    "$type": "dimension"
+  },
+  "tr-widest": {
+    "$value": "0.18em",
+    "$type": "dimension"
+  },
+  "fw-regular": {
+    "$value": "400",
+    "$type": "dimension"
+  },
+  "fw-medium": {
+    "$value": "500",
+    "$type": "dimension"
+  },
+  "fw-semi": {
+    "$value": "600",
+    "$type": "dimension"
+  },
+  "fw-bold": {
+    "$value": "700",
+    "$type": "dimension"
+  },
+  "shadow-swatch-ring": {
+    "$value": "inset 0 0 0 1px rgba(60, 45, 20, 0.04)",
+    "$type": "dimension"
+  },
+  "shadow-drawer": {
+    "$value": "1px 0 0 0 var(--rule-soft), 8px 0 24px -8px rgba(60, 45, 20, 0.12)",
+    "$type": "dimension"
+  },
+  "shadow-chat-panel": {
+    "$value": "-8px 0 24px -16px rgba(0, 0, 0, 0.25)",
+    "$type": "dimension"
+  }
+}

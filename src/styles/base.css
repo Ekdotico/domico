@@ -1,0 +1,203 @@
+/* ===========================================================================
+   Ekdotico base layer.
+
+   Everything here is application-agnostic: the reset, the document defaults,
+   the accessibility primitives, and the semantic type utilities. Nothing in
+   this file knows what the consuming application is.
+
+   Import order matters. Tokens first, then this:
+
+     import '@ekdotico/design-system/tokens.css';
+     import '@ekdotico/design-system/styles.css';
+
+   Layout geometry — page width, sidebar width, content column — is NOT here.
+   That is per-application structure, and each repository owns its own.
+   =========================================================================== */
+
+/* --- Reset ---------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+  background: var(--bg-canvas);
+  /* `calt` keeps contextual alternates on, which every family here supports.
+     `ss01` and `cv11` are stylistic-set requests carried over from an earlier
+     sans; a family that does not define them ignores the request, so this is
+     inert rather than wrong. Revisit if the interface family changes again. */
+  font-feature-settings: "ss01", "cv11", "calt";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: var(--hl-quote);
+  color: var(--fg-1);
+}
+
+/* --- Accessibility primitives -------------------------------------------- */
+
+/* WCAG 2.2 §2.4.7. A visible focus indicator on every interactive element,
+   in the accent colour so it reads as intentional rather than as a default. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* WCAG 2.2 §2.4.1 Bypass Blocks. Hidden until focused, then pinned top-left
+   so a keyboard user reaches the main content without traversing the chrome.
+   The consuming application supplies the markup:
+     <a class="skip-link" href="#main">Skip to content</a> */
+.skip-link {
+  position: fixed;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  z-index: 10000;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--bg-surface);
+  color: var(--fg-1);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  box-shadow: var(--shadow-2);
+  transform: translateY(-150%);
+  opacity: 0;
+  transition:
+    transform var(--dur-fast) var(--ease-soft),
+    opacity var(--dur-fast) var(--ease-soft);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  opacity: 1;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Available to assistive technology, absent from the visual rendering. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The house motion rule is fades, with transform permitted only where a surface
+   enters or leaves the viewport. Honour a reduced-motion request by removing
+   what little movement remains, the skip link's entry included. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Scrollbars ----------------------------------------------------------- */
+
+/* Two specifications cover the field, and both are needed:
+   1. scrollbar-width / scrollbar-color — Firefox and modern Chromium. Set on
+      <html> so it cascades to every scroll box.
+   2. ::-webkit-scrollbar pseudo-elements — Safari and older Chromium. These
+      do NOT cascade, so the universal selector reaches every scroll container.
+   Both draw from theme tokens, so scrollbars re-theme across all eight
+   palettes without further work. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--rule-strong);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: var(--radius-pill);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--fg-4);
+  background-clip: padding-box;
+}
+
+/* --- Semantic type utilities ---------------------------------------------- */
+
+.display,
+h1.display {
+  font-family: var(--font-serif);
+  font-weight: var(--fw-regular);
+  font-size: var(--fs-6xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-tighter);
+  color: var(--fg-1);
+  /* An optical-size request at the display grade. Crimson Pro exposes weight
+     and italic axes but no `opsz`, so this is currently inert. It is retained
+     deliberately: it costs nothing, and it is the correct instruction the day
+     the reading serif gains an optical-size axis. */
+  font-variation-settings: "opsz" 48;
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-widest);
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+.lede {
+  font-family: var(--font-serif);
+  font-weight: var(--fw-regular);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-prose);
+  color: var(--fg-2);
+  font-style: italic;
+}
+
+.serif { font-family: var(--font-serif); }
+.sans { font-family: var(--font-sans); }
+.mono { font-family: var(--font-mono); }
+.italic { font-style: italic; }
+
+.smallcaps {
+  font-variant-caps: all-small-caps;
+  letter-spacing: var(--tr-wider);
+}

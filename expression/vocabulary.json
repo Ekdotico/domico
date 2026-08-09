@@ -1,0 +1,567 @@
+{
+  "$schema": "./vocabulary.schema.json",
+  "version": "0.3",
+  "description": "Controlled vocabulary. Every concept in Ekdotico has exactly one canonical term. This file is the single source for the mechanical vocabulary rules: the prose tables in guidelines.md are generated from it, and the linter reads it directly. Adding a term means editing this file and nothing else.",
+  "notes": {
+    "ambiguousVariants": "Variants under `ambiguousVariants` are also ordinary English or legitimate domain terms. The linter reports them as substantive and marks them for human confirmation rather than blocking, because a match is necessary but not sufficient. A \"faculty dashboard\" and an MLA \"Works Cited\" list are both correct usages.",
+    "notDetectable": "A term under `notDetectable` is a known non-canonical form that the linter deliberately does not match, because the false-positive rate would drown the signal. Each carries a `notDetectableReason`. These are not exemptions from the rule — reviewers still catch them — only from automation.",
+    "scope": "A term with `scope: \"specification-only\"` is canonical in specification, architecture, and engineering contexts but is not a user-facing label. Product copy describes what the writer sees rather than naming the mechanism."
+  },
+  "terms": [
+    {
+      "id": "document",
+      "concept": "The document the user is working on",
+      "canonical": "Document",
+      "shorthand": null,
+      "variants": [
+        "doc"
+      ],
+      "rationale": "Format-agnostic; applies equally to thesis, journal article, research paper, and conference paper. \"Paper\" implies a specific physical format. \"Manuscript\" implies an unpublished state. \"Work\" is too general for functional contexts. \"Manuscript\" is also standard academic usage for a paper under submission, so it is confirmable rather than blocking.",
+      "since": "0.2",
+      "ambiguousVariants": [
+        "paper",
+        "the work",
+        "manuscript"
+      ]
+    },
+    {
+      "id": "seal",
+      "concept": "The action of permanently committing the provenance record",
+      "canonical": "Seal",
+      "shorthand": null,
+      "variants": [
+        "finalise",
+        "finalize"
+      ],
+      "rationale": "Captures the metaphor of a physical seal on a legal document — closure, integrity, authenticity — without requiring users to understand the technical mechanism. \"Lock\" implies reversibility. \"Finalise\" is too generic. Sealing is what the writer does; export lock is the mechanism that carries it out, and the two are separate entries rather than synonyms.",
+      "since": "0.2"
+    },
+    {
+      "id": "export-lock",
+      "concept": "The mechanism that seals the provenance record at export",
+      "canonical": "Export lock",
+      "shorthand": "Lock",
+      "variants": [],
+      "rationale": "The established name in the specification, where it is used throughout FR-EX, FR-PR, and FR-VR. It names a mechanism, not an action the writer takes: the writer exports, and the export lock is what seals the record as part of that. Distinct from Seal, which is the user-facing action.",
+      "since": "0.3",
+      "scope": "specification-only",
+      "scopeNote": "Correct and canonical in specification, architecture, and engineering contexts. Not a user-facing label. The writer encounters the mechanism as part of Export and is informed that the provenance record is sealed at that point; product copy says the document is sealed on export rather than naming the mechanism. Recording the scope resolves a contradiction carried since 0.2, where the controlled vocabulary called the term non-user-facing while the specification used it as the primary name — the term was never wrong, only its scope was unstated. The short form \"lock\" and the participle \"locked\" are correct within the same specification context, which is why they are no longer carried as variants of Seal.",
+      "allowedCompounds": [
+        "export lock",
+        "document lock",
+        "lock",
+        "locked",
+        "export-locked"
+      ]
+    },
+    {
+      "id": "sealed",
+      "concept": "The state of a document after sealing",
+      "canonical": "Sealed",
+      "shorthand": null,
+      "variants": [
+        "finalised",
+        "finalized"
+      ],
+      "rationale": "Past participle and adjective form of the canonical verb.",
+      "since": "0.2"
+    },
+    {
+      "id": "provenance-record",
+      "concept": "The complete collection of captured provenance data",
+      "canonical": "Provenance record",
+      "shorthand": "Record",
+      "variants": [
+        "writing record",
+        "certificate",
+        "provenance certificate",
+        "audit trail"
+      ],
+      "rationale": "The record is the complete, structured collection of all data the provenance system captures for a document; its human-readable rendering is the provenance report. Established throughout the SRS. \"Record\" alone is too generic in other contexts. \"Certificate\" implies third-party issuance. \"Writing record\" omits the integrity dimension.",
+      "since": "0.2"
+    },
+    {
+      "id": "provenance-report",
+      "concept": "The human-readable rendering of the provenance record",
+      "canonical": "Provenance report",
+      "shorthand": "Report",
+      "variants": [
+        "provenance view",
+        "record view",
+        "verification report"
+      ],
+      "rationale": "The report is the legible presentation of the provenance record, returned on verify.ekdoti.co and in the faculty dashboard. The record is the data; the report is the view of it. A report is always a rendering of a record, never a separate artefact.",
+      "since": "0.3"
+    },
+    {
+      "id": "prose-refine",
+      "concept": "The AI-assisted prose editing tool",
+      "canonical": "Prose Refine",
+      "shorthand": "/refine",
+      "variants": [
+        "humanize",
+        "humanise",
+        "inline chat",
+        "rewrite tool",
+        "polish"
+      ],
+      "rationale": "Locked. Title case; two words. Never \"humanize\" or \"humanise\".",
+      "since": "0.2"
+    },
+    {
+      "id": "planning-canvas",
+      "concept": "The mind map and planning feature",
+      "canonical": "Planning canvas",
+      "shorthand": "Canvas",
+      "variants": [
+        "mind map",
+        "mindmap",
+        "concept map"
+      ],
+      "rationale": "Specific to Ekdotico; distinguishes from the generic \"mind map\" methodology and from the LMS named Canvas. Communicates the purpose. \"Canvas\" alone is acceptable shorthand after \"planning canvas\" has appeared once in the same document or screen — the LMS ambiguity is resolved by first use rather than by avoiding the short form throughout.",
+      "since": "0.2"
+    },
+    {
+      "id": "session",
+      "concept": "A continuous unit of writing activity",
+      "canonical": "Session",
+      "shorthand": null,
+      "variants": [
+        "work session",
+        "writing period"
+      ],
+      "rationale": "Shortest, most functional term. A session begins when a user opens a document in an active browser tab with keyboard or mouse focus, and ends when the tab is closed, navigated away from, or has had no qualifying interaction events within the inactivity threshold specified in the SRS. \"Writing session\" is acceptable in instructional prose on first use; \"session\" is the canonical term for functional and provenance contexts.",
+      "since": "0.2",
+      "ambiguousVariants": [
+        "sitting"
+      ]
+    },
+    {
+      "id": "revision",
+      "concept": "A main-line document version created from an existing sealed document",
+      "canonical": "Revision",
+      "shorthand": null,
+      "variants": [
+        "new version",
+        "iteration"
+      ],
+      "rationale": "Established in the branching specification.",
+      "since": "0.2"
+    },
+    {
+      "id": "revise",
+      "concept": "The action of creating a main-line revision",
+      "canonical": "Revise",
+      "shorthand": null,
+      "variants": [
+        "create version",
+        "iterate"
+      ],
+      "rationale": "Established in the branching specification. Available on main-line (.0) documents only.",
+      "since": "0.2"
+    },
+    {
+      "id": "branch",
+      "concept": "A derived document based on a sealed document",
+      "canonical": "Branch",
+      "shorthand": null,
+      "variants": [
+        "derivative"
+      ],
+      "rationale": "Established in the branching specification. Noun and verb. \"Fork\" is also the ordinary software sense — a forked dependency, or forking the open-source repository — so it is confirmable rather than blocking.",
+      "since": "0.2",
+      "notDetectable": [
+        "copy"
+      ],
+      "notDetectableReason": "\"Copy\" is the house term for prose itself — the Expression Guidelines use it on almost every line — so matching it produces noise on a scale that would train reviewers to ignore the linter. A rule that cries wolf on the system's own core noun is worse than no rule. Reviewers catch a document called a copy; the linter does not try.",
+      "ambiguousVariants": [
+        "fork"
+      ]
+    },
+    {
+      "id": "version",
+      "concept": "The two-component version identifier",
+      "canonical": "Version",
+      "shorthand": "v1.0",
+      "variants": [],
+      "rationale": "Always followed by major.minor format, for example Version 1.0. Established in the branching specification. Always two-component.",
+      "since": "0.2"
+    },
+    {
+      "id": "document-hash",
+      "concept": "The SHA-256 hash identifying a sealed export",
+      "canonical": "Document hash",
+      "shorthand": "Hash",
+      "variants": [
+        "checksum",
+        "fingerprint",
+        "digest"
+      ],
+      "rationale": "Technical term; displayed in monospace. Not user-facing in plain prose.",
+      "since": "0.2"
+    },
+    {
+      "id": "session-signature",
+      "concept": "The Ed25519 signature appended at the end of each session",
+      "canonical": "Session signature",
+      "shorthand": "Signature",
+      "variants": [
+        "sig",
+        "session key"
+      ],
+      "rationale": "Distinguishes the per-session signing event from the export-level hash.",
+      "since": "0.2"
+    },
+    {
+      "id": "research-workspace",
+      "concept": "The AI-powered search and source discovery surface",
+      "canonical": "Research workspace",
+      "shorthand": null,
+      "variants": [
+        "research panel",
+        "discovery panel",
+        "search workspace"
+      ],
+      "rationale": "Established in SRS module naming.",
+      "since": "0.2"
+    },
+    {
+      "id": "pdf-reader",
+      "concept": "The PDF reading and annotation surface",
+      "canonical": "PDF reader",
+      "shorthand": null,
+      "variants": [
+        "PDF annotator",
+        "document reader"
+      ],
+      "rationale": "Simple and functional. \"PDF annotator\" is secondary. The compound module title \"PDF reader and annotator\" is permitted where it names the FR-PD module rather than the product surface. \"PDF viewer\" also means a third-party application reading an exported file — the metadata entry visible in Acrobat's properties panel, for instance — so it is confirmable rather than blocking.",
+      "since": "0.2",
+      "allowedCompounds": [
+        "PDF reader and annotator"
+      ],
+      "ambiguousVariants": [
+        "PDF viewer"
+      ]
+    },
+    {
+      "id": "source-chat",
+      "concept": "The AI-powered source interaction surface",
+      "canonical": "Source chat",
+      "shorthand": null,
+      "variants": [
+        "document chat",
+        "paper chat",
+        "RAG chat"
+      ],
+      "rationale": "Established in SRS module naming.",
+      "since": "0.2"
+    },
+    {
+      "id": "research-journal",
+      "concept": "The AI-maintained writing journal",
+      "canonical": "Research journal",
+      "shorthand": null,
+      "variants": [
+        "writing journal",
+        "process journal",
+        "lab notebook"
+      ],
+      "rationale": "Established in SRS module naming.",
+      "since": "0.2"
+    },
+    {
+      "id": "task-tracker",
+      "concept": "The task management surface",
+      "canonical": "Task tracker",
+      "shorthand": null,
+      "variants": [
+        "tasks tab",
+        "to-do list",
+        "todo list"
+      ],
+      "rationale": "Established in SRS module naming. \"Task panel\" names the panel within the tracker rather than the tracker itself, and the specification uses it that way throughout FR-TK.",
+      "since": "0.2",
+      "ambiguousVariants": [
+        "task panel"
+      ]
+    },
+    {
+      "id": "citation-engine",
+      "concept": "The citation resolution subsystem",
+      "canonical": "Citation engine",
+      "shorthand": null,
+      "variants": [
+        "auto-citation engine",
+        "auto-citation",
+        "automatic citation engine"
+      ],
+      "rationale": "Resolves academic identifiers — DOIs, arXiv IDs, PMIDs, ISBNs — against external bibliographic sources and returns structured metadata. Consistent with the FR-CI module. \"Auto-\" was dropped in 0.3: the engine does not generate citations, it retrieves and validates them, and the prefix implied an automation the subsystem does not perform. Three forms were in circulation before the term was locked.",
+      "since": "0.3"
+    },
+    {
+      "id": "bibliography-manager",
+      "concept": "The bibliography display and management surface",
+      "canonical": "Bibliography manager",
+      "shorthand": null,
+      "variants": [
+        "citation manager"
+      ],
+      "rationale": "Established in SRS module naming. \"Reference manager\" is also the product category occupied by Zotero and Mendeley; naming a competitor category is not a vocabulary breach.",
+      "since": "0.2",
+      "ambiguousVariants": [
+        "reference manager"
+      ]
+    },
+    {
+      "id": "citation",
+      "concept": "An individual reference entry in the bibliography",
+      "canonical": "Citation",
+      "shorthand": null,
+      "variants": [
+        "reference entry"
+      ],
+      "rationale": "Standard academic term; consistent with the FR-CI module.",
+      "since": "0.2",
+      "ambiguousVariants": [
+        "cite"
+      ]
+    },
+    {
+      "id": "bibliography",
+      "concept": "The formatted list of all citations",
+      "canonical": "Bibliography",
+      "shorthand": null,
+      "variants": [],
+      "rationale": "Standard academic term. Note that \"Works Cited\" and \"Reference list\" remain correct when naming the style-specific output of MLA and APA respectively.",
+      "since": "0.2",
+      "ambiguousVariants": [
+        "works cited",
+        "reference list"
+      ]
+    },
+    {
+      "id": "latex-block",
+      "concept": "An inline block of typeset mathematical content",
+      "canonical": "LaTeX block",
+      "shorthand": null,
+      "variants": [
+        "math block"
+      ],
+      "rationale": "Consistent with the FR-LX module. \"Equation block\" is also a document structure term, used when describing exported output and numbering rather than the editor feature.",
+      "since": "0.2",
+      "ambiguousVariants": [
+        "equation block"
+      ]
+    },
+    {
+      "id": "mermaid-diagram",
+      "concept": "An inline block diagram",
+      "canonical": "Mermaid diagram",
+      "shorthand": "diagram block",
+      "variants": [
+        "chart block",
+        "flowchart block"
+      ],
+      "rationale": "Consistent with the FR-MD module.",
+      "since": "0.2"
+    },
+    {
+      "id": "verify-endpoint",
+      "concept": "The public endpoint for record verification",
+      "canonical": "verify.ekdoti.co",
+      "shorthand": null,
+      "variants": [
+        "the verification portal",
+        "the verify portal"
+      ],
+      "rationale": "Always lowercase; no \"the\" or \"portal\" prefix. \"The verifier\" was removed as a variant: it names the person performing verification, not the endpoint.",
+      "since": "0.2"
+    },
+    {
+      "id": "student-plan",
+      "concept": "The free individual plan",
+      "canonical": "Student Plan",
+      "shorthand": null,
+      "variants": [
+        "free plan",
+        "basic plan"
+      ],
+      "rationale": "Established in the SRS and product documentation. \"Free tier\" is also the general term for competitor pricing, which the market analysis has to use.",
+      "since": "0.2",
+      "ambiguousVariants": [
+        "free tier"
+      ]
+    },
+    {
+      "id": "individual-pro",
+      "concept": "The paid individual plan",
+      "canonical": "Individual Pro",
+      "shorthand": null,
+      "variants": [
+        "pro plan",
+        "premium plan",
+        "paid tier"
+      ],
+      "rationale": "Established in the SRS and product documentation.",
+      "since": "0.2"
+    },
+    {
+      "id": "team-plan",
+      "concept": "The institutional plan with supervisor access",
+      "canonical": "Team Plan",
+      "shorthand": null,
+      "variants": [
+        "institutional plan",
+        "enterprise plan",
+        "faculty plan"
+      ],
+      "rationale": "Established in the SRS and product documentation.",
+      "since": "0.2"
+    },
+    {
+      "id": "supervisor",
+      "concept": "A user on the Team Plan with supervisor access rights",
+      "canonical": "Supervisor",
+      "shorthand": null,
+      "variants": [],
+      "rationale": "Used in the SRS. Not \"faculty\" (too specific to one context) and not \"reviewer\" (too generic). \"Advisor\" is not a synonym here: in Ekdotico it names the Prose Refine writing advisor. \"Faculty dashboard\" is the established surface name and is unaffected. \"Reviewer\" is also one of the four document permission roles in FR-ED and is used generically for a person reading a record, so it is confirmable rather than blocking. \"Instructor\" is also used generically when enumerating who might verify a record, so it is confirmable rather than blocking.",
+      "since": "0.2",
+      "ambiguousVariants": [
+        "faculty",
+        "reviewer",
+        "instructor"
+      ],
+      "allowedCompounds": [
+        "faculty dashboard"
+      ]
+    },
+    {
+      "id": "unsaved-changes",
+      "concept": "Edits not yet saved to the server",
+      "canonical": "Unsaved changes",
+      "shorthand": null,
+      "variants": [
+        "dirty state",
+        "unsaved work"
+      ],
+      "rationale": "Standard UI term; unambiguous. \"Pending changes\" also describes queued synchronisation state in the planning canvas, which is a different concept from the unsaved-changes indicator.",
+      "since": "0.2",
+      "ambiguousVariants": [
+        "pending changes"
+      ]
+    },
+    {
+      "id": "export",
+      "concept": "The action of producing a file from the document",
+      "canonical": "Export",
+      "shorthand": null,
+      "variants": [
+        "save as",
+        "generate file"
+      ],
+      "rationale": "Standard term. Verb and noun.",
+      "since": "0.2",
+      "ambiguousVariants": [
+        "download"
+      ]
+    },
+    {
+      "id": "new-document",
+      "concept": "Creating a new document",
+      "canonical": "New document",
+      "shorthand": null,
+      "variants": [
+        "create document",
+        "add document"
+      ],
+      "rationale": "Functional label; matches the action button label.",
+      "since": "0.2",
+      "ambiguousVariants": [
+        "start writing"
+      ]
+    }
+  ],
+  "gaps": {
+    "description": "Concepts that recur in Ekdotico content but have no canonical term yet. Recorded here so the linter does not flag them and so the additions process has a queue. These are gaps in the guidelines, not failures of the content. Surfaced by the Phase 1 audit, 2026-08-09.",
+    "concepts": [
+      {
+        "concept": "The unit of collaborative content in the editor",
+        "observed": [
+          "block",
+          "block type",
+          "node"
+        ],
+        "modules": [
+          "FR-ED",
+          "FR-LX",
+          "FR-MD",
+          "FR-CN"
+        ]
+      },
+      {
+        "concept": "The per-document collection of saved sources",
+        "observed": [
+          "source library",
+          "project source library",
+          "document source library"
+        ],
+        "modules": [
+          "FR-RW",
+          "FR-RJ",
+          "FR-CN",
+          "FR-SC"
+        ]
+      },
+      {
+        "concept": "The institutional container for documents and policy",
+        "observed": [
+          "workspace",
+          "institutional workspace",
+          "personal workspace"
+        ],
+        "modules": [
+          "FR-AU",
+          "FR-PR",
+          "FR-RW"
+        ]
+      },
+      {
+        "concept": "The three confidence bands in task extraction",
+        "observed": [
+          "tier",
+          "confidence tier",
+          "band"
+        ],
+        "modules": [
+          "FR-TK"
+        ]
+      },
+      {
+        "concept": "The person writing, in prose contexts",
+        "observed": [
+          "writer",
+          "student",
+          "user",
+          "author",
+          "document Owner"
+        ],
+        "modules": [
+          "all"
+        ],
+        "note": "Escalate. Five synonyms for the primary user is the reliability-contract failure principle P7 exists to prevent, and it compounds with every page added."
+      },
+      {
+        "concept": "The recorded provenance data categories",
+        "observed": [
+          "signal",
+          "provenance signal",
+          "signal category",
+          "signal group"
+        ],
+        "modules": [
+          "FR-PR"
+        ]
+      }
+    ]
+  }
+}

@@ -50,6 +50,13 @@ jobs:
       - name: Every exported subpath ships in the tarball
         run: pnpm check:exports
 
+      # Icons are vendored, so conformance is a convention rather than
+      # something the package manager enforces. This is what makes the
+      # convention enforceable — it caught ModeSwitcher shipping its own
+      # hand-drawn sun, monitor and moon alongside the Lucide ones.
+      - name: Vendored icons match their Lucide originals
+        run: pnpm check:icons
+
       # Asserts the linter fails when it should and, more importantly, stays
       # quiet where it should: false positives are what get a linter switched
       # off, and the structural exemptions would rot silently without this.

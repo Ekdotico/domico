@@ -147,7 +147,7 @@ function collect(source: string, pattern: RegExp, reason: string): Span[] {
  * error than a hundred findings against source code, which is what the first
  * run against `components/` produced.
  */
-function codeExemptions(source: string): Span[] {
+function codeExemptions(source: string, canContainJsx: boolean): Span[] {
   const scannable: Array<[number, number]> = [];
 
   // Comments are found first and excluded from the string scan. Backticks are
@@ -178,12 +178,40 @@ function codeExemptions(source: string): Span[] {
     scannable.push([m.index + 1, m.index + m[0].length - 1]);
   }
 
-  // JSX text: the run between a closing angle bracket and the next opening
-  // one, with no braces (which would make it an expression, not text).
-  const JSX_TEXT = />([^<>{}]+)</g;
-  for (const m of source.matchAll(JSX_TEXT)) {
-    if (m[1] && /[A-Za-z]{2}/.test(m[1])) {
-      scannable.push([m.index + 1, m.index + 1 + m[1].length]);
+  // JSX text: the run between two tags, with no braces (which would make it an
+  // expression rather than text).
+  //
+  // Both restrictions below exist because the earlier form — the run between
+  // any `>` and the next `<` — could not tell JSX from arithmetic. Given
+  //
+  //     prev: idx > 0 ? flat[idx - 1] : null,
+  //     next: idx < flat.length - 1 ? flat[idx + 1] : null,
+  //
+  // the two comparison operators bracket a run that contains letters, so the
+  // code between them was scanned as copy and its subtraction reported as a
+  // hyphen where an em dash belongs.
+  //
+  // First restriction: only .tsx and .jsx can hold JSX at all — TypeScript
+  // requires the x extension for it — so in a .ts file there is no JSX text by
+  // definition and the scan is skipped entirely.
+  if (canContainJsx) {
+    // Second restriction: the run must sit between two things shaped like
+    // tags, not between any two angle brackets. A comparison operator is never
+    // preceded by a tag name, which is what the arithmetic case above relied
+    // on being indistinguishable.
+    const TAG = /<\/?[A-Za-z][\w.:-]*(?:\s[^<>]*?)?\/?>/g;
+    const tags = [...source.matchAll(TAG)].map(
+      (m) => [m.index, m.index + m[0].length] as [number, number],
+    );
+
+    for (let i = 0; i < tags.length - 1; i++) {
+      const start = tags[i]![1];
+      const end = tags[i + 1]![0];
+      if (end <= start) continue;
+      const text = source.slice(start, end);
+      if (/[{}<>]/.test(text)) continue;
+      if (!/[A-Za-z]{2}/.test(text)) continue;
+      scannable.push([start, end]);
     }
   }
 
@@ -212,7 +240,7 @@ export function isSourceFile(path: string): boolean {
 export function exemptSpans(source: string, allowlist: string[], path = ''): Span[] {
   if (isSourceFile(path)) {
     return [
-      ...codeExemptions(source),
+      ...codeExemptions(source, /\.(tsx|jsx)$/.test(path)),
       // Import specifiers and the like are string literals, so they survive the
       // inversion above and still need the allowlist and URL exemptions.
       ...collect(source, URL, 'URL or file path'),

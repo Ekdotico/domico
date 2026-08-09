@@ -47,6 +47,45 @@ assert(has('hyphen-in-numeric-range'), 'missed a hyphen in a numeric range');
 // Register-scoped: only reachable because a register was declared above.
 assert(has('something-went-wrong'), 'missed a register-scoped System Feedback rule');
 
+// --- Code-aware scanning: JSX text against arithmetic ---------------------
+// Comparison operators bracket a run of code that reads exactly like JSX text.
+// This is the deree case: `idx > 0 ? flat[idx - 1] : null,` followed by
+// `idx < flat.length` had its subtraction reported as a hyphen where an em
+// dash belongs. Both halves are asserted, because a scan that finds nothing
+// anywhere would pass the negative test on its own.
+{
+  const arithmetic = [
+    'export function neighbours(flat, idx) {',
+    '  return {',
+    '    prev: idx > 0 ? flat[idx - 1] : null,',
+    '    next: idx < flat.length - 1 ? flat[idx + 1] : null,',
+    '  };',
+    '}',
+  ].join('\n');
+
+  for (const file of ['nav.ts', 'nav.tsx']) {
+    const found = lintText(arithmetic, file, { register: 'functional' })
+      .findings.filter((f) => !f.overriddenBy);
+    assert(
+      found.length === 0,
+      `scanned arithmetic as copy in ${file}: ${found.map((f) => f.ruleId).join(', ')}`,
+    );
+  }
+
+  // Real JSX text in a .tsx file must still be scanned, or the fix above would
+  // have bought its silence by turning the scan off.
+  const jsx = '<p>The export could not be completed - try again.</p>';
+  assert(
+    lintText(jsx, 'Panel.tsx', { register: 'system-feedback' }).findings.length > 0,
+    'stopped scanning genuine JSX text',
+  );
+  // ...and must not be scanned in a .ts file, which cannot contain JSX at all.
+  assert(
+    lintText(jsx, 'Panel.ts', { register: 'system-feedback' }).findings.length === 0,
+    'scanned JSX text in a .ts file, where TypeScript forbids JSX',
+  );
+}
+
 // --- Multi-register declaration ------------------------------------------
 // §5.6 Step 4: one file routinely carries copy from several registers. A list
 // must run every declared register's rules, and must not quietly run none.

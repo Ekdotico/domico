@@ -87,15 +87,44 @@ export function resolveRenderedMode(
   return prefersDark ? 'dark' : 'light';
 }
 
+/**
+ * One year. The choice is a reading accommodation rather than a session
+ * preference, so it should outlast any plausible gap between visits.
+ */
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+/**
+ * Persist a choice where the server can read it back.
+ *
+ * A cookie rather than localStorage, because the server renders the restored
+ * theme into the markup and localStorage is not available to it. See
+ * `server.ts` for why that matters — in short, reading from localStorage
+ * forces an inline script and therefore a Content-Security-Policy concession.
+ *
+ * Not HttpOnly: the switcher writes it. SameSite=Lax because it is read on
+ * ordinary top-level navigation and nothing else. Secure on https only, so
+ * that local development over http still works.
+ *
+ * localStorage is written too, and only for as long as the init script is
+ * still in use anywhere — it is the fallback path for static exports and the
+ * migration path for readers whose choice predates the cookie.
+ */
+function persist(key: string, value: string): void {
+  const secure = location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${key}=${encodeURIComponent(value)}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${secure}`;
+
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Private browsing, or a blocked storage partition. The cookie above is
+    // the one that matters; this is the compatibility path.
+  }
+}
+
 /** Write the theme to the document and remember it. */
 export function applyTheme(theme: Theme): void {
   document.documentElement.setAttribute('data-theme', theme);
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
-  } catch {
-    // Private browsing, or a blocked storage partition. The theme still
-    // applies to this page; it simply will not survive a reload.
-  }
+  persist(THEME_STORAGE_KEY, theme);
 }
 
 /** Write the mode to the document and remember it. Auto removes the attribute. */
@@ -105,9 +134,5 @@ export function applyMode(mode: Mode): void {
   } else {
     document.documentElement.setAttribute('data-mode', mode);
   }
-  try {
-    localStorage.setItem(MODE_STORAGE_KEY, mode);
-  } catch {
-    // See applyTheme.
-  }
+  persist(MODE_STORAGE_KEY, mode);
 }

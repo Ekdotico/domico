@@ -22,6 +22,15 @@
 
 export { ThemeSwitcher } from './ThemeSwitcher.js';
 export { ModeSwitcher } from './ModeSwitcher.js';
+export { useRadioGroup } from './useRadioGroup.js';
+
+/**
+ * Restoring the theme on the server is the preferred mechanism; the init
+ * script is the fallback for applications with no server render, and the
+ * migration path for readers whose choice is still in localStorage. See
+ * `server.ts`.
+ */
+export { appearanceAttributes, type CookieStore } from './server.js';
 export { themeInitScript } from './init.js';
 
 export {

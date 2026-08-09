@@ -51,6 +51,10 @@
       "types": "./dist/src/theme/index.d.ts",
       "default": "./dist/src/theme/index.js"
     },
+    "./theme/server": {
+      "types": "./dist/src/theme/server.d.ts",
+      "default": "./dist/src/theme/server.js"
+    },
     "./fonts": {
       "types": "./dist/src/fonts/index.d.ts",
       "default": "./dist/src/fonts/index.js"

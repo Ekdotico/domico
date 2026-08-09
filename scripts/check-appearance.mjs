@@ -70,6 +70,53 @@ assert.ok(!script.includes('"auto"'), 'bootstrap writes data-mode="auto", which 
 // with no imports, no template holes, and nothing that needs a bundler.
 assert.ok(!/import|require\(|\$\{/.test(script), 'bootstrap is not self-contained');
 
+// --- server-rendered attributes -------------------------------------------
+// These decide what <html> carries before any JavaScript runs, so a mistake
+// here is a wrong theme on first paint for every reader with a cookie.
+{
+  const { appearanceAttributes } = await import('../dist/src/theme/server.js');
+  const store = (values) => ({ get: (name) => (name in values ? { value: values[name] } : undefined) });
+
+  assert.deepEqual(appearanceAttributes(store({})), {}, 'a reader with no cookie got attributes');
+
+  for (const theme of themeNames) {
+    assert.deepEqual(
+      appearanceAttributes(store({ 'ekd-theme': theme })),
+      { 'data-theme': theme },
+      `the server did not restore "${theme}"`,
+    );
+  }
+
+  assert.deepEqual(
+    appearanceAttributes(store({ 'ekd-theme': 'parchment', 'ekd-mode': 'dark' })),
+    { 'data-theme': 'parchment', 'data-mode': 'dark' },
+    'an explicit mode was not restored',
+  );
+
+  // Auto must emit no data-mode at all: its absence is what re-arms the
+  // prefers-color-scheme block, so writing it would disable Auto entirely.
+  assert.deepEqual(
+    appearanceAttributes(store({ 'ekd-mode': 'auto' })),
+    {},
+    'the server wrote data-mode="auto", which disables Auto',
+  );
+
+  // A corrupted or stale cookie degrades to the default, never to an applied
+  // junk value that no stylesheet matches.
+  for (const junk of ['', 'PARCHMENT', 'sepia; DROP', 'auto', 'nonsense']) {
+    assert.ok(
+      !('data-theme' in appearanceAttributes(store({ 'ekd-theme': junk }))),
+      `the server applied an out-of-vocabulary theme cookie: ${JSON.stringify(junk)}`,
+    );
+  }
+  for (const junk of ['', 'DARK', 'light-ish']) {
+    assert.ok(
+      !('data-mode' in appearanceAttributes(store({ 'ekd-mode': junk }))),
+      `the server applied an out-of-vocabulary mode cookie: ${JSON.stringify(junk)}`,
+    );
+  }
+}
+
 console.log(
-  `check:appearance — resolution, guards, and a bootstrap covering ${themeNames.length} generated themes`,
+  `check:appearance — resolution, guards, server attributes, and a bootstrap covering ${themeNames.length} generated themes`,
 );

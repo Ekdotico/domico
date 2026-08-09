@@ -103,14 +103,14 @@ export function useMode(): Mode {
  * This is the one hook the server can only partly answer. An explicit Light or
  * Dark is in the cookie and is honoured. Auto is not a value the server holds:
  * it is a deferral to a preference that lives on the reader's machine and is
- * never sent with the request. Light is the assumption, and a reader on Auto
- * with a dark system still sees one frame of light-mode swatches before
- * hydration resolves it.
+ * never sent with the request, so Light is the assumption until hydration.
  *
- * Resolving that properly needs the `Sec-CH-Prefers-Color-Scheme` client hint,
- * which is Chromium-only and absent on the first visit of a session — or it
- * needs the affected surfaces to stop asking this question and let CSS answer
- * it, which is the better end state and a larger change than this one.
+ * Prefer CSS wherever the answer is only needed to choose a colour. A rule
+ * under `[data-mode="dark"]` and `prefers-color-scheme` resolves at paint, has
+ * no Auto gap, and needs no hydration — which is how `.theme-swatch` picks
+ * between the two canvases `ThemeSwitcher` hands it. Reach for this hook only
+ * when the value must exist in JavaScript: a library configured through an
+ * object of colour strings, for instance, which no stylesheet can reach.
  */
 export function useRenderedMode(): RenderedMode {
   const { mode } = useServerAppearance();

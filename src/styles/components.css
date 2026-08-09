@@ -606,6 +606,19 @@ THEME SWITCHER
   box-shadow: var(--shadow-swatch-ring);
   transition: border-color var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
 }
+/* Each swatch previews a theme that is not the active one, so its colour cannot
+   come from the cascade: only one [data-theme] is live at a time. ThemeSwitcher
+   supplies both candidates as --swatch-light and --swatch-dark, and the mode is
+   resolved here rather than in JavaScript. A hook could not answer for Auto —
+   the reader's system preference never reaches the server — so the swatches
+   rendered light on a dark page until hydration. These three rules resolve at
+   paint instead, which is also what removes the last inline colour from the
+   control. */
+.theme-swatch { background: var(--swatch-light); }
+[data-mode="dark"] .theme-swatch { background: var(--swatch-dark); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode]) .theme-swatch { background: var(--swatch-dark); }
+}
 .theme-name {
   font-family: var(--font-sans);
   font-size: var(--fs-3xs);

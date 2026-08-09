@@ -27,6 +27,10 @@
  */
 
 import { readFileSync, existsSync } from 'node:fs';
+// Node 22 or newer: fs/promises.glob does not exist before it, and this
+// binary is what the consuming repositories run. That is what sets the
+// `engines.node` floor in package.json — lower it and the CLI fails at
+// import time, before it can report anything.
 import { glob } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { lintText, shouldFail, type LintResult, type Register, type Severity } from './index.js';

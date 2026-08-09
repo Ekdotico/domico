@@ -85,9 +85,10 @@
     "check:exports": "node scripts/check-exports.mjs",
     "check:icons": "node scripts/check-icons.mjs",
     "check:appearance": "node scripts/check-appearance.mjs",
+    "check:contrast": "node scripts/check-contrast.mjs",
     "lint:copy": "node dist/src/lint/cli.js",
     "lint:fixture": "node scripts/check-lint-fixture.mjs",
-    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
+    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
     "release": "changeset publish"
   },
   "peerDependencies": {

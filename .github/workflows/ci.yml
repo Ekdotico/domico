@@ -63,6 +63,12 @@ jobs:
       - name: Appearance resolution and bootstrap
         run: pnpm check:appearance
 
+      # Contrast was asserted in prose and checked by hand, which is how
+      # --accent-ink shipped at 3.22:1 on Parchment dark. Every foreground is
+      # now measured against the surface it is actually drawn on.
+      - name: Colour pairs meet WCAG AA
+        run: pnpm check:contrast
+
       # Asserts the linter fails when it should and, more importantly, stays
       # quiet where it should: false positives are what get a linter switched
       # off, and the structural exemptions would rot silently without this.

@@ -68,8 +68,9 @@
     "$type": "color"
   },
   "accent-ink": {
-    "$value": "oklch(100% 0 0)",
-    "$type": "color"
+    "$value": "oklch(22% 0.03 299.08)",
+    "$type": "color",
+    "$description": "Ink on an accent-filled surface. Dark, because the dark-mode accent is a light lavender: white on it measured 3.22:1, under the 4.5:1 that a button label needs as normal text. Parchment was the only dark palette still using light ink on a light accent; Library, Sepia and Mono all already used dark ink. Tinted to the accent hue rather than made neutral, matching those three, and landing at 5.43:1."
   },
   "gilt": {
     "$value": "oklch(74.542% 0.1009 85.89)",

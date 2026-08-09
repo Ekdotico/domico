@@ -3,6 +3,7 @@
 import { palettes, themeNames } from '../../tokens/generated/tokens.js';
 import { THEME_LABELS, applyTheme, type Theme } from './appearance.js';
 import { useRenderedMode, useTheme } from './useAppearance.js';
+import { useRadioGroup } from './useRadioGroup.js';
 
 /**
  * Theme picker. Writes `data-theme` on the document element and remembers the
@@ -29,19 +30,22 @@ function canvas(theme: Theme, mode: 'light' | 'dark'): string {
 export function ThemeSwitcher() {
   const theme = useTheme();
   const renderedMode = useRenderedMode();
+  const { containerProps, radioProps } = useRadioGroup<Theme>({
+    values: themeNames,
+    selected: theme,
+    onSelect: applyTheme,
+  });
 
   return (
-    <div className="theme-switcher" role="radiogroup" aria-label="Colour theme">
+    <div className="theme-switcher" role="radiogroup" aria-label="Colour theme" {...containerProps}>
       {themeNames.map((key) => {
         const active = theme === key;
         return (
           <button
             key={key}
             type="button"
-            role="radio"
-            aria-checked={active}
             className={`theme-btn ${active ? 'active' : ''}`}
-            onClick={() => applyTheme(key)}
+            {...radioProps(key)}
           >
             <span
               className="theme-swatch"

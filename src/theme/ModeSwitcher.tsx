@@ -3,6 +3,7 @@
 import { MonitorIcon, MoonIcon, SunIcon } from '../components/icons.js';
 import { MODES, MODE_LABELS, applyMode, type Mode } from './appearance.js';
 import { useMode } from './useAppearance.js';
+import { useRadioGroup } from './useRadioGroup.js';
 
 /**
  * Light, Auto, Dark. Writes `data-mode` on the document element, or removes it
@@ -26,9 +27,14 @@ const ICONS: Record<Mode, typeof SunIcon> = {
 
 export function ModeSwitcher() {
   const mode = useMode();
+  const { containerProps, radioProps } = useRadioGroup<Mode>({
+    values: MODES,
+    selected: mode,
+    onSelect: applyMode,
+  });
 
   return (
-    <div className="mode-switcher" role="radiogroup" aria-label="Colour mode">
+    <div className="mode-switcher" role="radiogroup" aria-label="Colour mode" {...containerProps}>
       {MODES.map((key) => {
         const active = mode === key;
         const Icon = ICONS[key];
@@ -36,11 +42,9 @@ export function ModeSwitcher() {
           <button
             key={key}
             type="button"
-            role="radio"
-            aria-checked={active}
             aria-label={MODE_LABELS[key]}
             className={`mode-btn ${active ? 'active' : ''}`}
-            onClick={() => applyMode(key)}
+            {...radioProps(key)}
           >
             <Icon size={14} />
           </button>

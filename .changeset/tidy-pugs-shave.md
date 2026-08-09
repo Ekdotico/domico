@@ -1,0 +1,19 @@
+---
+'@ekdotico/design-system': minor
+---
+
+The server tells its components what it told the document.
+
+`appearanceAttributes()` restored the reader's theme onto `<html>` and stopped there. Every appearance-aware component still server-rendered the default, because the hooks in `useAppearance.ts` read the document and there is no document during a server render — their third `useSyncExternalStore` snapshot was a constant. The page was Sepia and the control said Parchment, which is the disagreement 0.2.0 claimed to have closed and had only moved from the client to the server.
+
+It was not only cosmetic. `ThemeSwitcher` puts its single tab stop on the selected option, so a reader arriving by keyboard before hydration was placed on Parchment rather than on the theme they had chosen.
+
+**`appearanceState()`** joins `appearanceAttributes()` on the `/theme/server` subpath. Same cookies, returned as values rather than attributes. Both fall back to the same defaults, so a corrupted cookie leaves the page and the control agreeing rather than disagreeing in opposite directions.
+
+**`AppearanceProvider`** carries that pair into the client tree, and the hooks take their server snapshot from it. A provider rather than a prop on each component, because the consumers are not only the switchers — a logo choosing a variant and a diagram choosing a palette ask the same question, and one of those is injected into MDX where no prop can reach it.
+
+Nothing needs to adopt it. The context default is the pair the hooks previously hardcoded, so an application that installs no provider behaves exactly as before, which is what a static export with no request to read a cookie from requires.
+
+`useRenderedMode` is the one hook this only partly answers. An explicit Light or Dark is in the cookie and is now honoured. Auto is not a value the server holds — it defers to a preference that lives on the reader's machine and is never sent with the request — so Light remains the assumption, and a reader on Auto with a dark system still meets one frame of light-mode swatches. Closing that needs either the `Sec-CH-Prefers-Color-Scheme` client hint, which is Chromium-only and absent on the first visit of a session, or the affected surfaces to stop asking and let CSS answer.
+
+`check:appearance` covers the new function: every generated theme and every mode round-trips, junk degrades to the defaults in both directions at once, and the attributes and the state are asserted to agree across every valid combination.

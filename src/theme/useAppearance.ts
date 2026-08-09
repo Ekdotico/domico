@@ -12,9 +12,17 @@
  * `useSyncExternalStore` is the primitive for exactly this: an external store
  * with a subscription, a client snapshot, and a server snapshot. It also
  * settles the server render honestly, since there is no document during SSR.
+ *
+ * That third snapshot used to be a constant, which made the server render
+ * honest but wrong: the reader's cookie had already put the right theme on
+ * <html>, and these hooks reported the default anyway. It now comes from
+ * `AppearanceProvider`, which carries the cookie the server read. An
+ * application that installs no provider gets the old constants, so nothing
+ * that worked before needs to change.
  */
 
 import { useSyncExternalStore } from 'react';
+import { useServerAppearance } from './AppearanceProvider.js';
 import {
   DEFAULT_MODE,
   DEFAULT_THEME,
@@ -58,13 +66,15 @@ function darkQuery(): MediaQueryList {
  * or holds something outside the vocabulary.
  */
 export function useTheme(): Theme {
+  const { theme } = useServerAppearance();
+
   return useSyncExternalStore(
     subscribeToDocument,
     () => {
       const value = document.documentElement.getAttribute('data-theme');
       return isTheme(value) ? value : DEFAULT_THEME;
     },
-    () => DEFAULT_THEME,
+    () => theme,
   );
 }
 
@@ -73,13 +83,15 @@ export function useTheme(): Theme {
  * not an explicit light or dark reads as Auto.
  */
 export function useMode(): Mode {
+  const { mode } = useServerAppearance();
+
   return useSyncExternalStore(
     subscribeToDocument,
     () => {
       const value = document.documentElement.getAttribute('data-mode');
       return value === 'light' || value === 'dark' ? value : DEFAULT_MODE;
     },
-    () => DEFAULT_MODE,
+    () => mode,
   );
 }
 
@@ -87,8 +99,22 @@ export function useMode(): Mode {
  * The mode the reader is actually looking at, with Auto already resolved.
  * Tracks both flip paths: the control writing or removing `data-mode`, and the
  * operating system preference changing while the reader is on Auto.
+ *
+ * This is the one hook the server can only partly answer. An explicit Light or
+ * Dark is in the cookie and is honoured. Auto is not a value the server holds:
+ * it is a deferral to a preference that lives on the reader's machine and is
+ * never sent with the request. Light is the assumption, and a reader on Auto
+ * with a dark system still sees one frame of light-mode swatches before
+ * hydration resolves it.
+ *
+ * Resolving that properly needs the `Sec-CH-Prefers-Color-Scheme` client hint,
+ * which is Chromium-only and absent on the first visit of a session — or it
+ * needs the affected surfaces to stop asking this question and let CSS answer
+ * it, which is the better end state and a larger change than this one.
  */
 export function useRenderedMode(): RenderedMode {
+  const { mode } = useServerAppearance();
+
   return useSyncExternalStore(
     subscribeToAppearance,
     () =>
@@ -96,6 +122,6 @@ export function useRenderedMode(): RenderedMode {
         document.documentElement.getAttribute('data-mode'),
         darkQuery().matches,
       ),
-    () => 'light',
+    () => (mode === 'auto' ? 'light' : mode),
   );
 }

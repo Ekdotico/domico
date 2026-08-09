@@ -30,6 +30,18 @@ export const DEFAULT_THEME: Theme = 'parchment';
 export const DEFAULT_MODE: Mode = 'auto';
 
 /**
+ * A reader's stored choice, resolved to the vocabulary.
+ *
+ * The pair the server can recover from cookies, and therefore the pair it can
+ * hand to the client for its first render. Distinct from what is on screen:
+ * `mode` here may be Auto, which only the browser can resolve.
+ */
+export interface AppearanceState {
+  theme: Theme;
+  mode: Mode;
+}
+
+/**
  * Storage keys, unprefixed and shared by every Ekdotico surface.
  *
  * A reader who sets Sepia in one application should not meet Parchment in the

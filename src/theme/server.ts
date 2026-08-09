@@ -37,7 +37,15 @@
  * shim for readers whose choice is still in localStorage.
  */
 
-import { MODE_STORAGE_KEY, THEME_STORAGE_KEY, isMode, isTheme } from './appearance.js';
+import {
+  DEFAULT_MODE,
+  DEFAULT_THEME,
+  MODE_STORAGE_KEY,
+  THEME_STORAGE_KEY,
+  isMode,
+  isTheme,
+  type AppearanceState,
+} from './appearance.js';
 
 /**
  * The shape of `cookies()` from `next/headers`, reduced to what is used here.
@@ -71,4 +79,32 @@ export function appearanceAttributes(cookies: CookieStore): AppearanceAttributes
   if (isMode(mode) && mode !== 'auto') attributes['data-mode'] = mode;
 
   return attributes;
+}
+
+/**
+ * The same cookies, as values rather than attributes.
+ *
+ * `appearanceAttributes` tells the *document* what the reader chose;
+ * this tells the *components* the same thing. Both are needed, because
+ * attributes on <html> are invisible to a component rendering on the server:
+ * there is no DOM to read them back from, so a control that derives its state
+ * from the document has nothing to derive it from until hydration.
+ *
+ * Without this, every appearance-aware component server-renders the default
+ * while the page around it renders the reader's actual choice — the switcher
+ * reports Parchment on a Sepia page, and its roving tab stop sits on the wrong
+ * option until hydration corrects it. Pass the result to `AppearanceProvider`.
+ *
+ * Out-of-vocabulary and absent cookies both collapse to the defaults, matching
+ * what the client hooks fall back to, so the two agree on a corrupted cookie
+ * rather than disagreeing in opposite directions.
+ */
+export function appearanceState(cookies: CookieStore): AppearanceState {
+  const theme = cookies.get(THEME_STORAGE_KEY)?.value;
+  const mode = cookies.get(MODE_STORAGE_KEY)?.value;
+
+  return {
+    theme: isTheme(theme) ? theme : DEFAULT_THEME,
+    mode: isMode(mode) ? mode : DEFAULT_MODE,
+  };
 }

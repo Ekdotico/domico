@@ -25,12 +25,24 @@ export { ModeSwitcher } from './ModeSwitcher.js';
 export { useRadioGroup } from './useRadioGroup.js';
 
 /**
+ * Carries the server's reading of the cookie into the client tree, so that a
+ * component asking which theme is active gets the reader's answer on the first
+ * render rather than the default. Optional: without it the hooks fall back to
+ * the defaults, which is what applications with no server render need.
+ */
+export {
+  AppearanceProvider,
+  useServerAppearance,
+  type AppearanceProviderProps,
+} from './AppearanceProvider.js';
+
+/**
  * Restoring the theme on the server is the preferred mechanism; the init
  * script is the fallback for applications with no server render, and the
  * migration path for readers whose choice is still in localStorage. See
  * `server.ts`.
  */
-export { appearanceAttributes, type CookieStore } from './server.js';
+export { appearanceAttributes, appearanceState, type CookieStore } from './server.js';
 export { themeInitScript } from './init.js';
 
 export {
@@ -55,4 +67,5 @@ export {
   type Theme,
   type Mode,
   type RenderedMode,
+  type AppearanceState,
 } from './appearance.js';

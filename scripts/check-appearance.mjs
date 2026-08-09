@@ -117,6 +117,68 @@ assert.ok(!/import|require\(|\$\{/.test(script), 'bootstrap is not self-containe
   }
 }
 
+// --- server-rendered state ------------------------------------------------
+// What appearance-aware components are told during the render that produces
+// the markup. A mistake here is a control that contradicts the page it sits
+// on, and a roving tab stop parked on an option the reader did not choose.
+{
+  const { appearanceAttributes, appearanceState } = await import('../dist/src/theme/server.js');
+  const store = (values) => ({ get: (name) => (name in values ? { value: values[name] } : undefined) });
+
+  assert.deepEqual(
+    appearanceState(store({})),
+    { theme: 'parchment', mode: 'auto' },
+    'a reader with no cookie did not get the defaults',
+  );
+
+  for (const theme of themeNames) {
+    assert.equal(
+      appearanceState(store({ 'ekd-theme': theme })).theme,
+      theme,
+      `the server did not report "${theme}" to its components`,
+    );
+  }
+
+  for (const mode of MODES) {
+    assert.equal(
+      appearanceState(store({ 'ekd-mode': mode })).mode,
+      mode,
+      `the server did not report mode "${mode}" to its components`,
+    );
+  }
+
+  // Auto survives as a value here, unlike in the attributes, where its whole
+  // mechanism is being absent. A component has to be able to render Auto as
+  // the selected option; the document has to omit it.
+  assert.equal(appearanceState(store({ 'ekd-mode': 'auto' })).mode, 'auto');
+  assert.deepEqual(appearanceAttributes(store({ 'ekd-mode': 'auto' })), {});
+
+  // The two must agree on every valid cookie, or the page and the control that
+  // reports it disagree — which is the defect this pair exists to close.
+  for (const theme of themeNames) {
+    for (const mode of MODES) {
+      const cookies = store({ 'ekd-theme': theme, 'ekd-mode': mode });
+      const attributes = appearanceAttributes(cookies);
+      const state = appearanceState(cookies);
+
+      assert.equal(attributes['data-theme'], state.theme, `theme disagreed for ${theme}/${mode}`);
+      assert.equal(
+        attributes['data-mode'] ?? 'auto',
+        state.mode,
+        `mode disagreed for ${theme}/${mode}`,
+      );
+    }
+  }
+
+  // A corrupted cookie degrades to the default in both directions at once. If
+  // only one of the pair fell back, the page and the control would disagree
+  // precisely when the stored value was junk.
+  for (const junk of ['', 'PARCHMENT', 'sepia; DROP', 'nonsense']) {
+    const state = appearanceState(store({ 'ekd-theme': junk, 'ekd-mode': junk }));
+    assert.deepEqual(state, { theme: 'parchment', mode: 'auto' }, `junk cookie leaked: ${junk}`);
+  }
+}
+
 console.log(
-  `check:appearance — resolution, guards, server attributes, and a bootstrap covering ${themeNames.length} generated themes`,
+  `check:appearance — resolution, guards, server attributes and state, and a bootstrap covering ${themeNames.length} generated themes`,
 );

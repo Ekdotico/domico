@@ -151,9 +151,11 @@ export const palettes = {
       "hl-ai": "oklch(92.421% 0.0117 264.51)",
       "accent-xref": "oklch(44.896% 0.074 240.39)",
       "fg-xref": "oklch(37.273% 0.0648 243.09)",
+      "shadow-0": "0 0 0 1px rgba(20,40,20,0.04)",
       "shadow-1": "0 1px 2px rgba(20,40,20,0.06), 0 0 0 1px rgba(20,40,20,0.04)",
       "shadow-2": "0 2px 6px rgba(20,40,20,0.08), 0 0 0 1px rgba(20,40,20,0.05)",
       "shadow-3": "0 8px 24px rgba(20,40,20,0.10), 0 0 0 1px rgba(20,40,20,0.05)",
+      "shadow-inset": "inset 0 1px 2px rgba(20,40,20,0.08)",
       "overlay-scrim": "rgba(20,40,20,0.32)"
     },
     "dark": {
@@ -241,9 +243,11 @@ export const palettes = {
       "hl-ai": "oklch(91.635% 0.016 73.67)",
       "accent-xref": "oklch(45.706% 0.0647 249.41)",
       "fg-xref": "oklch(39.16% 0.0519 247.34)",
+      "shadow-0": "0 0 0 1px rgba(60,30,10,0.04)",
       "shadow-1": "0 1px 2px rgba(60,30,10,0.06), 0 0 0 1px rgba(60,30,10,0.04)",
       "shadow-2": "0 2px 6px rgba(60,30,10,0.08), 0 0 0 1px rgba(60,30,10,0.05)",
       "shadow-3": "0 8px 24px rgba(60,30,10,0.10), 0 0 0 1px rgba(60,30,10,0.05)",
+      "shadow-inset": "inset 0 1px 2px rgba(60,30,10,0.08)",
       "overlay-scrim": "rgba(60,30,10,0.32)"
     },
     "dark": {
@@ -331,6 +335,11 @@ export const palettes = {
       "hl-ai": "oklch(93.923% 0.004 106.48)",
       "accent-xref": "oklch(33.964% 0.1324 276.71)",
       "fg-xref": "oklch(28.315% 0.1138 276.3)",
+      "shadow-0": "0 0 0 1px rgba(20,20,20,0.04)",
+      "shadow-1": "0 1px 2px rgba(20,20,20,0.06), 0 0 0 1px rgba(20,20,20,0.04)",
+      "shadow-2": "0 2px 6px rgba(20,20,20,0.08), 0 0 0 1px rgba(20,20,20,0.05)",
+      "shadow-3": "0 8px 24px rgba(20,20,20,0.10), 0 0 0 1px rgba(20,20,20,0.05)",
+      "shadow-inset": "inset 0 1px 2px rgba(20,20,20,0.08)",
       "overlay-scrim": "rgba(20,20,20,0.32)"
     },
     "dark": {

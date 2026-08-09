@@ -1,6 +1,6 @@
 'use client';
 
-import { useRenderedMode } from '../theme/useRenderedMode.js';
+import { useRenderedMode } from '../theme/useAppearance.js';
 
 /**
  * The Ekdotico mark. 512×512 viewBox; path data is byte-identical to the

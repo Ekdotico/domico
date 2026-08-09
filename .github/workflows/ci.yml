@@ -57,6 +57,12 @@ jobs:
       - name: Vendored icons match their Lucide originals
         run: pnpm check:icons
 
+      # The bootstrap runs before React and before any stylesheet, so a defect
+      # in it is a full-page colour flash or an unstyled document. It is a
+      # string, so nothing else would catch a mistake in it.
+      - name: Appearance resolution and bootstrap
+        run: pnpm check:appearance
+
       # Asserts the linter fails when it should and, more importantly, stays
       # quiet where it should: false positives are what get a linter switched
       # off, and the structural exemptions would rot silently without this.

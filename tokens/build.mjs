@@ -82,9 +82,15 @@ const css = `${BANNER}
 
    A consumer switches theme by switching values, never by switching names.
    Parchment is both the default and the complete base set: the other three
-   light palettes declare only what they override and inherit the rest. That
-   cascade is deliberate and load-bearing — Mono, for example, declares no
-   shadows and inherits the warm-brown parchment elevation.
+   light palettes declare only what they override and inherit the rest.
+
+   Shadows are the exception, and every light palette declares its own complete
+   set. Elevation reads as light falling on the page, so its colour has to come
+   from the same place the page does: warm brown under Parchment, green under
+   Library, red-brown under Sepia, neutral under Mono. Inheriting any part of
+   that set put a warm-brown hairline on a monochrome canvas, and left Library
+   and Sepia tinting their three elevation shadows while their ring and inset
+   stayed parchment — one light source rendered in two colours.
    =========================================================================== */
 
 :root,

@@ -1,65 +1,48 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { MonitorIcon, MoonIcon, SunIcon } from '../components/icons.js';
+import { MODES, MODE_LABELS, applyMode, type Mode } from './appearance.js';
+import { useMode } from './useAppearance.js';
 
-type Mode = 'light' | 'dark' | 'auto';
+/**
+ * Light, Auto, Dark. Writes `data-mode` on the document element, or removes it
+ * for Auto, and remembers the choice in localStorage under `ekd-mode`.
+ *
+ * The absence of `data-mode` is what Auto is, not a placeholder for it: the
+ * stylesheet's `[data-theme=…]:not([data-mode])` selector is what lets the
+ * `prefers-color-scheme` block apply.
+ *
+ * The active mode is read from the document, for the same reason as the theme
+ * — see ThemeSwitcher. The previous version additionally read the stored mode
+ * in an effect and then did nothing with it, which was invisible only because
+ * the bootstrap had already applied it.
+ */
 
-const MODES: { key: Mode; label: string }[] = [
-  { key: 'light', label: 'Light' },
-  { key: 'auto', label: 'Auto' },
-  { key: 'dark', label: 'Dark' },
-];
-
-function applyMode(mode: Mode) {
-  if (mode === 'auto') {
-    document.documentElement.removeAttribute('data-mode');
-  } else {
-    document.documentElement.setAttribute('data-mode', mode);
-  }
-  try {
-    localStorage.setItem('ekd-mode', mode);
-  } catch {
-    /* localStorage unavailable */
-  }
-}
+const ICONS: Record<Mode, typeof SunIcon> = {
+  light: SunIcon,
+  auto: MonitorIcon,
+  dark: MoonIcon,
+};
 
 export function ModeSwitcher() {
-  const [mode, setMode] = useState<Mode>('auto');
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('ekd-mode');
-      if (stored === 'light' || stored === 'dark' || stored === 'auto') {
-        setMode(stored);
-      }
-    } catch {
-      /* localStorage unavailable */
-    }
-  }, []);
-
-  const choose = (next: Mode) => {
-    setMode(next);
-    applyMode(next);
-  };
+  const mode = useMode();
 
   return (
-    <div className="mode-switcher" role="radiogroup" aria-label="Color mode">
-      {MODES.map((m) => {
-        const isActive = mode === m.key;
+    <div className="mode-switcher" role="radiogroup" aria-label="Colour mode">
+      {MODES.map((key) => {
+        const active = mode === key;
+        const Icon = ICONS[key];
         return (
           <button
-            key={m.key}
+            key={key}
             type="button"
             role="radio"
-            aria-checked={isActive}
-            aria-label={m.label}
-            className={`mode-btn ${isActive ? 'active' : ''}`}
-            onClick={() => choose(m.key)}
+            aria-checked={active}
+            aria-label={MODE_LABELS[key]}
+            className={`mode-btn ${active ? 'active' : ''}`}
+            onClick={() => applyMode(key)}
           >
-            {m.key === 'light' && <SunIcon size={14} />}
-            {m.key === 'auto' && <MonitorIcon size={14} />}
-            {m.key === 'dark' && <MoonIcon size={14} />}
+            <Icon size={14} />
           </button>
         );
       })}

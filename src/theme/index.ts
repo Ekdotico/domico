@@ -14,9 +14,36 @@
  * An absent data-mode means "follow the system", which the stylesheet handles
  * through prefers-color-scheme. Persistence uses localStorage keys `ekd-theme`
  * and `ekd-mode`; both are shared across all three applications by design.
+ *
+ * The document is the state. Every hook here reads those attributes rather
+ * than holding a copy, because the init script writes them before React runs
+ * and a copy would start out stale.
  */
 
-export { ThemeSwitcher, applyTheme } from './ThemeSwitcher.js';
+export { ThemeSwitcher } from './ThemeSwitcher.js';
 export { ModeSwitcher } from './ModeSwitcher.js';
-export { useRenderedMode, type RenderedMode } from './useRenderedMode.js';
 export { themeInitScript } from './init.js';
+
+export {
+  useTheme,
+  useMode,
+  useRenderedMode,
+} from './useAppearance.js';
+
+export {
+  MODES,
+  MODE_LABELS,
+  THEME_LABELS,
+  THEME_STORAGE_KEY,
+  MODE_STORAGE_KEY,
+  DEFAULT_THEME,
+  DEFAULT_MODE,
+  applyTheme,
+  applyMode,
+  isTheme,
+  isMode,
+  resolveRenderedMode,
+  type Theme,
+  type Mode,
+  type RenderedMode,
+} from './appearance.js';

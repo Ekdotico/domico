@@ -14,9 +14,35 @@
  *   </head>
  *
  * Under a strict Content-Security-Policy this needs the request nonce on the
- * script tag. It touches only documentElement.dataset and localStorage, and
- * interpolates nothing, so there is no injection surface.
+ * script tag. Where a per-request nonce is not available — an application
+ * pinned to a static export, for instance — the recorded consequence is
+ * `'unsafe-inline'` in `script-src`, and that trade should be written down
+ * where the policy is defined rather than discovered later.
+ *
+ * The script touches only `documentElement` attributes and localStorage. The
+ * only interpolation is the theme vocabulary, which is generated from
+ * `tokens/source/` and JSON-encoded here, so there is no injection surface and
+ * no second list to fall out of step with the stylesheet.
  */
+
+import { themeNames } from '../../tokens/generated/tokens.js';
+import { MODE_STORAGE_KEY, THEME_STORAGE_KEY } from './appearance.js';
+
 export function themeInitScript(): string {
-  return `(function(){try{var t=localStorage.getItem('ekd-theme');if(t==='parchment'||t==='library'||t==='sepia'||t==='mono'){document.documentElement.dataset.theme=t}var m=localStorage.getItem('ekd-mode');if(m==='light'||m==='dark'){document.documentElement.dataset.mode=m}}catch(e){}})();`;
+  const themes = JSON.stringify(themeNames);
+  const themeKey = JSON.stringify(THEME_STORAGE_KEY);
+  const modeKey = JSON.stringify(MODE_STORAGE_KEY);
+
+  return (
+    `(function(){try{` +
+    `var d=document.documentElement;` +
+    `var t=localStorage.getItem(${themeKey});` +
+    `if(${themes}.indexOf(t)!==-1){d.setAttribute("data-theme",t);}` +
+    `var m=localStorage.getItem(${modeKey});` +
+    `if(m==="light"||m==="dark"){d.setAttribute("data-mode",m);}` +
+    // localStorage throws rather than returning null when a browser blocks
+    // storage for the origin. Failing here must leave the default theme
+    // applied, not an unstyled document.
+    `}catch(e){}})();`
+  );
 }

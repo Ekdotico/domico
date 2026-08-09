@@ -147,6 +147,10 @@
     "$value": "oklch(39.16% 0.0519 247.34)",
     "$type": "color"
   },
+  "shadow-0": {
+    "$value": "0 0 0 1px rgba(60,30,10,0.04)",
+    "$type": "shadow"
+  },
   "shadow-1": {
     "$value": "0 1px 2px rgba(60,30,10,0.06), 0 0 0 1px rgba(60,30,10,0.04)",
     "$type": "shadow"
@@ -157,6 +161,10 @@
   },
   "shadow-3": {
     "$value": "0 8px 24px rgba(60,30,10,0.10), 0 0 0 1px rgba(60,30,10,0.05)",
+    "$type": "shadow"
+  },
+  "shadow-inset": {
+    "$value": "inset 0 1px 2px rgba(60,30,10,0.08)",
     "$type": "shadow"
   },
   "overlay-scrim": {

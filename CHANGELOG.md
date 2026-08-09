@@ -1,5 +1,33 @@
 # @ekdotico/design-system
 
+## 0.2.0
+
+### Minor Changes
+
+- Server-rendered appearance, and the accessibility and colour fixes found while auditing the three consuming applications against this package.
+
+  **Appearance is restored on the server.** `appearanceAttributes()` on the new `/theme/server` subpath reads the theme and mode cookies and returns the attributes to spread onto `<html>`. No inline script runs, so there is nothing for a Content-Security-Policy to make an exception for. This is the preferred mechanism; `themeInitScript()` remains for applications with no server render, and as the migration path for readers whose choice is still in localStorage.
+
+  The reason is security rather than tidiness. Restoring from localStorage cannot happen without JavaScript, before first paint, inline — which forces every consumer to either mint a per-request nonce or admit `'unsafe-inline'` into `script-src`. One consumer had already recorded that concession because its hosting cannot produce a request-scoped nonce.
+
+  Auto remains a CSS decision. The server cannot know the reader's operating system preference and does not need to: Auto is the absence of `data-mode`, and `[data-theme=…]:not([data-mode])` hands the decision to `prefers-color-scheme` at paint time.
+
+  **The switchers read the document instead of copying it.** Both held React state initialised to a default and corrected it in an effect, so a reader with a stored theme saw the page in Sepia with Parchment shown as selected for one frame on every load. State now comes from the document attributes through `useSyncExternalStore`. `useTheme` and `useMode` join `useRenderedMode`, and the appearance vocabulary moves to a browser-free module so `resolveRenderedMode` can be asserted without a DOM.
+
+  **The radio groups keep the promise their role makes.** Both declared `role="radiogroup"` and implemented neither half of the pattern: every option was its own tab stop and the arrow keys did nothing. `useRadioGroup` supplies a single tab stop with roving focus, arrows that move and select, and Home and End.
+
+  **Colour and elevation.**
+
+  - `--accent-ink` on Parchment dark was white on a light lavender accent, 3.22:1 against the 4.5:1 a button label needs. Parchment was the only dark palette still doing this. Now 5.43:1.
+  - Every light palette declares its own complete shadow set. Library and Sepia tinted their three elevation shadows while their ring and inset inherited Parchment, and Mono declared none at all, putting a warm-brown hairline on a monochrome canvas.
+  - `check:contrast` measures 112 foreground and surface pairs across all eight palettes in CI.
+
+  **Icons.** `ModeSwitcher` carried its own hand-drawn sun, monitor and moon alongside the verbatim Lucide ones already in `icons.tsx`, at different radii and rectangles. It now uses the vendored set. `TableIcon` and `MaximizeIcon` are added, and `check:icons` verifies every vendored icon against `lucide-static`, failing on a redrawn coordinate or an inline SVG reappearing outside the icon module.
+
+  **Portability.** `useRadioGroup` returns a callback ref rather than a `RefObject`: React 19 changed the variance of `RefObject`, so a hook exporting one types cleanly under exactly one React major while `peerDependencies` admits both.
+
+  `engines.node` moves to `>=22`, which the linter CLI already required through `fs/promises.glob`.
+
 ## 0.1.0
 
 ### Minor Changes

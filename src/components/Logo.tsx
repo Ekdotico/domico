@@ -1,7 +1,3 @@
-'use client';
-
-import { useRenderedMode } from '../theme/useAppearance.js';
-
 /**
  * The Ekdotico mark. 512×512 viewBox; path data is byte-identical to the
  * source SVGs under assets/logo/SVG/.
@@ -9,23 +5,36 @@ import { useRenderedMode } from '../theme/useAppearance.js';
  * This is the only custom SVG icon in the system. Every other icon comes from
  * Lucide at 1.5px stroke, 16px default.
  *
- * Three render modes:
+ * Four render modes:
  *   "ink" (default) — stroke uses currentColor and there is no tile, so the
  *     mark adapts to whatever theme surrounds it.
- *   "dark-solid" — brand-fixed plum tile with a cream stroke. Self-contained
- *     on a light canvas.
- *   "light-solid" — the inverse. Used on a dark canvas so the mark reads as a
- *     discrete element rather than dissolving into the background.
+ *   "solid" — a tile that contrasts with whatever canvas it lands on, chosen
+ *     by the stylesheet. What `Logo` uses, and the right default for chrome.
+ *   "dark-solid" — brand-fixed plum tile with a cream stroke, pinned. For a
+ *     surface whose mode is known and fixed regardless of the reader's, such
+ *     as an Open Graph image or a print template.
+ *   "light-solid" — the inverse, pinned the same way.
  *
- * The two solid variants draw from brand tokens rather than theme tokens: the
- * tile must look the same in all four themes, which is the whole point of a
- * mark. Colours are applied through `style` rather than as `fill`/`stroke`
+ * The solid variants draw from brand tokens rather than theme tokens: the tile
+ * must look the same in all four themes, which is the whole point of a mark.
+ * Colours are applied through `style` rather than as `fill`/`stroke`
  * attributes because an SVG presentation attribute will not resolve var().
+ *
+ * "solid" resolves through --logo-tile-bg and --logo-tile-ink, which
+ * components.css aliases to one of the two pinned pairs per mode. `Logo` used
+ * to make that choice from useRenderedMode, which is the one question no
+ * server can answer — Auto defers to a preference that never leaves the
+ * reader's machine — so the mark rendered its light-canvas tile on a dark page
+ * until hydration. A stylesheet has no such gap: it resolves at paint.
+ *
+ * Nothing here reads the document any more, so this module is not a client
+ * component.
  */
 
-export type LogoMarkVariant = 'ink' | 'dark-solid' | 'light-solid';
+export type LogoMarkVariant = 'ink' | 'solid' | 'dark-solid' | 'light-solid';
 
 const VARIANT_TOKENS: Record<Exclude<LogoMarkVariant, 'ink'>, { fill: string; stroke: string }> = {
+  solid: { fill: 'var(--logo-tile-bg)', stroke: 'var(--logo-tile-ink)' },
   'dark-solid': { fill: 'var(--logo-tile-dark-bg)', stroke: 'var(--logo-tile-dark-ink)' },
   'light-solid': { fill: 'var(--logo-tile-light-bg)', stroke: 'var(--logo-tile-light-ink)' },
 };
@@ -72,16 +81,13 @@ export function LogoMark({
 }
 
 /**
- * Mark plus wordmark. Picks whichever solid variant contrasts with the
- * rendered mode, so the tile stays legible on either canvas.
+ * Mark plus wordmark. The tile contrasts with whatever canvas it lands on,
+ * which is a question for the stylesheet rather than for this component.
  */
 export function Logo({ size = 22 }: { size?: number }) {
-  const mode = useRenderedMode();
-  const variant: LogoMarkVariant = mode === 'dark' ? 'light-solid' : 'dark-solid';
-
   return (
     <div className="logo">
-      <LogoMark size={size} className="logo-mark logo-mark--tile" variant={variant} />
+      <LogoMark size={size} className="logo-mark logo-mark--tile" variant="solid" />
       <span className="logo-wordmark">Ekdotico</span>
     </div>
   );

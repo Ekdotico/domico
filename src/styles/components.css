@@ -707,11 +707,37 @@ MODE SWITCHER — segmented pill: sun / monitor / moon
 }
 
 /* ============================================================
-
-/* --- Logo lockup --------------------------------------------------------- */
-
-LOGO LOCKUP
+   LOGO LOCKUP
    ============================================================ */
+
+/* The banner above used to open a comment that closed on its own first line,
+   leaving "LOGO LOCKUP" as bare CSS. That made the selector below invalid, and
+   an invalid selector takes its whole block with it — so .logo shipped in
+   0.2.0 with no styles at all in this stylesheet. No consumer had noticed,
+   because none of them load it yet. */
+
+/* Which tile the "solid" variant wears. The two pinned pairs come from
+   brand.json and never vary; this chooses between them by mode alone, so a
+   mark placed anywhere contrasts with the canvas under it. Resolved here
+   rather than in Logo because the component cannot know the answer during a
+   server render: Auto defers to a system preference that never reaches the
+   server, so the mark wore its light-canvas tile on a dark page until
+   hydration. A stylesheet resolves it at paint instead. */
+:root {
+  --logo-tile-bg: var(--logo-tile-dark-bg);
+  --logo-tile-ink: var(--logo-tile-dark-ink);
+}
+[data-mode="dark"] {
+  --logo-tile-bg: var(--logo-tile-light-bg);
+  --logo-tile-ink: var(--logo-tile-light-ink);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode]) {
+    --logo-tile-bg: var(--logo-tile-light-bg);
+    --logo-tile-ink: var(--logo-tile-light-ink);
+  }
+}
+
 .logo {
   display: inline-flex;
   align-items: center;

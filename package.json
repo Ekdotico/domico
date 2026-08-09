@@ -7,7 +7,7 @@
   "author": "Ekdotico",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Ekdotico/ekdotico-design-system.git"
+    "url": "git+https://github.com/Ekdotico/design-system.git"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",

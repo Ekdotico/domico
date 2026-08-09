@@ -43,6 +43,13 @@ jobs:
       - name: Expression data is in sync with the guidelines
         run: pnpm check:expression
 
+      # `files` and `exports` are maintained separately, so a subpath can point
+      # at a path that ships in nobody's node_modules. That failure appears
+      # only in a consuming repository, after publish, as an import that does
+      # not resolve — which is the worst place to find it.
+      - name: Every exported subpath ships in the tarball
+        run: pnpm check:exports
+
       # Asserts the linter fails when it should and, more importantly, stays
       # quiet where it should: false positives are what get a linter switched
       # off, and the structural exemptions would rot silently without this.

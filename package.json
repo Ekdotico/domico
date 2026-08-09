@@ -82,9 +82,10 @@
     "build": "pnpm build:tokens && pnpm build:expression && pnpm build:ts && pnpm build:styles",
     "check:generated": "node scripts/check-generated.mjs",
     "check:expression": "node scripts/check-expression-sync.mjs",
+    "check:exports": "node scripts/check-exports.mjs",
     "lint:copy": "node dist/src/lint/cli.js",
     "lint:fixture": "node scripts/check-lint-fixture.mjs",
-    "check": "pnpm check:generated && pnpm check:expression && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
+    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
     "release": "changeset publish"
   },
   "peerDependencies": {

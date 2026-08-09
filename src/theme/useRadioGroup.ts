@@ -20,7 +20,7 @@
  * makes the other feel broken.
  */
 
-import { useCallback, useRef, type KeyboardEvent, type RefObject } from 'react';
+import { useCallback, useRef, type KeyboardEvent } from 'react';
 
 export interface RadioGroupOptions<T> {
   /** The full option list, in rendered order. */
@@ -34,7 +34,14 @@ export interface RadioGroupOptions<T> {
 export interface RadioGroupBindings<T> {
   /** Spread on the element carrying `role="radiogroup"`. */
   containerProps: {
-    ref: RefObject<HTMLDivElement>;
+    /**
+     * A callback ref, not a RefObject. React 19 changed the variance of
+     * RefObject, so a hook that exports one types cleanly under exactly one
+     * React major and fails under the other — and this package supports both
+     * through `peerDependencies: react >= 18`. A callback ref is assignable in
+     * either.
+     */
+    ref: (node: HTMLDivElement | null) => void;
     onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void;
   };
   /** Spread on each element carrying `role="radio"`. */
@@ -51,7 +58,10 @@ export function useRadioGroup<T>({
   selected,
   onSelect,
 }: RadioGroupOptions<T>): RadioGroupBindings<T> {
-  const container = useRef<HTMLDivElement>(null);
+  const container = useRef<HTMLDivElement | null>(null);
+  const setContainer = useCallback((node: HTMLDivElement | null) => {
+    container.current = node;
+  }, []);
 
   const move = useCallback(
     (nextIndex: number) => {
@@ -100,7 +110,7 @@ export function useRadioGroup<T>({
   );
 
   return {
-    containerProps: { ref: container, onKeyDown },
+    containerProps: { ref: setContainer, onKeyDown },
     radioProps: (value: T) => ({
       role: 'radio',
       'aria-checked': value === selected,

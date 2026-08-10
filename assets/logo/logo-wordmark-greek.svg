@@ -1,12 +1,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" role="img" aria-label="Ekdotico — εκδοτικό">
-  <defs>
-    
-  </defs>
+  <!--
+    UNFINISHED: the letterforms are live text, not outlines.
+
+    This mark should be self-contained geometry. It is not. Both lines below are
+    <text>, so the mark renders in whatever face the environment can supply, and
+    the Greek line cannot render in Crimson Pro at all — that family ships no
+    Greek subset, which is why it names Commissioner instead. See the Greek rule
+    in .impeccable.md.
+
+    What changed here: each line now states its own font-family, font-size, and
+    fill. Previously neither did, so the letterforms came from whatever the
+    surrounding document happened to cascade — and at a user-agent default size
+    of 16px inside a 420-unit viewBox, which is roughly a third of the size the
+    coordinates were laid out for. The two classes are hooks for a consumer that
+    inlines the file and wants to restyle it; nothing in this package defines
+    them, and the mark no longer depends on anything doing so.
+
+    The families are named literally rather than through the serif and sans font
+    tokens, because this file is shipped as an asset: rendered through <img> or
+    as a favicon there is no cascade for a custom property to resolve against.
+    That is a deliberate exception to "reference the token, never the family",
+    and it is a further reason to outline — an outlined mark needs neither the
+    token nor the family. (Custom properties cannot be named in an XML comment
+    anyway: a double hyphen is not permitted inside one.)
+
+    STILL TO DO: convert both <text> nodes to <path>. Crimson Pro and
+    Commissioner are both SIL OFL 1.1, so outlining and redistribution are
+    permitted. Outlining was attempted and abandoned rather than approximated:
+    the only copies of either family in this workspace are Brotli-compressed
+    .woff2 files in a Next.js build cache, and no Brotli decompressor or font
+    library is available here. Drawing the glyphs by eye would produce a mark
+    that is wrong in a way nobody can see until it is beside real type, which is
+    worse than a documented limitation. Font-size and baseline positions below
+    are therefore approximate: they fit the existing coordinates and the mark
+    beside them, and the outlining pass should treat them as a starting point
+    rather than as measurements.
+  -->
   <g transform="translate(10 32)" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round">
     <path d="M2 40 C 12 10, 28 10, 36 40"></path>
     <path d="M36 40 C 44 10, 60 10, 70 40"></path>
     <line x1="36" y1="14" x2="36" y2="44"></line>
   </g>
-  <text x="92" y="66" class="latin" fill="currentColor">Ekdotico</text>
-  <text x="94" y="92" class="greek" fill="currentColor" opacity="0.55">ε κ δ ο τ ι κ ό</text>
+  <text
+    x="92"
+    y="66"
+    class="latin"
+    fill="currentColor"
+    font-family="'Crimson Pro', Georgia, serif"
+    font-size="40"
+  >Ekdotico</text>
+  <text
+    x="94"
+    y="92"
+    class="greek"
+    fill="currentColor"
+    opacity="0.55"
+    font-family="'Commissioner', 'Helvetica Neue', Arial, sans-serif"
+    font-size="17"
+  >ε κ δ ο τ ι κ ό</text>
 </svg>

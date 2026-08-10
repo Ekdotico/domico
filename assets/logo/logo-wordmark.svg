@@ -1,12 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 80" role="img" aria-label="Ekdotico">
-  <defs>
-    
-  </defs>
-  
+  <!--
+    UNFINISHED, for the same reason as logo-wordmark-greek.svg: the wordmark is
+    live text rather than outlines, so it renders in whatever face the
+    environment can supply. It now states its own font-family, font-size, and
+    fill, where before it stated none of the three and inherited the lot — at a
+    user-agent default of 16px inside a 360-unit viewBox. The family is named
+    literally because an asset rendered through <img> has no cascade for the
+    serif font token to resolve against.
+
+    STILL TO DO: convert the <text> node to <path>. See the longer note in
+    logo-wordmark-greek.svg for why the conversion was abandoned rather than
+    approximated.
+  -->
   <g transform="translate(10 18)" class="mark" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round">
     <path d="M2 40 C 12 10, 28 10, 36 40"></path>
     <path d="M36 40 C 44 10, 60 10, 70 40"></path>
     <line x1="36" y1="14" x2="36" y2="44" stroke-dasharray="0"></line>
   </g>
-  <text x="92" y="56" class="wm mark">Ekdotico</text>
+  <text
+    x="92"
+    y="56"
+    class="wm mark"
+    fill="currentColor"
+    font-family="'Crimson Pro', Georgia, serif"
+    font-size="40"
+  >Ekdotico</text>
 </svg>

@@ -319,10 +319,9 @@
 /* --- Callout ------------------------------------------------------------- */
 
 /* CALLOUT (editorial aside)
-   Tinted/bordered <aside> with optional title row and a thin
-   left-edge stripe (suppressed for the quietest 'note' variant).
-   Six type variants map to semantic token pairs:
-     note   — neutral surface, no stripe (--bg-surface-2)
+   Tinted <aside> with a full hairline border and an optional title
+   row. Six type variants map to semantic token pairs:
+     note   — neutral surface (--bg-surface-2), neutral hairline
      info   — --info / --info-soft
      tip    — --ok / --ok-soft
      warn   — --warn / --warn-soft
@@ -331,14 +330,30 @@
    Distinct from <blockquote>, which is reserved for source
    quotations (already gilt-striped). Do not use as a marketing
    banner. Stacking three or more in a row dilutes their value.
-   Signaling sits on the surface + stripe + title (not body color)
+   Signaling sits on the surface + border + title (not body color)
    so the Mono theme — where --accent is pure black — still reads
    correctly without color-only cues.
+
+   Retired in 0.11.0: a 3px tinted ::before down the left edge, on
+   every variant except 'note'. The house style prohibits "coloured
+   left-border accent cards", and drawing the accent as a pseudo-
+   element rather than as a border-left evaded the letter of that ban
+   while being the thing it names. The tone it carried is not lost —
+   it moves onto the border, which is the hairline the rest of the
+   system already uses, and warn and danger additionally carry
+   role="note" and a title, so none of the signalling was ever
+   colour alone. The left padding goes back to matching the right:
+   the extra 4px existed only to clear the stripe.
+
+   Not an inset box-shadow. That would reproduce the same stripe
+   through a different property and leave the prohibition standing.
    ============================================================ */
 .callout {
+  /* position and overflow are for the content, not for a stripe: they keep a
+     wide child clipped to the rounded corner rather than squaring it off. */
   position: relative;
   margin: 18px 0 22px;
-  padding: 14px 18px 14px 22px;
+  padding: 14px 18px;
   background: var(--bg-surface-2);
   border: 1px solid var(--rule-soft);
   border-radius: var(--radius-lg);
@@ -373,42 +388,29 @@
 .content-inner .callout-body > p:first-child { margin-top: 0; }
 .content-inner .callout-body > p:last-child  { margin-bottom: 0; }
 
-/* Left-edge accent stripe — present on all variants except 'note',
-   which keeps a quieter neutral surface for routine asides. */
-.callout:not([data-type="note"])::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-}
-
-/* Per-type tints + stripe + title color. Body color stays --fg-1. */
-.callout[data-type="info"]   { background: var(--info-soft);   border-color: var(--info-soft); }
-.callout[data-type="info"]::before   { background: var(--info); }
+/* Per-type wash + hairline + title color. Body color stays --fg-1.
+   The border used to restate the wash, which made it invisible; it now
+   carries the tone the stripe used to, at the hairline weight the rest of
+   the system draws every other edge at. */
+.callout[data-type="info"]   { background: var(--info-soft);   border-color: var(--info); }
 .callout[data-type="info"] .callout-title   { color: var(--info); }
 
-.callout[data-type="tip"]    { background: var(--ok-soft);     border-color: var(--ok-soft); }
-.callout[data-type="tip"]::before    { background: var(--ok); }
+.callout[data-type="tip"]    { background: var(--ok-soft);     border-color: var(--ok); }
 .callout[data-type="tip"] .callout-title    { color: var(--ok); }
 
-.callout[data-type="warn"]   { background: var(--warn-soft);   border-color: var(--warn-soft); }
-.callout[data-type="warn"]::before   { background: var(--warn); }
+.callout[data-type="warn"]   { background: var(--warn-soft);   border-color: var(--warn); }
 .callout[data-type="warn"] .callout-title   { color: var(--warn); }
 
-.callout[data-type="danger"] { background: var(--danger-soft); border-color: var(--danger-soft); }
-.callout[data-type="danger"]::before { background: var(--danger); }
+.callout[data-type="danger"] { background: var(--danger-soft); border-color: var(--danger); }
 .callout[data-type="danger"] .callout-title { color: var(--danger); }
 
-.callout[data-type="quote"]  { background: var(--burgundy-soft); border-color: var(--burgundy-soft); }
-.callout[data-type="quote"]::before  { background: var(--burgundy); }
+.callout[data-type="quote"]  { background: var(--burgundy-soft); border-color: var(--burgundy); }
 .callout[data-type="quote"] .callout-title  { color: var(--burgundy); }
 .callout[data-type="quote"] .callout-body,
 .content-inner .callout[data-type="quote"] .callout-body p { font-style: italic; }
 
 @media (max-width: 760px) {
-  .callout { padding: 12px 14px 12px 18px; }
+  .callout { padding: 12px 14px; }
 }
 
 /* ============================================================

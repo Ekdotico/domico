@@ -73,7 +73,12 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/design-system/tokens.css` | Every custom property, for all four themes across both modes |
 | `@ekdotico/design-system/tokens` | The same values, typed, for use outside a stylesheet |
 | `@ekdotico/design-system/styles.css` | The base layer and the shared component styles |
-| `@ekdotico/design-system/components` | The nine shared React components |
+| `@ekdotico/design-system/styles/base.css` | The reset and the semantic type utilities |
+| `@ekdotico/design-system/styles/reset.css` | The reset, document defaults, accessibility primitives, scrollbars |
+| `@ekdotico/design-system/styles/type.css` | The semantic type utilities alone |
+| `@ekdotico/design-system/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
+| `@ekdotico/design-system/styles/appearance.css` | The theme switcher and the mode switcher alone |
+| `@ekdotico/design-system/components` | The shared React components |
 | `@ekdotico/design-system/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/design-system/fonts` | Font loading configuration for the three locked families |
 | `@ekdotico/design-system/mermaid` | Mermaid `themeVariables` for all eight palettes |
@@ -147,8 +152,14 @@ path-based routing. Take the tokens, and take the base layer only if the tools
 should read as Ekdotico surfaces rather than as utilities. The shared
 components are optional.
 
+An internal tool whose conventions forbid a global class layer can still render
+the appearance controls: `styles/appearance.css` is exactly the markup
+`ThemeSwitcher` and `ModeSwitcher` emit and carries nothing else.
+
 ```ts
 import '@ekdotico/design-system/tokens.css';
+import '@ekdotico/design-system/styles/reset.css';
+import '@ekdotico/design-system/styles/appearance.css';
 import { resolveTokens } from '@ekdotico/design-system/tokens';
 
 // Values are available outside CSS, for canvas rendering, chart libraries,

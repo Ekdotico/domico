@@ -590,29 +590,16 @@
 
 /* --- Appearance controls -------------------------------------------------
 
-   The theme switcher and the mode switcher now live in src/styles/appearance.css
-   and are composed into this file by scripts/build-styles.mjs, so an application
-   that renders only the two controls can take only their stylesheet.
+   Every appearance control now lives in src/styles/appearance.css and is
+   composed into this file by scripts/build-styles.mjs, so an application that
+   renders only the controls can take only their stylesheet.
+
+   The header row that pairs a label with the mode pill went with them. It was
+   held back here on the reasoning that the markup is an application's own, and
+   that reasoning cost praktico the only visible divergence it had from docs:
+   its import of styles/appearance.css could not reach .theme-header, so its
+   label and mode pill stacked where docs' sat on one line.
    ------------------------------------------------------------------------ */
-
-
-/* ============================================================
-   THEME HEADER ROW — label on the left, mode pill on the right
-   ============================================================ */
-.theme-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-.theme-header-label {
-  font-family: var(--font-sans);
-  font-size: var(--fs-3xs);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--fg-4);
-}
 
 
 /* ============================================================

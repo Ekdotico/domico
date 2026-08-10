@@ -69,6 +69,12 @@ jobs:
       - name: Colour pairs meet WCAG AA
         run: pnpm check:contrast
 
+      # components.css shipped unparseable from 0.1.0 to 0.4.0 and nothing
+      # noticed, because no consumer had ever imported it. A stylesheet nobody
+      # imports is a stylesheet nobody validates.
+      - name: Shipped stylesheets parse
+        run: pnpm check:styles
+
       # Asserts the linter fails when it should and, more importantly, stays
       # quiet where it should: false positives are what get a linter switched
       # off, and the structural exemptions would rot silently without this.

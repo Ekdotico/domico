@@ -1,5 +1,17 @@
 # @ekdotico/design-system
 
+## 0.4.1
+
+### Patch Changes
+
+- Repair `components.css`, which has not parsed since 0.1.0.
+
+  The extraction script replaced each original banner comment with its own header but kept the banner's body and closing delimiter, so ten blocks had prose sitting in CSS statement position followed by a stray `*/`. The file also ended with a banner opener and no content, which made every parser read the tail as a comment.
+
+  Four releases shipped it and nothing noticed, because no consumer had ever imported the file — docs takes only the tokens. Splitting the stylesheet in 0.4.0 gave deree a reason to import it, and the build refused.
+
+  `check:styles` now validates every shipped stylesheet for balanced comments and braces, in `pnpm check` and in CI. A stylesheet nobody imports is a stylesheet nobody validates, so the package validates its own.
+
 ## 0.4.0
 
 ### Minor Changes

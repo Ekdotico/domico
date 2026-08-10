@@ -21,7 +21,7 @@
 
 /* --- Section rule -------------------------------------------------------- */
 
-SECTION RULE (gilt + hairline)
+/* SECTION RULE (gilt + hairline)
    ============================================================ */
 .sect-rule {
   display: flex;
@@ -36,7 +36,7 @@ SECTION RULE (gilt + hairline)
 
 /* --- Tables -------------------------------------------------------------- */
 
-TABLES (used both via MDX + components)
+/* TABLES (used both via MDX + components)
    ============================================================ */
 .tbl-wrap {
   /* No overflow at desktop — having overflow-x: auto would force the
@@ -147,7 +147,7 @@ TABLES (used both via MDX + components)
 
 /* --- Badges -------------------------------------------------------------- */
 
-BADGES
+/* BADGES
    ============================================================ */
 .badge {
   display: inline-flex;
@@ -195,7 +195,7 @@ BADGES
 
 /* --- Key-value list ------------------------------------------------------ */
 
-KEY-VALUE LIST (semantic <dl>/<dt>/<dd>)
+/* KEY-VALUE LIST (semantic <dl>/<dt>/<dd>)
    Used for structured term/definition pairs — persona attributes,
    glossary entries, ADR metadata, etc. Two variants:
      .kv-list-card    — boxed surface (default for standalone use)
@@ -302,7 +302,7 @@ KEY-VALUE LIST (semantic <dl>/<dt>/<dd>)
 
 /* --- Callout ------------------------------------------------------------- */
 
-CALLOUT (editorial aside)
+/* CALLOUT (editorial aside)
    Tinted/bordered <aside> with optional title row and a thin
    left-edge stripe (suppressed for the quietest 'note' variant).
    Six type variants map to semantic token pairs:
@@ -399,7 +399,7 @@ CALLOUT (editorial aside)
 
 /* --- Figure -------------------------------------------------------------- */
 
-FIGURE (image with caption + optional credit)
+/* FIGURE (image with caption + optional credit)
    Semantic <figure>/<figcaption> pair. The image gets a soft
    hairline + radius-lg by default — establishes the "cabinet
    card" feel of an archived plate. Caption sits below in a
@@ -447,7 +447,7 @@ FIGURE (image with caption + optional credit)
 
 /* --- Tabs ---------------------------------------------------------------- */
 
-TABS (WAI-ARIA tab panel)
+/* TABS (WAI-ARIA tab panel)
    Horizontal tab list with hairline underline; the active tab
    carries a 2px accent underline. The panel below mirrors the
    Persona surface treatment (--bg-surface + --rule + radius-lg
@@ -519,7 +519,7 @@ TABS (WAI-ARIA tab panel)
 
 /* --- Stat and stat grid -------------------------------------------------- */
 
-STAT + STAT GRID (single load-bearing numbers)
+/* STAT + STAT GRID (single load-bearing numbers)
    Large serif value over a small uppercase sans label, with an
    optional italic serif sub-line. The Grid lays stats out in 2/3/4
    columns above 760px, collapsing to 2 then 1 on narrower screens.
@@ -576,7 +576,7 @@ STAT + STAT GRID (single load-bearing numbers)
 
 /* --- Theme switcher ------------------------------------------------------ */
 
-THEME SWITCHER
+/* THEME SWITCHER
    ============================================================ */
 .theme-switcher {
   display: grid;
@@ -662,7 +662,7 @@ THEME SWITCHER
 
 /* --- Mode switcher ------------------------------------------------------- */
 
-MODE SWITCHER — segmented pill: sun / monitor / moon
+/* MODE SWITCHER — segmented pill: sun / monitor / moon
    ============================================================ */
 .mode-switcher {
   display: inline-flex;
@@ -757,5 +757,3 @@ MODE SWITCHER — segmented pill: sun / monitor / moon
   line-height: 1;
   color: var(--fg-1);
 }
-
-/* ============================================================

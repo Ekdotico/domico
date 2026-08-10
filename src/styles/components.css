@@ -572,73 +572,13 @@
   .stat-grid { grid-template-columns: 1fr; }
 }
 
-/* ============================================================
+/* --- Appearance controls -------------------------------------------------
 
-/* --- Theme switcher ------------------------------------------------------ */
+   The theme switcher and the mode switcher now live in src/styles/appearance.css
+   and are composed into this file by scripts/build-styles.mjs, so an application
+   that renders only the two controls can take only their stylesheet.
+   ------------------------------------------------------------------------ */
 
-/* THEME SWITCHER
-   ============================================================ */
-.theme-switcher {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 2px;
-}
-.theme-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 4px;
-  border: none;
-  background: transparent;
-  color: var(--fg-3);
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: color var(--dur-fast) var(--ease-soft);
-}
-.theme-btn:hover { color: var(--fg-1); }
-.theme-btn:hover .theme-swatch { border-color: var(--fg-3); }
-.theme-swatch {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 1px solid var(--rule-strong);
-  box-shadow: var(--shadow-swatch-ring);
-  transition: border-color var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
-}
-/* Each swatch previews a theme that is not the active one, so its colour cannot
-   come from the cascade: only one [data-theme] is live at a time. ThemeSwitcher
-   supplies both candidates as --swatch-light and --swatch-dark, and the mode is
-   resolved here rather than in JavaScript. A hook could not answer for Auto —
-   the reader's system preference never reaches the server — so the swatches
-   rendered light on a dark page until hydration. These three rules resolve at
-   paint instead, which is also what removes the last inline colour from the
-   control. */
-.theme-swatch { background: var(--swatch-light); }
-[data-mode="dark"] .theme-swatch { background: var(--swatch-dark); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-mode]) .theme-swatch { background: var(--swatch-dark); }
-}
-.theme-name {
-  font-family: var(--font-sans);
-  font-size: var(--fs-3xs);
-  font-weight: var(--fw-medium);
-  letter-spacing: 0.04em;
-}
-.theme-btn.active {
-  color: var(--fg-1);
-}
-.theme-btn.active .theme-swatch {
-  border-color: var(--gilt);
-  box-shadow: 0 0 0 1px var(--gilt-soft);
-}
-.theme-btn.active .theme-name {
-  font-style: italic;
-  font-family: var(--font-serif);
-  font-size: var(--fs-2xs);
-  letter-spacing: var(--tr-tight);
-  font-variation-settings: "opsz" 12;
-}
 
 /* ============================================================
    THEME HEADER ROW — label on the left, mode pill on the right
@@ -658,53 +598,6 @@
   color: var(--fg-4);
 }
 
-/* ============================================================
-
-/* --- Mode switcher ------------------------------------------------------- */
-
-/* MODE SWITCHER — segmented pill: sun / monitor / moon
-   ============================================================ */
-.mode-switcher {
-  display: inline-flex;
-  align-items: stretch;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-pill);
-  background: var(--bg-surface-2);
-  padding: 2px;
-  gap: 0;
-}
-.mode-btn {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  padding: 0;
-  /* WCAG 2.2 SC 2.5.8 — 24px minimum target size. The buttons sit adjacent
-     (gap:0) so the spacing exception does not apply (A11Y-6). */
-  width: 26px;
-  height: 26px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--fg-4);
-  cursor: pointer;
-  border-radius: var(--radius-pill);
-  transition:
-    background 140ms cubic-bezier(0.22, 1, 0.36, 1),
-    color 140ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 140ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.mode-btn:hover {
-  color: var(--fg-2);
-}
-.mode-btn.active {
-  background: var(--bg-canvas);
-  color: var(--fg-1);
-  box-shadow: var(--shadow-inset);
-}
-.mode-btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
 
 /* ============================================================
    LOGO LOCKUP

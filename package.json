@@ -1,6 +1,6 @@
 {
   "name": "@ekdotico/design-system",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": false,
   "description": "The Ekdotico house style: design tokens, base styles, shared components, and the Expression Guidelines with their machine-readable vocabulary and prohibited terms.",
   "license": "SEE LICENSE IN LICENSE",
@@ -43,6 +43,7 @@
     "./styles/reset.css": "./dist/styles/reset-only.css",
     "./styles/type.css": "./dist/styles/type-only.css",
     "./styles/components.css": "./dist/styles/components.css",
+    "./styles/appearance.css": "./dist/styles/appearance-only.css",
     "./components": {
       "types": "./dist/src/components/index.d.ts",
       "default": "./dist/src/components/index.js"

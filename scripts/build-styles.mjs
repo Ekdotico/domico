@@ -2,7 +2,7 @@
 /**
  * Assemble the shipped stylesheets.
  *
- * Five entries, so a consumer can take as much or as little as it needs.
+ * Six entries, so a consumer can take as much or as little as it needs.
  * Tokens are separate again, so the values can be had without any of the
  * opinions.
  *
@@ -10,7 +10,8 @@
  *   styles/base.css         reset + type utilities
  *   styles/reset.css        reset, document defaults, a11y primitives, scrollbars
  *   styles/type.css         the semantic type utilities alone
- *   styles/components.css   primitives and the shared components
+ *   styles/components.css   primitives, appearance controls, shared components
+ *   styles/appearance.css   the theme switcher and the mode switcher alone
  *
  * The split exists because whole-stylesheet adoption is the wrong granularity
  * for an application that already has a layer of its own. deree wanted the
@@ -19,6 +20,12 @@
  * utilities, because its conventions forbid a global utility layer — and a
  * reset and a set of optional classes are not the same kind of thing, so
  * shipping them welded together made that impossible to express.
+ *
+ * appearance.css is that argument one level down. praktico renders both
+ * switchers and nothing else in the component layer, so its only choices were
+ * a dozen classes it never uses or a local restatement of the control. It had
+ * silently taken a third: styling class names the package does not emit, which
+ * left both switchers bare.
  *
  * Every entry that existed before keeps its name and its contents, so nothing
  * that imports one today has to change.
@@ -37,7 +44,8 @@ const source = (f) => readFileSync(join(ROOT, 'src', 'styles', f), 'utf8').trim(
 const reset = source('reset.css');
 const type = source('type.css');
 const base = [reset, type].join('\n\n');
-const components = [source('primitives.css'), source('components.css')].join('\n\n');
+const appearance = source('appearance.css');
+const components = [source('primitives.css'), appearance, source('components.css')].join('\n\n');
 
 const header = (what, note) => `/**
  * @ekdotico/design-system — ${what}.
@@ -75,7 +83,12 @@ const files = [
   [
     'components.css',
     `${header('primitives and shared components', "   import '@ekdotico/design-system/styles/components.css';")}\n${components}\n`,
-    'primitives + components',
+    'primitives + appearance + components',
+  ],
+  [
+    'appearance-only.css',
+    `${header('appearance controls only', "   import '@ekdotico/design-system/styles/appearance.css';")}\n${appearance}\n`,
+    'theme switcher + mode switcher',
   ],
 ];
 

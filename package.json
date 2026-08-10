@@ -1,6 +1,6 @@
 {
   "name": "@ekdotico/design-system",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": false,
   "description": "The Ekdotico house style: design tokens, base styles, shared components, and the Expression Guidelines with their machine-readable vocabulary and prohibited terms.",
   "license": "SEE LICENSE IN LICENSE",

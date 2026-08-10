@@ -1,5 +1,17 @@
 # @ekdotico/design-system
 
+## 0.4.0
+
+### Minor Changes
+
+- Ship the stylesheet in three entries rather than one, so a consumer can take the component styles without a second reset.
+
+  - `styles.css` — unchanged in name and contents: base layer, primitives and components.
+  - `styles/base.css` — the base layer alone: reset, focus ring, skip link, screen-reader utility, reduced motion, scrollbars, type utilities.
+  - `styles/components.css` — primitives and shared components alone.
+
+  Whole-stylesheet adoption is the wrong granularity for a site that already has its own reset. deree needed the theme switcher and nothing else: importing the combined file would have layered a second reset over its own, and copying the six rules it needed into its globals would have recreated exactly the duplication this package exists to remove.
+
 ## 0.3.0
 
 ### Minor Changes

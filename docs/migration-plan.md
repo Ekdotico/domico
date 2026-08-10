@@ -1,6 +1,6 @@
 # Migration and remediation plan
 
-**Prepared:** 2026-08-09 · **Target:** `docs` (`ekdotico-docs`) · **Package:** `@ekdotico/design-system@0.1.0`
+**Prepared:** 2026-08-09 · **Target:** `docs` (`ekdotico-docs`) · **Package:** `@ekdotico/domico@0.1.0`
 
 Four tracks. They are independent and can be sequenced separately, which is the
 point: the visual migration is mostly mechanical and should not wait on the
@@ -33,7 +33,7 @@ removed it entirely.
    **This is the step most likely to break the deploy**, and it fails at
    install time with a 401 rather than anything descriptive. Verify on a
    preview deployment before merging anything else in this track.
-3. `pnpm add @ekdotico/design-system`.
+3. `pnpm add @ekdotico/domico`.
 
 ### 1.2 Token layer — mechanical, verifiable by diff
 
@@ -42,7 +42,7 @@ dark palettes, the two auto-dark duplicates, and the type, space, radius,
 motion, and layout scales) with:
 
 ```ts
-import '@ekdotico/design-system/tokens.css';
+import '@ekdotico/domico/tokens.css';
 ```
 
 The generated `tokens.css` was produced from those exact declarations, so this
@@ -82,7 +82,7 @@ Delete from `app/globals.css`:
 | 2486–2623 | Theme switcher, mode switcher, logo lockup |
 | 3161–3196 | Scrollbars |
 
-Replace with `import '@ekdotico/design-system/styles.css';`, ordered after the
+Replace with `import '@ekdotico/domico/styles.css';`, ordered after the
 token import.
 
 **Keep** lines 1162–1267 (the fixed column widths for `RequirementTable`,
@@ -97,7 +97,7 @@ Line numbers are as of this plan; take them from the extraction scripts
 
 | From | To |
 |---|---|
-| `@/components/docs/Badge` | `@ekdotico/design-system/components` |
+| `@/components/docs/Badge` | `@ekdotico/domico/components` |
 | `@/components/docs/Callout` | same |
 | `@/components/docs/Table` | same |
 | `@/components/docs/Stat` | same |
@@ -106,7 +106,7 @@ Line numbers are as of this plan; take them from the extraction scripts
 | `@/components/docs/Figure` | same |
 | `@/components/SectionRule` | same |
 | `@/components/Logo` | same |
-| `@/components/ThemeSwitcher` | `@ekdotico/design-system/theme` |
+| `@/components/ThemeSwitcher` | `@ekdotico/domico/theme` |
 | `@/components/ModeSwitcher` | same |
 | `@/lib/useRenderedMode` | same |
 
@@ -121,7 +121,7 @@ Then delete the eleven source files and `lib/useRenderedMode.ts`.
 Replace with:
 
 ```ts
-import { mermaidTheme } from '@ekdotico/design-system/mermaid';
+import { mermaidTheme } from '@ekdotico/domico/mermaid';
 ```
 
 **This is the only step in Track 1 that changes rendered output**, and it does
@@ -137,7 +137,7 @@ failing loudly.
 ### 1.6 Assets — mechanical
 
 Delete `public/logo/` (84 files). Resolve from
-`@ekdotico/design-system/assets` instead. Keep `public/favicon.png`,
+`@ekdotico/domico/assets` instead. Keep `public/favicon.png`,
 `app/icon.svg`, and `app/apple-icon.png`: Next resolves those by convention
 from fixed paths and they cannot come from a package.
 
@@ -289,7 +289,7 @@ unknown until the first run:
 
 1. **Add the dependency and a config, warn-only.** Mechanical.
    ```bash
-   pnpm add -D @ekdotico/design-system
+   pnpm add -D @ekdotico/domico
    pnpm exec ekdotico-lint --warn-only "app/**/*.mdx"
    ```
 2. **Read the output and tune the allowlist.** Judgement. Expect additions for

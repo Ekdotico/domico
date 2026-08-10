@@ -7,9 +7,9 @@
    forbid a global utility layer — wants the reset without these, and could not
    take one without the other while they shared a file.
 
-     import '@ekdotico/design-system/tokens.css';
-     import '@ekdotico/design-system/styles/reset.css';
-     import '@ekdotico/design-system/styles/type.css';   // this file
+     import '@ekdotico/domico/tokens.css';
+     import '@ekdotico/domico/styles/reset.css';
+     import '@ekdotico/domico/styles/type.css';   // this file
    =========================================================================== */
 
 .display,

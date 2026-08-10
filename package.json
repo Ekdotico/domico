@@ -1,13 +1,13 @@
 {
-  "name": "@ekdotico/design-system",
-  "version": "0.9.0",
+  "name": "@ekdotico/domico",
+  "version": "0.10.0",
   "private": false,
-  "description": "The Ekdotico house style: design tokens, base styles, shared components, and the Expression Guidelines with their machine-readable vocabulary and prohibited terms.",
+  "description": "Domico — the Ekdotico house style: design tokens, base styles, shared components, and the Expression Guidelines with their machine-readable vocabulary and prohibited terms.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "Ekdotico",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Ekdotico/design-system.git"
+    "url": "git+https://github.com/Ekdotico/domico.git"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",

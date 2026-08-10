@@ -16,7 +16,7 @@
  *
  *   // app/layout.tsx
  *   import { cookies } from 'next/headers';
- *   import { appearanceAttributes } from '@ekdotico/design-system/theme/server';
+ *   import { appearanceAttributes } from '@ekdotico/domico/theme/server';
  *
  *   export default async function RootLayout({ children }) {
  *     return (

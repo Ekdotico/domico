@@ -8,7 +8,7 @@
  *
  * Resolve a URL with the bundler's own mechanism:
  *
- *   import { logoAssetPath } from '@ekdotico/design-system/assets';
+ *   import { logoAssetPath } from '@ekdotico/domico/assets';
  *   const src = new URL(logoAssetPath('branded', 'transparent', 120, 'SVG'),
  *                       import.meta.url).href;
  *

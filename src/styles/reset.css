@@ -12,10 +12,10 @@
    An application with its own type layer wants the first and not the second,
    and could not previously take one without the other.
 
-     import '@ekdotico/design-system/tokens.css';
-     import '@ekdotico/design-system/styles/reset.css';   // this file
-     import '@ekdotico/design-system/styles/type.css';    // the utilities
-     import '@ekdotico/design-system/styles/base.css';    // both together
+     import '@ekdotico/domico/tokens.css';
+     import '@ekdotico/domico/styles/reset.css';   // this file
+     import '@ekdotico/domico/styles/type.css';    // the utilities
+     import '@ekdotico/domico/styles/base.css';    // both together
 
    Layout geometry — page width, sidebar width, content column — is NOT here.
    That is per-application structure, and each repository owns its own.

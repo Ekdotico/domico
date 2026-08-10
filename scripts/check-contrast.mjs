@@ -44,6 +44,13 @@ const PAIRS = [
   ['ok', 'bg-canvas', 4.5],
   ['info', 'bg-canvas', 4.5],
   ['fg-xref', 'bg-canvas', 4.5],
+  // Diagram edges, on the surface Mermaid is handed as its `background`. A
+  // graphical object rather than text, so WCAG 2.2 SC 1.4.11 applies at 3:1
+  // rather than 4.5:1. Listed because --diagram-edge is per-theme: four
+  // separate hues, each of which has to stay visible on its own canvas, is
+  // exactly the shape of thing that passes on the theme it was picked against
+  // and fails on one of the other three.
+  ['diagram-edge', 'bg-surface', 3],
 ];
 
 const read = (theme, mode) => {

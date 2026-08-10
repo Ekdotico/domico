@@ -1,0 +1,56 @@
+/* ===========================================================================
+   Ekdotico semantic type utilities.
+
+   Optional, and that is the point of the split. These are classes an author
+   chooses to apply, not rules the document obeys. An application with a type
+   layer of its own — praktico states one in a CSS Module, and its conventions
+   forbid a global utility layer — wants the reset without these, and could not
+   take one without the other while they shared a file.
+
+     import '@ekdotico/design-system/tokens.css';
+     import '@ekdotico/design-system/styles/reset.css';
+     import '@ekdotico/design-system/styles/type.css';   // this file
+   =========================================================================== */
+
+.display,
+h1.display {
+  font-family: var(--font-serif);
+  font-weight: var(--fw-regular);
+  font-size: var(--fs-6xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-tighter);
+  color: var(--fg-1);
+  /* An optical-size request at the display grade. Crimson Pro exposes weight
+     and italic axes but no `opsz`, so this is currently inert. It is retained
+     deliberately: it costs nothing, and it is the correct instruction the day
+     the reading serif gains an optical-size axis. */
+  font-variation-settings: "opsz" 48;
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-widest);
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+.lede {
+  font-family: var(--font-serif);
+  font-weight: var(--fw-regular);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-prose);
+  color: var(--fg-2);
+  font-style: italic;
+}
+
+.serif { font-family: var(--font-serif); }
+.sans { font-family: var(--font-sans); }
+.mono { font-family: var(--font-mono); }
+.italic { font-style: italic; }
+
+.smallcaps {
+  font-variant-caps: all-small-caps;
+  letter-spacing: var(--tr-wider);
+}

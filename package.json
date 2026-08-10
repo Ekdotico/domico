@@ -15,14 +15,19 @@
   },
   "type": "module",
   "bin": {
-    "ekdotico-lint": "./dist/src/lint/cli.js"
+    "ekdotico-lint": "./dist/src/lint/cli.js",
+    "ekdotico-check": "./dist/src/check/cli.js"
   },
   "sideEffects": [
     "*.css"
   ],
   "files": [
     "dist",
+    "src",
     "tokens/generated",
+    "tokens/source",
+    "tokens/lib",
+    "scripts",
     "assets",
     "expression/*.md",
     "LICENSE",

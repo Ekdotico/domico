@@ -490,6 +490,31 @@ pnpm check          # drift gates and type check
 | `pnpm check:generated` | Fail if a generated token artefact was edited by hand |
 | `pnpm check:expression` | Fail if the prose and the structured data disagree |
 
+### Running the guards from a consuming repository
+
+The drift gates were unavailable outside this repository, so no consuming
+application could make any of them a blocking check. `ekdotico-check` exposes
+them:
+
+```bash
+pnpm exec ekdotico-check              # contrast, styles, and appearance
+pnpm exec ekdotico-check contrast
+pnpm exec ekdotico-check --list
+```
+
+A command rather than a documented path into `node_modules`. A consumer
+invoking a script file by path depends on this package's internal layout, which
+then cannot change without breaking every pipeline that was never told it was
+coupled to it.
+
+Three of the seven run only here, and say so rather than failing on a missing
+import: `generated` rebuilds the tokens, `expression` validates the authoring
+schemas, and `exports` packs this package. Each needs a development dependency
+that is never published. `icons` compares against `lucide-static`, which is also
+a development dependency, so it reports that it cannot verify rather than
+passing vacuously.
+
+
 Everything under `tokens/generated/` and both generated regions of
 `expression/guidelines.md` are build output. They are committed so a consumer
 can read them without building, and both drift gates run in CI.

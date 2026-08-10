@@ -211,6 +211,28 @@ consistent across the three applications:
 import { ThemeSwitcher, ModeSwitcher } from '@ekdotico/domico/theme';
 ```
 
+Where the chrome has no room for the pair laid out, `AppearanceMenu` puts both
+behind one 36px button:
+
+```tsx
+import { AppearanceMenu } from '@ekdotico/domico/theme';
+
+<AppearanceMenu />;
+```
+
+It is a disclosure button and a non-modal popover, and neither a menu nor a
+dialog. A reader picks a theme by comparing each candidate against the page, so
+the surface stays open through every activation and never seals off the page it
+is being judged against. Escape closes it and returns focus to the button, a
+press outside closes it, and Tab leaves. On opening, focus lands on the theme
+already selected rather than on the first option, because the theme switcher is
+one tab stop parked on the active choice.
+
+Both properties are optional: `label` is the row label inside the panel, which
+defaults to "Theme", and `triggerLabel` is the accessible name on the button,
+which defaults to "Appearance". Its styles ship in `styles/appearance.css`
+alongside the two controls it composes.
+
 Add `themeInitScript()` to `<head>` as a blocking script. Without it the page
 renders one frame in Parchment light before the stored theme applies, which is
 a full-page colour flash. Under a strict Content-Security-Policy the script tag

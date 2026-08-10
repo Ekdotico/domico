@@ -15,9 +15,15 @@
  */
 
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { resolveRenderedMode, isTheme, isMode, MODES } from '../dist/src/theme/appearance.js';
 import { themeInitScript } from '../dist/src/theme/init.js';
 import { themeNames } from '../dist/tokens/generated/tokens.js';
+
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const CONTROLS = ['ThemeSwitcher', 'ModeSwitcher', 'AppearanceMenu'];
 
 // --- resolveRenderedMode --------------------------------------------------
 // An explicit choice wins over the operating system in BOTH directions. The
@@ -179,6 +185,74 @@ assert.ok(!/import|require\(|\$\{/.test(script), 'bootstrap is not self-containe
   }
 }
 
+// --- the controls and their stylesheet ------------------------------------
+// styles/appearance.css exists so an application can style exactly the markup
+// these components emit. That promise is only kept if the two lists agree, and
+// they have not before: praktico styled class names the package does not emit
+// and both switchers rendered bare. A class in the markup with no rule in the
+// entry is the same defect from the other side.
+{
+  const css = readFileSync(join(ROOT, 'src/styles/appearance.css'), 'utf8');
+  const emitted = new Map();
+
+  for (const name of CONTROLS) {
+    const source = readFileSync(join(ROOT, `src/theme/${name}.tsx`), 'utf8');
+    for (const match of source.matchAll(/className=(?:"([^"]*)"|\{`([^`]*)`\})/g)) {
+      // Interpolations are either a conditional modifier or the caller's own
+      // placement class; neither is the package's to style.
+      const literal = (match[1] ?? match[2]).replace(/\$\{[^}]*\}/g, ' ');
+      for (const cls of literal.split(/\s+/).filter(Boolean)) {
+        if (!emitted.has(cls)) emitted.set(cls, name);
+      }
+    }
+  }
+
+  assert.ok(emitted.size > 0, 'no class names were found in the appearance controls');
+  for (const [cls, from] of emitted) {
+    assert.ok(
+      css.includes(`.${cls}`),
+      `${from} renders .${cls}, which src/styles/appearance.css does not style. ` +
+        'An application taking only that entry would render the control bare.',
+    );
+  }
+
+  // Nothing in the appearance layer may wait on a transition or animation
+  // event. reset.css sets `transition: none !important` under
+  // prefers-reduced-motion, so neither event fires for those readers and a
+  // component gating unmount on one never unmounts.
+  // Comments are stripped throughout: every rule below is about what the
+  // component does, and the files explain themselves in prose that necessarily
+  // names the things they avoid.
+  const code = (rel) =>
+    readFileSync(join(ROOT, 'src/theme', rel), 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+
+  for (const rel of [
+    'ThemeSwitcher.tsx',
+    'ModeSwitcher.tsx',
+    'AppearanceMenu.tsx',
+    'AppearanceProvider.tsx',
+    'useAppearance.ts',
+    'useRadioGroup.ts',
+  ]) {
+    assert.ok(
+      !/\b(transitionend|animationend)\b/.test(code(rel)),
+      `src/theme/${rel} waits on a transition or animation event, which never fires under prefers-reduced-motion`,
+    );
+  }
+
+  // The appearance menu is a disclosure. A reader picks a theme by comparing it
+  // against the page, so the surface may not be modal and may not close on
+  // activation the way a menu role requires.
+  const menu = code('AppearanceMenu.tsx');
+  for (const promise of ['aria-expanded', 'aria-controls']) {
+    assert.ok(menu.includes(promise), `AppearanceMenu's trigger is missing ${promise}`);
+  }
+  for (const forbidden of ['aria-modal', 'role="menu"', 'role="dialog"']) {
+    assert.ok(!menu.includes(forbidden), `AppearanceMenu declares ${forbidden}; it is a non-modal disclosure`);
+  }
+}
+
 console.log(
-  `check:appearance — resolution, guards, server attributes and state, and a bootstrap covering ${themeNames.length} generated themes`,
+  `check:appearance — resolution, guards, server attributes and state, a bootstrap covering ${themeNames.length} generated themes, ` +
+    `and ${CONTROLS.length} controls whose classes all resolve in styles/appearance.css`,
 );

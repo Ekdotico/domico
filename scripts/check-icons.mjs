@@ -107,7 +107,11 @@ while ((match = component.exec(source)) !== null) {
 // A stray inline SVG outside icons.tsx is how the drift got in last time: the
 // geometry has to live in one module or the set stops being a set.
 const strays = [];
-for (const rel of ['src/theme/ModeSwitcher.tsx', 'src/theme/ThemeSwitcher.tsx']) {
+for (const rel of [
+  'src/theme/ModeSwitcher.tsx',
+  'src/theme/ThemeSwitcher.tsx',
+  'src/theme/AppearanceMenu.tsx',
+]) {
   const path = join(ROOT, rel);
   if (!existsSync(path)) continue;
   const text = readFileSync(path, 'utf8');

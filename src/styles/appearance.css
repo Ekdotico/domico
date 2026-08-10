@@ -169,3 +169,91 @@
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+
+/* --- Appearance menu — disclosure button + non-modal popover --------------- */
+
+/* AppearanceMenu wraps the header row and both switchers in a popover, for
+   chrome with no room for the pair laid out. The panel is a disclosure rather
+   than a menu: a reader picks a theme by comparing it against the page, so the
+   surface stays open through every activation.
+   ------------------------------------------------------------------------ */
+
+.appearance-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.appearance-trigger {
+  appearance: none;
+  /* WCAG 2.2 SC 2.5.8 wants 24px; 36px is the chrome button size, and the
+     icon is the whole control, so there is no label to lean on. */
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  color: var(--fg-3);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-soft),
+    color var(--dur-fast) var(--ease-soft),
+    border-color var(--dur-fast) var(--ease-soft);
+}
+.appearance-trigger:hover {
+  color: var(--fg-1);
+  border-color: var(--rule-strong);
+}
+.appearance-menu[data-open="true"] .appearance-trigger {
+  background: var(--bg-surface-2);
+  color: var(--fg-1);
+  border-color: var(--rule-strong);
+}
+
+/* The panel stays in the document, open or closed. Unmounting it on
+   transitionend would hang for any reader who has asked for reduced motion:
+   reset.css sets `transition: none !important` inside that query, so the event
+   never fires and a component waiting on it waits for ever.
+
+   `visibility` is what makes the closed panel genuinely closed — out of the tab
+   order and out of the accessibility tree — and it is a discrete property, so
+   it flips to visible at the start of the opening transition and to hidden at
+   the end of the closing one. Opacity alone would leave an invisible panel
+   collecting Tab stops.
+
+   The 4px lift is a transform, which the house rule permits here and nowhere
+   near a hover or a state change: this surface is entering and leaving the
+   viewport, and the movement is what says where it came from. */
+.appearance-panel {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  right: 0;
+  z-index: 20;
+  min-width: 240px;
+  padding: var(--sp-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-3);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition:
+    opacity var(--dur-base) var(--ease-soft),
+    transform var(--dur-base) var(--ease-soft),
+    visibility var(--dur-base) var(--ease-soft);
+}
+.appearance-menu[data-open="true"] .appearance-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* The row inside the panel carries the panel's own padding, so it does not
+   need the standalone row's bottom margin doubled up against the switcher. */
+.appearance-panel .theme-header {
+  margin-bottom: var(--sp-2);
+}

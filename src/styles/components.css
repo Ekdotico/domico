@@ -106,12 +106,28 @@
 .tbl-wrap tbody tr:last-child td:first-child { border-bottom-left-radius: var(--radius-lg); }
 .tbl-wrap tbody tr:last-child td:last-child  { border-bottom-right-radius: var(--radius-lg); }
 .tbl-wrap tbody tr:hover td { background: color-mix(in srgb, var(--bg-surface-2) 60%, transparent); }
+/* Two cell treatments for one kind of row: an identifier, and the thing it
+   names. .td-id sets the identifier — a requirement code, a risk number, a
+   stakeholder reference — in mono, so a column of them aligns and reads as a
+   key. .td-strong sets the name beside it, in sans at a weight that carries the
+   row without becoming a heading.
+
+   They are a pair and ship together. .td-strong lived in the documentation site
+   alone for a while, which meant a table drew half its cells from the package
+   and half from its own stylesheet, and a second consumer would have had to
+   rediscover the half that was missing. */
 .td-id {
   font-family: var(--font-mono);
   font-size: var(--fs-2xs);
   color: var(--accent);
   white-space: nowrap;
-  font-weight: 500;
+  font-weight: var(--fw-medium);
+}
+
+.td-strong {
+  font-family: var(--font-sans);
+  font-weight: var(--fw-semi);
+  color: var(--fg-1);
 }
 
 /* --- Table caption ------------------------------------------------------- */

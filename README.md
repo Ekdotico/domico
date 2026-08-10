@@ -1,7 +1,12 @@
-# @ekdotico/design-system
+# Domico
 
-The Ekdotico house style, in one versioned package: the visual layer and the
-linguistic layer together.
+`@ekdotico/domico` — the Ekdotico house style, in one versioned package: the
+visual layer and the linguistic layer together.
+
+Domico is the design system's own name. Ekdotico is the company whose house
+style it holds, and remains the scope on the package, the `ekd-` prefix on the
+appearance cookie and the `.ekd-` class prefix, and the word that appears in the
+products. Renaming the system did not rename the company.
 
 The visual layer is the design tokens, the four themes, the base stylesheet,
 the shared components, and the brand assets. The linguistic layer is the
@@ -57,7 +62,7 @@ environment that runs a build, and commit the `.npmrc` above.
 Then install:
 
 ```bash
-pnpm add @ekdotico/design-system
+pnpm add @ekdotico/domico
 ```
 
 If `pnpm` reports that it could not replace `${NODE_AUTH_TOKEN}`, the variable
@@ -70,20 +75,20 @@ packages are being installed, and fatal when this one is.
 
 | Import | Contents |
 |---|---|
-| `@ekdotico/design-system/tokens.css` | Every custom property, for all four themes across both modes |
-| `@ekdotico/design-system/tokens` | The same values, typed, for use outside a stylesheet |
-| `@ekdotico/design-system/styles.css` | The base layer and the shared component styles |
-| `@ekdotico/design-system/styles/base.css` | The reset and the semantic type utilities |
-| `@ekdotico/design-system/styles/reset.css` | The reset, document defaults, accessibility primitives, scrollbars |
-| `@ekdotico/design-system/styles/type.css` | The semantic type utilities alone |
-| `@ekdotico/design-system/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
-| `@ekdotico/design-system/styles/appearance.css` | The theme switcher and the mode switcher alone |
-| `@ekdotico/design-system/components` | The shared React components |
-| `@ekdotico/design-system/theme` | Theme and mode switching, and the first-paint init script |
-| `@ekdotico/design-system/fonts` | Font loading configuration for the three locked families |
-| `@ekdotico/design-system/mermaid` | Mermaid `themeVariables` for all eight palettes |
-| `@ekdotico/design-system/expression` | The vocabulary and the prohibited terms, typed |
-| `@ekdotico/design-system/expression/guidelines.md` | The Expression Guidelines, canonical copy |
+| `@ekdotico/domico/tokens.css` | Every custom property, for all four themes across both modes |
+| `@ekdotico/domico/tokens` | The same values, typed, for use outside a stylesheet |
+| `@ekdotico/domico/styles.css` | The base layer and the shared component styles |
+| `@ekdotico/domico/styles/base.css` | The reset and the semantic type utilities |
+| `@ekdotico/domico/styles/reset.css` | The reset, document defaults, accessibility primitives, scrollbars |
+| `@ekdotico/domico/styles/type.css` | The semantic type utilities alone |
+| `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
+| `@ekdotico/domico/styles/appearance.css` | The theme switcher and the mode switcher alone |
+| `@ekdotico/domico/components` | The shared React components |
+| `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
+| `@ekdotico/domico/fonts` | Font loading configuration for the three locked families |
+| `@ekdotico/domico/mermaid` | Mermaid `themeVariables` for all eight palettes |
+| `@ekdotico/domico/expression` | The vocabulary and the prohibited terms, typed |
+| `@ekdotico/domico/expression/guidelines.md` | The Expression Guidelines, canonical copy |
 
 ---
 
@@ -97,12 +102,12 @@ structure, not house style.
 
 ```ts
 // app/layout.tsx
-import '@ekdotico/design-system/tokens.css';
-import '@ekdotico/design-system/styles.css';
+import '@ekdotico/domico/tokens.css';
+import '@ekdotico/domico/styles.css';
 
 import { Crimson_Pro, Commissioner, Fira_Code } from 'next/font/google';
-import { fontConfig } from '@ekdotico/design-system/fonts';
-import { themeInitScript } from '@ekdotico/design-system/theme';
+import { fontConfig } from '@ekdotico/domico/fonts';
+import { themeInitScript } from '@ekdotico/domico/theme';
 
 const serif = Crimson_Pro(fontConfig.serif);
 const sans = Commissioner(fontConfig.sans);
@@ -140,9 +145,9 @@ has not been audited against the Expression Guidelines, so adopt the linter in
 warning mode first and read the output before enforcing anything.
 
 ```ts
-import '@ekdotico/design-system/tokens.css';
-import '@ekdotico/design-system/styles.css';
-import { Logo, Callout } from '@ekdotico/design-system/components';
+import '@ekdotico/domico/tokens.css';
+import '@ekdotico/domico/styles.css';
+import { Logo, Callout } from '@ekdotico/domico/components';
 ```
 
 ### internal
@@ -157,10 +162,10 @@ the appearance controls: `styles/appearance.css` is exactly the markup
 `ThemeSwitcher` and `ModeSwitcher` emit and carries nothing else.
 
 ```ts
-import '@ekdotico/design-system/tokens.css';
-import '@ekdotico/design-system/styles/reset.css';
-import '@ekdotico/design-system/styles/appearance.css';
-import { resolveTokens } from '@ekdotico/design-system/tokens';
+import '@ekdotico/domico/tokens.css';
+import '@ekdotico/domico/styles/reset.css';
+import '@ekdotico/domico/styles/appearance.css';
+import { resolveTokens } from '@ekdotico/domico/tokens';
 
 // Values are available outside CSS, for canvas rendering, chart libraries,
 // or a theme-colour meta tag.
@@ -192,7 +197,7 @@ Ship the switchers rather than reimplementing them, so behaviour stays
 consistent across the three applications:
 
 ```tsx
-import { ThemeSwitcher, ModeSwitcher } from '@ekdotico/design-system/theme';
+import { ThemeSwitcher, ModeSwitcher } from '@ekdotico/domico/theme';
 ```
 
 Add `themeInitScript()` to `<head>` as a blocking script. Without it the page
@@ -216,7 +221,7 @@ point: the guidelines previously existed twice, both copies labelled version
 The controlled vocabulary and the prohibited terms are also structured data:
 
 ```ts
-import { vocabulary, prohibited, rulesFor, canonicalFor } from '@ekdotico/design-system/expression';
+import { vocabulary, prohibited, rulesFor, canonicalFor } from '@ekdotico/domico/expression';
 
 // Only the rules that apply within one register. A prohibition scoped to the
 // provenance/institutional register is never fired against marketing copy.
@@ -236,7 +241,7 @@ message, which is itself a System Feedback register violation.
 changing a prohibited term means editing one file.
 
 ```bash
-pnpm add -D @ekdotico/design-system
+pnpm add -D @ekdotico/domico
 pnpm exec ekdotico-lint "app/**/*.mdx"
 ```
 

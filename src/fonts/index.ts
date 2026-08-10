@@ -12,7 +12,7 @@
  * `--font-mono` tokens resolve:
  *
  *   import { Crimson_Pro, Commissioner, Fira_Code } from 'next/font/google';
- *   import { fontConfig } from '@ekdotico/design-system/fonts';
+ *   import { fontConfig } from '@ekdotico/domico/fonts';
  *
  *   const serif = Crimson_Pro(fontConfig.serif);
  *   const sans  = Commissioner(fontConfig.sans);

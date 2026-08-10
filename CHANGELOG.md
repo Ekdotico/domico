@@ -1,4 +1,4 @@
-# @ekdotico/design-system
+# @ekdotico/domico
 
 ## 0.4.1
 

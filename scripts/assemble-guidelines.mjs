@@ -41,7 +41,7 @@ doc = replaceOnce(
 **Status:** Active development
 **Last updated:** August 2026
 **Audience:** Core team, contractors, open-source contributors, automated failsafe review agent
-**Owner:** \`@ekdotico/design-system\` — this document is versioned and released with the package. It is the single canonical copy. Any copy held inside a consuming repository is stale by definition.`,
+**Owner:** \`@ekdotico/domico\` — this document is versioned and released with the package. It is the single canonical copy. Any copy held inside a consuming repository is stale by definition.`,
   'header',
 );
 
@@ -49,7 +49,7 @@ doc = replaceOnce(
 doc = replaceOnce(
   doc,
   '**v0.2 (May 2026):**',
-  `**v0.3 (August 2026):** Extracted into \`@ekdotico/design-system\` as the single canonical copy, replacing the two divergent copies that both carried the version number 0.2. Reconciled §7 on the newer of the two: **provenance record** now names the captured data and **provenance report** names its human-readable rendering, which is what the specification content already used. Section 7 and §8 became generated regions, filled from \`expression/vocabulary.json\` and \`expression/prohibited.json\`; the structured data is now the single source for every mechanical rule and a build-time check fails if the prose and the data disagree. Recorded eight vocabulary gaps surfaced by the extraction audit against the §7.5 additions process.
+  `**v0.3 (August 2026):** Extracted into \`@ekdotico/domico\` as the single canonical copy, replacing the two divergent copies that both carried the version number 0.2. Reconciled §7 on the newer of the two: **provenance record** now names the captured data and **provenance report** names its human-readable rendering, which is what the specification content already used. Section 7 and §8 became generated regions, filled from \`expression/vocabulary.json\` and \`expression/prohibited.json\`; the structured data is now the single source for every mechanical rule and a build-time check fails if the prose and the data disagree. Recorded eight vocabulary gaps surfaced by the extraction audit against the §7.5 additions process.
 
 **v0.2 (May 2026):**`,
   'changelog',

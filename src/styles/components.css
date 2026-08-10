@@ -1,11 +1,11 @@
 /* ===========================================================================
    Ekdotico shared components.
 
-   Styles for the components exported from @ekdotico/design-system/components.
+   Styles for the components exported from @ekdotico/domico/components.
    Import after the tokens and the base layer:
 
-     import '@ekdotico/design-system/tokens.css';
-     import '@ekdotico/design-system/styles.css';
+     import '@ekdotico/domico/tokens.css';
+     import '@ekdotico/domico/styles.css';
 
    Every colour, type, radius, and motion value resolves to a token.
 

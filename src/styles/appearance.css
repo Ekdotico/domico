@@ -5,7 +5,7 @@
    else. Shipped as its own entry so an application can style the two controls
    it imports without also taking the shared component layer:
 
-     import '@ekdotico/design-system/styles/appearance.css';
+     import '@ekdotico/domico/styles/appearance.css';
 
    praktico is why. It renders both switchers and states its type per component
    in a CSS Module, so its conventions forbid a global utility or component

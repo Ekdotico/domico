@@ -8,8 +8,8 @@
  *
  * Styles ship separately and must be imported once at the application root:
  *
- *   import '@ekdotico/design-system/tokens.css';
- *   import '@ekdotico/design-system/styles.css';
+ *   import '@ekdotico/domico/tokens.css';
+ *   import '@ekdotico/domico/styles.css';
  */
 
 export {

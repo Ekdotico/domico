@@ -250,6 +250,40 @@ assert.ok(!/import|require\(|\$\{/.test(script), 'bootstrap is not self-containe
   for (const forbidden of ['aria-modal', 'role="menu"', 'role="dialog"']) {
     assert.ok(!menu.includes(forbidden), `AppearanceMenu declares ${forbidden}; it is a non-modal disclosure`);
   }
+
+  // visibility is a DISCRETE property. Given a duration, it flips when the
+  // easing output passes 0.5 — with --ease-soft that is roughly 15ms into a
+  // 220ms transition, i.e. inside the first frame. The panel opens by attribute,
+  // so the effect that focuses the reader's current theme runs inside that
+  // window, finds the panel still computing `visibility: hidden`, and its
+  // focus() is silently ignored. That shipped: opening the menu left focus on
+  // the trigger, and it was found by recording focusin on a real click, not by
+  // reading the code. Zero duration with a delay instead — instant on open,
+  // held through the fade on close.
+  // Comments are stripped: the stylesheet explains this in prose that
+  // necessarily quotes the form it forbids.
+  const cssCode = css.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  let visibilityTransitions = 0;
+  for (const decl of cssCode.matchAll(/transition:\s*([^;}]*\bvisibility\b[^;}]*)[;}]/g)) {
+    const part = decl[1]
+      .split(',')
+      .map((s) => s.trim())
+      .find((s) => s.startsWith('visibility'));
+    visibilityTransitions += 1;
+    assert.ok(
+      /^visibility\s+0s\b/.test(part ?? ''),
+      `styles/appearance.css transitions visibility as "${part}". visibility is discrete, ` +
+        'so it flips part-way through and a focus() call before that point is silently ' +
+        'ignored — which is how opening the panel left focus on the trigger. Declare it ' +
+        'as `visibility 0s linear <delay>`.',
+    );
+  }
+  assert.ok(
+    visibilityTransitions >= 2,
+    'expected the appearance panel to declare visibility in both its closed and open ' +
+      `transitions; found ${visibilityTransitions}. If the panel stopped using visibility ` +
+      'to leave the tab order, this check and that decision need revisiting together.',
+  );
 }
 
 console.log(

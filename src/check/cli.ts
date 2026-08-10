@@ -26,7 +26,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /** Package root, from dist/src/check/cli.js. */
@@ -99,7 +99,7 @@ function list(): void {
   console.log(`\nWith no arguments: ${DEFAULT_GUARDS.join(', ')}.`);
 }
 
-function run(name: string): number {
+function run(name: string, target: string): number {
   const guard = GUARDS[name];
   if (!guard) {
     console.error(`ekdotico-check: no guard named "${name}". Run ekdotico-check --list.`);
@@ -121,7 +121,7 @@ function run(name: string): number {
     return 2;
   }
 
-  const args = guard.targetsConsumer ? [script, process.cwd()] : [script];
+  const args = guard.targetsConsumer ? [script, target] : [script];
   const result = spawnSync(process.execPath, args, { stdio: 'inherit' });
   if (result.error) {
     console.error(`ekdotico-check: could not run "${name}": ${result.error.message}`);
@@ -137,10 +137,39 @@ if (argv.includes('--help') || argv.includes('-h') || argv.includes('--list')) {
   process.exit(0);
 }
 
-const requested = argv.length > 0 ? argv : [...DEFAULT_GUARDS];
+// Guard names and an optional target directory, in any order. The target is
+// only meaningful to a guard that audits the calling repository, and defaults to
+// the working directory — but `ekdotico-check discipline .` is the form a person
+// reaches for, and reading the `.` as a guard name made the CLI exit 2 while
+// every check underneath it passed. A gate that fails green is worse than no
+// gate, so a path is recognised as a path.
+//
+// A token is a path only if it looks like one or exists. Anything else is a
+// mistyped guard name and is reported, rather than being silently swallowed as a
+// directory that does not exist.
+const names: string[] = [];
+let target: string | undefined;
+
+for (const arg of argv) {
+  if (arg in GUARDS) {
+    names.push(arg);
+  } else if (arg === '.' || arg === '..' || /^[.~/]/.test(arg) || existsSync(arg)) {
+    if (target !== undefined) {
+      console.error(`ekdotico-check: more than one directory given ("${target}", "${arg}").`);
+      process.exit(2);
+    }
+    target = arg;
+  } else {
+    console.error(`ekdotico-check: no guard named "${arg}". Run ekdotico-check --list.`);
+    process.exit(2);
+  }
+}
+
+const requested = names.length > 0 ? names : [...DEFAULT_GUARDS];
+const resolvedTarget = resolve(target ?? process.cwd());
 let worst = 0;
 for (const name of requested) {
-  const status = run(name);
+  const status = run(name, resolvedTarget);
   if (status > worst) worst = status;
 }
 process.exit(worst);

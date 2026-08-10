@@ -245,15 +245,32 @@
   opacity: 0;
   visibility: hidden;
   transform: translateY(-4px);
+  /* visibility is a DISCRETE property. Transitioned, it flips when the easing
+     output passes 0.5 — with --ease-soft, roughly 15ms into a 220ms transition,
+     which is inside the first frame. So `visibility var(--dur-base)` left a
+     window at the start of opening where the panel was laid out but still
+     computed `visibility: hidden`, and a focus() call in that window is
+     silently ignored: opening the panel left focus on the trigger instead of on
+     the reader's current theme.
+
+     Zero duration, delayed to the end of the fade instead. Opening flips
+     visibility in the same frame, so the panel is focusable immediately;
+     closing keeps it visible for the whole fade rather than cutting the
+     animation off halfway. Under prefers-reduced-motion the reset drops all of
+     this and visibility flips instantly in both directions, which is correct. */
   transition:
     opacity var(--dur-base) var(--ease-soft),
     transform var(--dur-base) var(--ease-soft),
-    visibility var(--dur-base) var(--ease-soft);
+    visibility 0s linear var(--dur-base);
 }
 .appearance-menu[data-open="true"] .appearance-panel {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
+  transition:
+    opacity var(--dur-base) var(--ease-soft),
+    transform var(--dur-base) var(--ease-soft),
+    visibility 0s linear 0s;
 }
 
 /* The row inside the panel carries the panel's own padding, so it does not

@@ -59,10 +59,10 @@
   background: var(--bg-surface-2);
   color: var(--fg-3);
   font-family: var(--font-sans);
-  font-weight: 600;
+  font-weight: var(--fw-semi);
   font-size: var(--fs-3xs);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--tr-label);
   padding: 10px 14px;
   text-align: left;
   border-top: 2px solid var(--rule);
@@ -73,7 +73,10 @@
      lower edge; the topbar's opaque --bg-canvas (z-index 5) masks
      anything scrolling beneath it, so no per-th mask is needed. */
   position: sticky;
-  top: var(--table-sticky-offset, 0px);
+  /* No fallback: --table-sticky-offset is a token and ships as 0px, so a
+     fallback here would be a second place the default is written down. An
+     application that has sticky chrome overrides the token. */
+  top: var(--table-sticky-offset);
   z-index: 3;
 }
 /* The first/last th own the top corner: their side border meets the
@@ -139,11 +142,11 @@
   padding: 10px 14px;
   background: var(--bg-surface-2);
   font-family: var(--font-sans);
-  font-weight: 600;
+  font-weight: var(--fw-semi);
   font-size: var(--fs-3xs);
   color: var(--fg-3);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--tr-label);
   border-top: 2px solid var(--rule);
   border-inline-start: 2px solid var(--rule);
   border-inline-end: 2px solid var(--rule);
@@ -170,10 +173,10 @@
   align-items: center;
   font-family: var(--font-sans);
   font-size: var(--fs-2xs);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   padding: 3px 9px;
   border-radius: var(--radius-pill);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--tr-wide);
   white-space: nowrap;
   line-height: 1.4;
   vertical-align: middle;
@@ -245,9 +248,9 @@
 .kv-key {
   font-family: var(--font-sans);
   font-size: var(--fs-2xs);
-  font-weight: 600;
+  font-weight: var(--fw-semi);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--tr-label);
   color: var(--fg-3);
   margin: 4px 0 0;
   align-self: start;
@@ -363,7 +366,7 @@
 .callout-title {
   font-family: var(--font-sans);
   font-size: var(--fs-2xs);
-  font-weight: 600;
+  font-weight: var(--fw-semi);
   text-transform: uppercase;
   letter-spacing: var(--tr-wider);
   color: var(--fg-3);
@@ -489,7 +492,7 @@
   padding: 8px 14px 9px;
   font-family: var(--font-sans);
   font-size: var(--fs-xs);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   letter-spacing: var(--tr-wide);
   color: var(--fg-3);
   background: transparent;
@@ -559,7 +562,7 @@
 .stat-label {
   font-family: var(--font-sans);
   font-size: var(--fs-xs);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   text-transform: uppercase;
   letter-spacing: var(--tr-wider);
   color: var(--fg-3);
@@ -650,8 +653,13 @@
 .logo-wordmark {
   font-family: var(--font-serif);
   font-size: var(--fs-md);
-  font-weight: 400;
-  letter-spacing: -0.01em;
+  font-weight: var(--fw-regular);
+  /* Rounded to the scale from an unnamed -0.01em. At fs-md the difference from
+     --tr-tight is under a twentieth of a pixel. A wordmark that tracks with the
+     type scale is more coherent than one carrying its own unnamed value; if the
+     mark ever needs an exact optical figure it belongs in the token source as a
+     brand token, not as a literal in a component rule. */
+  letter-spacing: var(--tr-tight);
   line-height: 1;
   color: var(--fg-1);
 }

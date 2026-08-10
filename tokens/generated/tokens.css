@@ -645,6 +645,7 @@
   --tr-normal: 0;
   --tr-wide: 0.02em;
   --tr-wider: 0.08em;
+  --tr-label: 0.12em;
   --tr-widest: 0.18em;
   --fw-regular: 400;
   --fw-medium: 500;

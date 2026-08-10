@@ -38,12 +38,25 @@ interface Guard {
   what: string;
   /** Stated when the guard cannot run outside this repository. */
   developmentOnly?: string;
+  /**
+   * Audits the calling repository's own source rather than this package's
+   * artefacts, so it is handed the working directory. Every other guard reads
+   * the token set and needs no argument.
+   */
+  targetsConsumer?: boolean;
 }
 
 const GUARDS: Record<string, Guard> = {
   contrast: {
     script: 'check-contrast',
     what: 'every foreground/surface pair meets its WCAG threshold, across all eight palettes',
+  },
+  discipline: {
+    script: 'check-discipline',
+    what:
+      'no literal where a token exists, no var() fallback, no Greek resolving to ' +
+      '--font-serif, and nothing reimplemented that this package already exports',
+    targetsConsumer: true,
   },
   styles: {
     script: 'check-styles',
@@ -108,7 +121,8 @@ function run(name: string): number {
     return 2;
   }
 
-  const result = spawnSync(process.execPath, [script], { stdio: 'inherit' });
+  const args = guard.targetsConsumer ? [script, process.cwd()] : [script];
+  const result = spawnSync(process.execPath, args, { stdio: 'inherit' });
   if (result.error) {
     console.error(`ekdotico-check: could not run "${name}": ${result.error.message}`);
     return 2;

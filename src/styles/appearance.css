@@ -40,7 +40,7 @@
 .theme-header-label {
   font-family: var(--font-sans);
   font-size: var(--fs-3xs);
-  letter-spacing: 0.12em;
+  letter-spacing: var(--tr-label);
   text-transform: uppercase;
   color: var(--fg-4);
 }
@@ -104,7 +104,11 @@
   font-family: var(--font-sans);
   font-size: var(--fs-3xs);
   font-weight: var(--fw-medium);
-  letter-spacing: 0.04em;
+  /* Rounded to the scale from an unnamed 0.04em. This is the one sentence-case
+     label among the small sans labels, so it wants less tracking than the
+     uppercase ones; at fs-3xs the difference from 0.04em is under a quarter of
+     a pixel, which does not earn a seventh tracking step. */
+  letter-spacing: var(--tr-wide);
 }
 .theme-btn.active {
   color: var(--fg-1);

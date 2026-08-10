@@ -91,6 +91,11 @@
     "$value": "0.08em",
     "$type": "dimension"
   },
+  "tr-label": {
+    "$value": "0.12em",
+    "$type": "dimension",
+    "$description": "Uppercase micro-labels at fs-3xs and fs-2xs: table headers, table captions, key/value terms, the appearance panel's row label. Named because the value was already load-bearing in four component rules with nothing to call it, which is how a scale acquires a sixth unnamed step. Semantic rather than a scale position, because 0.12em has no free name between wider and widest, and the role is what the four sites have in common."
+  },
   "tr-widest": {
     "$value": "0.18em",
     "$type": "dimension"

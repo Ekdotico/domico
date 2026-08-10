@@ -46,6 +46,30 @@ const TOKEN_FILES =
   /(tokens?\.css|tokens\/source\/|tokens\/generated\/|tokens\/lib\/|\.generated\.|app\/og\/|opengraph-image|\/og\/route\.)/;
 const WALK_EXT = new Set(['.css', '.tsx', '.ts', '.jsx', '.js', '.mjs']);
 
+// REGIONS permitted to contain literals, for the same reason app/og/ is above.
+// A hand-written HTML document inside a source file — everything from
+// <!doctype html> to </html>, written into a window.open() popup or an iframe
+// — is a NEW document. Nothing links the token sheet into it and no :root of
+// the application is in scope, so var(--token) resolves to nothing there and a
+// literal is the only thing that can work. Same situation as satori, reached by
+// a different route.
+//
+// Exempt by line range and not by file, deliberately. A component that opens a
+// popup almost always renders in-page as well, and that half must stay checked:
+// docs/components/docs/Mermaid.tsx is 1226 lines of which 100 are the two popup
+// templates, and the other 1100 style the inline figure with tokens.
+function docTemplateLines(lines) {
+  const exempt = new Set();
+  for (let i = 0; i < lines.length; i++) {
+    if (!/<!doctype html/i.test(lines[i])) continue;
+    const end = lines.findIndex((l, j) => j > i && /<\/html>/i.test(l));
+    if (end < 0) continue; // unterminated: not a document, so not exempt
+    for (let n = i; n <= end; n++) exempt.add(n + 1);
+    i = end;
+  }
+  return exempt;
+}
+
 function walk(dir, out = []) {
   let entries;
   try { entries = readdirSync(dir); } catch { return out; }
@@ -212,6 +236,8 @@ for (const file of files) {
   const lines = src.split('\n');
   const rawLines = raw.split('\n');
   const inTokenFile = TOKEN_FILES.test(file);
+  // Line numbers that fall inside a written-out HTML document, if any.
+  const inDocTemplate = docTemplateLines(lines);
 
   // A one-line re-export is not a duplicate implementation.
   const isReExport = /^\s*export\s*\{[^}]*\}\s*from\s*['"]@ekdotico\/domico/m.test(src);
@@ -221,10 +247,16 @@ for (const file of files) {
     if (!line.trim()) return;
 
     if (!inTokenFile) {
-      for (const [re, label] of LITERAL_RULES) {
-        // Data URIs and SVG viewBox/path data are not design values.
-        if (/url\(data:|viewBox=|\bd="/.test(line)) continue;
-        if (re.test(line)) add('literals', file, n, rawLines[i], label);
+      // The literal check only. A var(--token, literal) fallback inside a
+      // written-out document is still a second source of truth — the token
+      // does not resolve there, so the fallback is the ONLY value and the
+      // var() is dead weight — so the fallback check below stays on.
+      if (!inDocTemplate.has(n)) {
+        for (const [re, label] of LITERAL_RULES) {
+          // Data URIs and SVG viewBox/path data are not design values.
+          if (/url\(data:|viewBox=|\bd="/.test(line)) continue;
+          if (re.test(line)) add('literals', file, n, rawLines[i], label);
+        }
       }
       for (const m of line.matchAll(FALLBACK)) {
         // Unknown token layer: report everything rather than silently passing.

@@ -82,7 +82,9 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/reset.css` | The reset, document defaults, accessibility primitives, scrollbars |
 | `@ekdotico/domico/styles/type.css` | The semantic type utilities alone |
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
-| `@ekdotico/domico/styles/appearance.css` | The theme switcher and the mode switcher alone |
+| `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
+| `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, and `tabs.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/domico/fonts` | Font loading configuration for the three locked families |
@@ -159,12 +161,21 @@ components are optional.
 
 An internal tool whose conventions forbid a global class layer can still render
 the appearance controls: `styles/appearance.css` is exactly the markup
-`ThemeSwitcher` and `ModeSwitcher` emit and carries nothing else.
+`ThemeSwitcher`, `ModeSwitcher`, and `AppearanceMenu` emit and carries nothing
+else.
+
+The same holds for the shared components. Each has its own entry, so a tool
+that renders three of them imports three stylesheets rather than a component
+layer holding a dozen classes it never uses. A global component layer was the
+one thing standing between the internal tools and the shared components, and
+`styles/components.css` remains for consumers that want the whole set.
 
 ```ts
 import '@ekdotico/domico/tokens.css';
 import '@ekdotico/domico/styles/reset.css';
 import '@ekdotico/domico/styles/appearance.css';
+import '@ekdotico/domico/styles/callout.css';
+import '@ekdotico/domico/styles/table.css';
 import { resolveTokens } from '@ekdotico/domico/tokens';
 
 // Values are available outside CSS, for canvas rendering, chart libraries,

@@ -44,6 +44,16 @@
     "./styles/type.css": "./dist/styles/type-only.css",
     "./styles/components.css": "./dist/styles/components.css",
     "./styles/appearance.css": "./dist/styles/appearance-only.css",
+    "./styles/primitives.css": "./dist/styles/primitives.css",
+    "./styles/badge.css": "./dist/styles/badge.css",
+    "./styles/callout.css": "./dist/styles/callout.css",
+    "./styles/figure.css": "./dist/styles/figure.css",
+    "./styles/keyvalue.css": "./dist/styles/keyvalue.css",
+    "./styles/logo.css": "./dist/styles/logo.css",
+    "./styles/section-rule.css": "./dist/styles/section-rule.css",
+    "./styles/stat.css": "./dist/styles/stat.css",
+    "./styles/table.css": "./dist/styles/table.css",
+    "./styles/tabs.css": "./dist/styles/tabs.css",
     "./components": {
       "types": "./dist/src/components/index.d.ts",
       "default": "./dist/src/components/index.js"

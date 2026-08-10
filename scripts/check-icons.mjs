@@ -123,10 +123,46 @@ if (strays.length > 0) {
   );
 }
 
+// The logo mark is drawn twice: as three subpaths for every static rendering,
+// and as one continuous path for the stroke-draw animation, which needs a
+// single element for getTotalLength to measure. Two spellings of one mark is
+// precisely the drift this script exists to prevent, so the continuous form is
+// derived-and-compared rather than trusted. It must be the subpaths in order,
+// with the descender retraced so the pen returns to the junction rather than
+// lifting.
+const logo = readFileSync(join(ROOT, 'src/components/Logo.tsx'), 'utf8');
+const subpaths = [...logo.matchAll(/^ {2}'(M [^']+)',$/gm)].map((m) => m[1]);
+const continuous = logo.match(/^ {2}'(M 72 375[^']+)';$/m)?.[1];
+
+if (subpaths.length !== 3 || !continuous) {
+  failures.push(
+    `Logo.tsx: expected three SUBPATHS and one CONTINUOUS path, found ${subpaths.length} and ` +
+      `${continuous ? 'one' : 'none'}. If they were restructured, update this check with them.`,
+  );
+} else {
+  // Each subpath after the first begins with a moveto to a point the pen has
+  // already reached, so only the drawing commands carry over.
+  const drop = (d) => d.replace(/^M [\d.]+ [\d.]+\s*/, '');
+  const [, stem, close] = subpaths;
+  const expected = `${subpaths[0]} ${drop(stem)} L 252 320 ${drop(close)}`;
+  const flat = (s) => s.replace(/\s+/g, ' ').trim();
+  if (flat(continuous) !== flat(expected)) {
+    failures.push(
+      'Logo.tsx: CONTINUOUS is not the concatenation of SUBPATHS.\n' +
+        `      continuous: ${continuous}\n` +
+        `      expected:   ${expected}\n` +
+        '      The animated mark and the static mark have to be the same mark.',
+    );
+  }
+}
+
 if (failures.length > 0) {
   console.error('check:icons — vendored icons do not match their Lucide originals:\n');
   for (const f of failures) console.error(`  - ${f}`);
   process.exit(1);
 }
 
-console.log(`check:icons — ${checked} vendored icons match lucide-static verbatim`);
+console.log(
+  `check:icons — ${checked} vendored icons match lucide-static verbatim, ` +
+    'and the logo mark is identical in both its forms',
+);

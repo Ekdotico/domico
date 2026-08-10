@@ -79,6 +79,11 @@ a {
   border-radius: var(--radius-md);
   font-family: var(--font-sans);
   font-size: var(--fs-sm);
+  /* A fixed pill has no width to constrain it, so a longer label — or a
+     translation of one — wraps to two lines and the pill loses its shape. The
+     preview site carried this declaration before it adopted the base layer;
+     holding it here means no consumer has to remember. */
+  white-space: nowrap;
   box-shadow: var(--shadow-2);
   transform: translateY(-150%);
   opacity: 0;

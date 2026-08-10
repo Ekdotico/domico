@@ -34,6 +34,11 @@ const PAIRS = [
   ['accent', 'bg-canvas', 4.5],
   ['accent-ink', 'accent', 4.5],
   ['gilt', 'bg-canvas', 4.5],
+  // Gilt text on the gilt wash — the preview banner and the LIS field labels.
+  // Absent from this list, a consumer forked a darker gilt of its own to pass,
+  // and that fork then failed on every dark palette. A surface a consumer
+  // actually draws on belongs here.
+  ['gilt', 'gilt-soft', 4.5],
   ['warn', 'bg-canvas', 4.5],
   ['danger', 'bg-canvas', 4.5],
   ['ok', 'bg-canvas', 4.5],

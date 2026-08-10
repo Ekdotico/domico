@@ -1,14 +1,21 @@
 /* ===========================================================================
-   Ekdotico base layer.
+   Ekdotico reset layer.
 
-   Everything here is application-agnostic: the reset, the document defaults,
-   the accessibility primitives, and the semantic type utilities. Nothing in
-   this file knows what the consuming application is.
+   The reset, the document defaults, the element-level normalisation, and the
+   accessibility primitives. Nothing here knows what the consuming application
+   is, and nothing here is optional: an application that renders HTML wants all
+   of it.
 
-   Import order matters. Tokens first, then this:
+   The semantic type utilities used to sit in this file and now live in
+   type.css, because they are not the same kind of thing. A reset states how
+   the document behaves; a utility offers a class an author may choose to use.
+   An application with its own type layer wants the first and not the second,
+   and could not previously take one without the other.
 
      import '@ekdotico/design-system/tokens.css';
-     import '@ekdotico/design-system/styles.css';
+     import '@ekdotico/design-system/styles/reset.css';   // this file
+     import '@ekdotico/design-system/styles/type.css';    // the utilities
+     import '@ekdotico/design-system/styles/base.css';    // both together
 
    Layout geometry — page width, sidebar width, content column — is NOT here.
    That is per-application structure, and each repository owns its own.
@@ -53,6 +60,47 @@ a {
   color: var(--fg-1);
 }
 
+/* Let the browser choose the break points. `balance` evens the lines of a
+   heading so a title does not leave one word stranded; `pretty` stops a
+   paragraph ending on an orphan. Both are progressive — an engine without them
+   wraps as it always did — and both apply to every block of copy, which is why
+   they belong here rather than in one application's stylesheet. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Replaced elements are inline by default, which leaves a descender's worth of
+   space beneath them and makes a figure look mis-padded. Block removes it, and
+   the max stops an oversized asset widening its container. */
+img,
+picture,
+svg,
+video,
+canvas {
+  display: block;
+  max-inline-size: 100%;
+}
+
+/* Form controls do not inherit type from the document in any engine. Without
+   this a button renders in the user agent's font at its own size, which is the
+   single most common way a design system's type scale is broken. */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
 /* --- Accessibility primitives -------------------------------------------- */
 
 /* WCAG 2.2 §2.4.7. A visible focus indicator on every interactive element,
@@ -61,6 +109,13 @@ a {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: var(--radius-xs);
+}
+
+/* The ring above is the only focus indicator this system draws. Engines that
+   still paint a user-agent ring on a plain :focus — a click on a button, where
+   :focus-visible does not match — would otherwise show two. */
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 /* WCAG 2.2 §2.4.1 Bypass Blocks. Hidden until focused, then pinned top-left
@@ -113,15 +168,27 @@ a {
 }
 
 /* The house motion rule is fades, with transform permitted only where a surface
-   enters or leaves the viewport. Honour a reduced-motion request by removing
-   what little movement remains, the skip link's entry included. */
+   enters or leaves the viewport. A reduced-motion request removes all of it,
+   the skip link's entry included.
+
+   This is a flat prohibition, not the 0.01ms ceiling the idiom usually uses.
+   The ceiling exists to keep transitionend and animationend firing, so a script
+   that waits on one is not left hanging — a real concern, and not one any
+   Ekdotico application has: none of the three registers either event. What the
+   ceiling does have is a failure mode. It sets duration and iteration count,
+   which does not stop a running animation, so a blinking caret freezes at
+   whatever opacity the frame caught rather than resting visible. Two components
+   in the documentation site had already worked around that with their own
+   `animation: none`, which is the tell that the ceiling was the wrong default.
+
+   Anything that genuinely needs the event to fire should state its own
+   transition inside this query rather than have every element pay for it. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    animation: none !important;
+    transition: none !important;
     scroll-behavior: auto !important;
   }
 }
@@ -162,47 +229,3 @@ html {
   background-clip: padding-box;
 }
 
-/* --- Semantic type utilities ---------------------------------------------- */
-
-.display,
-h1.display {
-  font-family: var(--font-serif);
-  font-weight: var(--fw-regular);
-  font-size: var(--fs-6xl);
-  line-height: var(--lh-tight);
-  letter-spacing: var(--tr-tighter);
-  color: var(--fg-1);
-  /* An optical-size request at the display grade. Crimson Pro exposes weight
-     and italic axes but no `opsz`, so this is currently inert. It is retained
-     deliberately: it costs nothing, and it is the correct instruction the day
-     the reading serif gains an optical-size axis. */
-  font-variation-settings: "opsz" 48;
-}
-
-.eyebrow {
-  font-family: var(--font-sans);
-  font-weight: var(--fw-medium);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-widest);
-  text-transform: uppercase;
-  color: var(--fg-3);
-}
-
-.lede {
-  font-family: var(--font-serif);
-  font-weight: var(--fw-regular);
-  font-size: var(--fs-lg);
-  line-height: var(--lh-prose);
-  color: var(--fg-2);
-  font-style: italic;
-}
-
-.serif { font-family: var(--font-serif); }
-.sans { font-family: var(--font-sans); }
-.mono { font-family: var(--font-mono); }
-.italic { font-style: italic; }
-
-.smallcaps {
-  font-variant-caps: all-small-caps;
-  letter-spacing: var(--tr-wider);
-}

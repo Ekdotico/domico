@@ -2,22 +2,26 @@
 /**
  * Assemble the shipped stylesheets.
  *
- * Three entries, so a consumer can take as much or as little as it needs.
+ * Five entries, so a consumer can take as much or as little as it needs.
  * Tokens are separate again, so the values can be had without any of the
  * opinions.
  *
- *   styles.css              base layer + primitives + components (everything)
- *   styles/base.css         reset, focus ring, skip link, type utilities
+ *   styles.css              everything: reset + type + primitives + components
+ *   styles/base.css         reset + type utilities
+ *   styles/reset.css        reset, document defaults, a11y primitives, scrollbars
+ *   styles/type.css         the semantic type utilities alone
  *   styles/components.css   primitives and the shared components
  *
  * The split exists because whole-stylesheet adoption is the wrong granularity
- * for a site that already has its own reset. deree wanted the theme switcher
- * and nothing else; importing the combined file would have layered a second
- * reset over its own, and copying the six rules it needed into its globals
- * would have recreated the duplication the package exists to remove.
+ * for an application that already has a layer of its own. deree wanted the
+ * theme switcher and nothing else; importing the combined file would have
+ * layered a second reset over its own. praktico wants the reset and not the
+ * utilities, because its conventions forbid a global utility layer — and a
+ * reset and a set of optional classes are not the same kind of thing, so
+ * shipping them welded together made that impossible to express.
  *
- * The combined entry keeps the name and the contents it already had, so
- * nothing that imports `styles.css` today has to change.
+ * Every entry that existed before keeps its name and its contents, so nothing
+ * that imports one today has to change.
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -30,7 +34,9 @@ mkdirSync(OUT, { recursive: true });
 
 const source = (f) => readFileSync(join(ROOT, 'src', 'styles', f), 'utf8').trim();
 
-const base = source('base.css');
+const reset = source('reset.css');
+const type = source('type.css');
+const base = [reset, type].join('\n\n');
 const components = [source('primitives.css'), source('components.css')].join('\n\n');
 
 const header = (what, note) => `/**
@@ -55,6 +61,16 @@ const files = [
     'base-only.css',
     `${header('base layer only', "   import '@ekdotico/design-system/styles/base.css';")}\n${base}\n`,
     'base layer only',
+  ],
+  [
+    'reset-only.css',
+    `${header('reset layer only', "   import '@ekdotico/design-system/styles/reset.css';")}\n${reset}\n`,
+    'reset layer only',
+  ],
+  [
+    'type-only.css',
+    `${header('semantic type utilities only', "   import '@ekdotico/design-system/styles/type.css';")}\n${type}\n`,
+    'type utilities only',
   ],
   [
     'components.css',

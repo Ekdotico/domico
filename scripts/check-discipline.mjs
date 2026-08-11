@@ -459,19 +459,33 @@ if (!IS_PACKAGE_ITSELF) {
   // package's own catalogue necessarily contains the filename.
   const CASE_ARM = /^\s*[\w*/.\[\]{},-]+\)\s*(?:[\w]+=|;;)/;
 
-  // Per MATCH, not per line, and the distinction is load-bearing here. A hook's
-  // payload is one enormous single-line JSON string, so it contains the correct
-  // package reference and the stale local one at once — a line-level allowance let
-  // the real defect through while still reporting the comments above it. The only
-  // acceptable form is the package path immediately in front of the filename, so
-  // test exactly that and nothing looser.
   const CORRECT_PREFIX = '@ekdotico/domico/docs/';
 
   for (const file of walkInjectors(APP)) {
     readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
       if (CASE_ARM.test(line)) return;
       for (const m of line.matchAll(DOC_REF)) {
+        // The correct path, verbatim.
         if (line.slice(0, m.index).endsWith(CORRECT_PREFIX)) continue;
+
+        // A glob that also matches the package path. `*/docs/design-tokens.md` is
+        // how the hook's own matcher is written and documented, and it resolves
+        // against node_modules as readily as against a local copy.
+        if (line.slice(0, m.index).endsWith('*/docs/')) continue;
+
+        // A bare mention on a line that ALREADY gives the correct path for the
+        // same document. Then the reference is contextual prose — in practice a
+        // sentence saying the local copy is deleted and naming what to read
+        // instead — rather than a direction to a local file.
+        //
+        // This is narrower than it looks, and the narrowness is the point. An
+        // earlier version allowed any line mentioning `@ekdotico/domico`, which was
+        // too loose: the original defect's payload named the package's TOKEN
+        // STYLESHEET while sending the agent to a local catalogue, and passed. The
+        // test is the package path for THIS document, so that payload still fails
+        // and a payload that states both the right path and the history does not.
+        if (line.includes(`${CORRECT_PREFIX}${m[1]}.md`)) continue;
+
         add('docfork', file, i + 1, line,
           `HOOK: injects a local ${m[1]}.md into an agent — must be ${PACKAGE_DOCS}/${m[1]}.md`);
         break;

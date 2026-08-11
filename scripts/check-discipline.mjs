@@ -376,6 +376,28 @@ function walkMarkdown(dir, out = []) {
   return out;
 }
 
+// Anything under .claude/hooks/, whatever its extension, plus the settings file
+// that can carry an inline hook. These INJECT text into a model rather than
+// waiting to be read, and that difference is why they need their own rule below.
+function walkInjectors(appDir, out = []) {
+  const hooks = join(appDir, '.claude', 'hooks');
+  const walk = (dir) => {
+    let entries;
+    try { entries = readdirSync(dir); } catch { return; }
+    for (const e of entries) {
+      const p = join(dir, e);
+      let st;
+      try { st = statSync(p); } catch { continue; }
+      if (st.isDirectory()) walk(p);
+      else out.push(p);
+    }
+  };
+  walk(hooks);
+  const settings = join(appDir, '.claude', 'settings.json');
+  if (existsSync(settings)) out.push(settings);
+  return out;
+}
+
 if (!IS_PACKAGE_ITSELF) {
   const markdown = walkMarkdown(APP);
   const DOC_REF = /(design-tokens|visual-ruleset)\.md/g;
@@ -416,6 +438,45 @@ if (!IS_PACKAGE_ITSELF) {
         }
       });
     }
+  }
+
+  // Hooks, and the opposite rule, which is the point of treating them separately.
+  //
+  // A document waits to be read, so a sentence naming a deleted file is usually
+  // history and is exempted above. A hook INJECTS its text into a model on every
+  // matching edit, so it is never history: it is an instruction being given now.
+  // A local path there is wrong whichever way it resolves — if the file exists it
+  // is a fork, and if it does not the agent is sent nowhere as the first thing it
+  // is told. So this arm fires unconditionally.
+  //
+  // Both consuming applications shipped exactly this defect and the markdown-only
+  // walk could not see it: one hook opened with "Read the catalogue first —
+  // docs/design-tokens.md, end to end" for a file that had just been deleted.
+  // A shell case arm is a pattern deciding WHETHER the hook fires on the file being
+  // edited. It is not text handed to a model, so a document name there is a
+  // matcher and not an instruction — the first version of this arm flagged two of
+  // them and would have left the hook unfixable, since the arm that matches the
+  // package's own catalogue necessarily contains the filename.
+  const CASE_ARM = /^\s*[\w*/.\[\]{},-]+\)\s*(?:[\w]+=|;;)/;
+
+  // Per MATCH, not per line, and the distinction is load-bearing here. A hook's
+  // payload is one enormous single-line JSON string, so it contains the correct
+  // package reference and the stale local one at once — a line-level allowance let
+  // the real defect through while still reporting the comments above it. The only
+  // acceptable form is the package path immediately in front of the filename, so
+  // test exactly that and nothing looser.
+  const CORRECT_PREFIX = '@ekdotico/domico/docs/';
+
+  for (const file of walkInjectors(APP)) {
+    readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+      if (CASE_ARM.test(line)) return;
+      for (const m of line.matchAll(DOC_REF)) {
+        if (line.slice(0, m.index).endsWith(CORRECT_PREFIX)) continue;
+        add('docfork', file, i + 1, line,
+          `HOOK: injects a local ${m[1]}.md into an agent — must be ${PACKAGE_DOCS}/${m[1]}.md`);
+        break;
+      }
+    });
   }
 }
 

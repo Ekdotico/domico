@@ -1,16 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 80" role="img" aria-label="Ekdotico">
   <!--
-    UNFINISHED, for the same reason as logo-wordmark-greek.svg: the wordmark is
-    live text rather than outlines, so it renders in whatever face the
-    environment can supply. It now states its own font-family, font-size, and
-    fill, where before it stated none of the three and inherited the lot — at a
-    user-agent default of 16px inside a 360-unit viewBox. The family is named
-    literally because an asset rendered through <img> has no cascade for the
-    serif font token to resolve against.
+    UNFINISHED: the wordmark is live text rather than outlines, so it renders in
+    whatever face the environment can supply. It now states its own font-family,
+    font-size, and fill, where before it stated none of the three and inherited
+    the lot — at a user-agent default of 16px inside a 360-unit viewBox. The
+    family is named literally because an asset rendered through <img> has no
+    cascade for the font token to resolve against, which is the one place in this
+    system where naming a family rather than a token is correct.
 
-    STILL TO DO: convert the <text> node to <path>. See the longer note in
-    logo-wordmark-greek.svg for why the conversion was abandoned rather than
-    approximated.
+    STILL TO DO: convert the <text> node to <path>.
+
+    A Greek wordmark had the same fault and used to carry the longer version of
+    this note. It was deleted at 0.12.0 rather than finished — there is one logo
+    and it is the hand-drawn mark above, which is paths throughout — so the
+    reasoning is recorded here instead. The conversion was abandoned rather than
+    approximated because outlining needs the real face and a tool to trace it;
+    hand-fitting paths to a specimen produces letterforms that are close to the
+    typeface and not of it, which is worse than live text, because live text
+    announces the problem the first time it resolves to a fallback while a bad
+    outline never does.
+
+    Until it is outlined, anything that places this file depends on Crimson Pro
+    resolving in that context. A mark whose letterforms depend on a webfont
+    resolving is not a mark. Prefer the LogoMark component or logo-mark.svg.
   -->
   <g transform="translate(10 18)" class="mark" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round">
     <path d="M2 40 C 12 10, 28 10, 36 40"></path>

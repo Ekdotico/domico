@@ -44,7 +44,8 @@ A literal `px` font size is a defect on its own terms, independent of the
 system: the scale is `rem` so that a reader who raised their browser font size
 scales the whole interface with it.
 
-*Enforced by* `ekdotico-check discipline`, and `check:styles` within the package.
+*Enforced by* `ekdotico-check discipline`, which reads the token stylesheet to
+decide what counts as a literal, so the guard cannot fall behind the scale.
 
 ### Rule 2 — Never write a fallback value into `var()`
 
@@ -260,8 +261,9 @@ soft surface, not a button bouncing. Timing lives in `--dur-fast` (140ms),
 numerically equals a token today is not exempt, because it forks the moment
 either moves.
 
-*Enforced by* `check:styles`, and by the ruleset build, which rejects a
-`cubic-bezier` with a control point outside `[0,1]` on the y axis.
+*Enforced by* `ekdotico-check discipline`, which treats a duration and an easing
+as design values and so fails on a literal one, and by `check:ruleset`, which
+rejects a `cubic-bezier` with a control point outside `[0,1]` on the y axis.
 
 ### Rule 11 — Reduced motion is a flat prohibition, and nothing may wait on `transitionend`
 
@@ -293,8 +295,10 @@ never fires, so the component hangs on screen permanently — for exactly the
 readers least able to work around it. Keep the surface mounted and toggle a
 class.
 
-*Enforced by* `check:styles`, and by the ruleset build, which requires the flat
-prohibition present and `0.01ms` absent.
+*Enforced by* `check:styles`, which rejects a `0.01ms` ceiling anywhere in the
+shipped stylesheets — stripping comments first, so the long note in `reset.css`
+explaining why the ceiling is wrong is not mistaken for the ceiling itself — and by
+`check:ruleset`, which additionally requires the flat prohibition to be present.
 
 ### Rule 12 — Never transition `visibility` with a duration
 
@@ -342,8 +346,12 @@ surface is typographic convention rather than decoration and is permitted — bu
 if that exception is house style, it belongs in writing with its ceiling named.
 An unwritten exception is how a ban erodes.
 
-*Enforced by* `check:styles`, and by the ruleset build, which fails on any
-`border-inline-start` above 1px.
+*Enforced by* `check:styles`, and the adjective is the test: it fails on an inline
+border above 1px unless the colour comes from the rule scale. A thick border in
+`--rule` is an outline, which the table component draws cell by cell because a
+table cannot take a border with rounded corners cleanly; a thick border in an
+accent or a state tint is the stripe. `check:ruleset` holds the ruleset document
+itself to the stricter form, failing on any `border-inline-start` above 1px.
 
 ### Rule 14 — Contrast is owed by all eight palettes, not the default one
 
@@ -412,33 +420,60 @@ consumers — a caret in an application's manifest is caught by review only.
 
 ## Current state
 
-**Dated 2026-08-11, against `@ekdotico/domico@0.11.0`.** Everything above is a
-rule; everything here is a fact with a shelf life. Twenty claims from the first
-edition were re-verified against the code on this date; seventeen had been fixed
-and are not repeated.
+**Dated 2026-08-11, against `@ekdotico/domico@0.12.1`.** Everything above is a
+rule; everything here is a fact with a shelf life. Paths are relative to the
+estate root, one level above this package, since the findings concern sibling
+repositories.
 
-Three findings survive.
+One finding survives.
 
 | # | Finding | Rule | Where |
 | --- | --- | --- | --- |
-| 1 | `docs` and `deree` depend on `^0.11.0`; only `praktico` pins exactly | 16 | `docs/package.json`, `deree/package.json` |
-| 2 | One consuming repository still declares its own local token catalogue authoritative | 15 | `internal/praktico/CLAUDE.md` |
-| 3 | The Latin wordmark sets two nodes in live `<text>` rather than outlined paths | 4 | `assets/logo/logo-wordmark.svg` |
+| 1 | The Latin wordmark sets one node in live `<text>` rather than outlined paths | 4 | `domico/assets/logo/logo-wordmark.svg` |
 
-Finding 3 is what remains of a pair. The Greek wordmark had the same fault and was
-deleted rather than outlined: there is one logo, the hand-drawn mark, and it is
-paths throughout. The Latin wordmark is kept for now and carries the defect, so
-anything that places it is depending on a webfont resolving in that context.
+It is what remains of a pair. The Greek wordmark had the same fault and was deleted
+rather than outlined: there is one logo, the hand-drawn mark, and it is paths
+throughout. The Latin wordmark is kept for now and carries the defect, so anything
+that places it depends on a webfont resolving in that context.
+
+### What the previous edition listed, and why it is gone
+
+This section is now on its second correction in a day, which is the strongest
+argument available for keeping state out of the rules.
+
+The first edition made twenty factual claims interleaved with its rules;
+re-verification found seventeen already fixed. This edition reduced those to three
+findings — and two of the three were closed within hours of being written, by the
+same work that shipped the document:
+
+- `docs` and `deree` carried `^0.11.0` while only `praktico` pinned exactly. All
+  three now pin `0.12.1`, and `save-exact=true` is in each `.npmrc` so the caret
+  cannot return through a `pnpm add`.
+- One consuming repository declared its own local token catalogue authoritative.
+  Both local catalogues are deleted, every instruction file points at
+  `node_modules`, and `docfork` now fails a repository that reintroduces one.
+
+A third defect was found in the same pass and fixed rather than recorded: both
+applications' PreToolUse hooks still injected the deleted local path into an agent
+on every styling edit. The guard could not see it, because it walked only
+markdown. It now reads hooks too, under the opposite rule — a document naming a
+deleted file is usually history, but a hook naming one is an instruction being
+given now, so there the reference is a defect whether the file exists or not.
 
 ## Provenance
 
-Compiled against `@ekdotico/domico@0.11.0` as consumed by `docs`, `deree`, and
+Compiled against `@ekdotico/domico@0.12.1` as consumed by `docs`, `deree`, and
 `internal/praktico`. Every colour, size, and duration named here is the token
 value it names. Contrast figures are measured, not asserted. Where a rule cites a
 mechanism, the mechanism was verified in a running build rather than reasoned
 about — the `var()` fallback finding, the `visibility` discrete-property finding,
 and the painted-pixel diagram check were each established that way, and each
 contradicted the reading that source code alone supported.
+
+Each guard named above was checked against what it actually asserts, not against
+its name. Three rules cited `check:styles` for properties it never examined; the
+assertions were added to the script rather than removed from the rules, and both
+were mutation-tested.
 
 The visual edition of this document is built by `ruleset/build.mjs` and checked
 against its own rules by `ruleset/verify.mjs`.

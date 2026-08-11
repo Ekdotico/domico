@@ -60,7 +60,9 @@ const GUARDS: Record<string, Guard> = {
   },
   styles: {
     script: 'check-styles',
-    what: 'every shipped stylesheet has balanced comments and braces',
+    what:
+      'every shipped stylesheet parses, carries no 0.01ms motion ceiling, and ' +
+      'draws no coloured edge stripe',
   },
   appearance: {
     script: 'check-appearance',
@@ -99,7 +101,7 @@ function list(): void {
   console.log(`\nWith no arguments: ${DEFAULT_GUARDS.join(', ')}.`);
 }
 
-function run(name: string, target: string): number {
+function run(name: string, target: string, extra: string[] = []): number {
   const guard = GUARDS[name];
   if (!guard) {
     console.error(`ekdotico-check: no guard named "${name}". Run ekdotico-check --list.`);
@@ -121,7 +123,7 @@ function run(name: string, target: string): number {
     return 2;
   }
 
-  const args = guard.targetsConsumer ? [script, target] : [script];
+  const args = guard.targetsConsumer ? [script, target, ...extra] : [script, ...extra];
   const result = spawnSync(process.execPath, args, { stdio: 'inherit' });
   if (result.error) {
     console.error(`ekdotico-check: could not run "${name}": ${result.error.message}`);
@@ -148,11 +150,20 @@ if (argv.includes('--help') || argv.includes('-h') || argv.includes('--list')) {
 // mistyped guard name and is reported, rather than being silently swallowed as a
 // directory that does not exist.
 const names: string[] = [];
+const flags: string[] = [];
 let target: string | undefined;
 
 for (const arg of argv) {
   if (arg in GUARDS) {
     names.push(arg);
+  } else if (arg.startsWith('--')) {
+    // Forwarded, not interpreted. `ekdotico-check discipline --quiet` used to exit
+    // 2 with "no guard named --quiet" while every check underneath it passed — the
+    // same fails-green shape as reading a trailing `.` as a guard name, and just as
+    // bad in a pipeline, because the gate goes red with nothing wrong. The guards
+    // own their own flags; this CLI has no business vetting them, so an unknown one
+    // is the guard's to reject.
+    flags.push(arg);
   } else if (arg === '.' || arg === '..' || /^[.~/]/.test(arg) || existsSync(arg)) {
     if (target !== undefined) {
       console.error(`ekdotico-check: more than one directory given ("${target}", "${arg}").`);
@@ -169,7 +180,7 @@ const requested = names.length > 0 ? names : [...DEFAULT_GUARDS];
 const resolvedTarget = resolve(target ?? process.cwd());
 let worst = 0;
 for (const name of requested) {
-  const status = run(name, resolvedTarget);
+  const status = run(name, resolvedTarget, flags);
   if (status > worst) worst = status;
 }
 process.exit(worst);

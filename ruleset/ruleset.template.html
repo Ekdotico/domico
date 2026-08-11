@@ -759,7 +759,8 @@ font-size: 15px;</pre>
         <p style="font-size: var(--fs-2xs); margin: var(--sp-2) 0 0;">Silent fallback. No error, no warning &mdash; just a different typeface per OS.</p>
       </div>
     </div>
-    <p>The Greek wordmark has the same fault one layer deeper: <code>domico/assets/logo/logo-wordmark-greek.svg:10&ndash;11</code> uses live <code>&lt;text&gt;</code> with no <code>font-family</code>, its <code>&lt;defs&gt;</code> block is empty, and the <code>.latin</code> and <code>.greek</code> classes it references are defined nowhere. Outline both nodes to paths: a mark whose letterforms depend on a webfont resolving is not a mark.</p>
+    <p>A standalone asset is the one place the rule inverts. An SVG that ships as a file has no cascade to read a custom property from, so naming a family literally is the only thing that can work there &mdash; correct in a shipped asset and nowhere else. Better still is not to need the exception: <strong>a mark whose letterforms depend on a webfont resolving is not a mark.</strong> Outline the glyphs to paths.</p>
+    <p>There is one logo and it is the hand-drawn mark, which is paths throughout. A Greek wordmark that set its name in live <code>&lt;text&gt;</code> was deleted at 0.12.0 rather than finished, because what it drew depended on the context it was placed in. <code>domico/assets/logo/logo-wordmark.svg</code> still carries the same fault in one node and is the last of it.</p>
   </div>
 
   <div class="rule-block">

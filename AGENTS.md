@@ -22,7 +22,7 @@ node_modules/@ekdotico/domico/docs/visual-ruleset.md   the sixteen rules, with t
 
 **Read the copy in `node_modules`, never a copy in the repository you are
 editing.** If the repository has its own token catalogue or its own restatement
-of these rules, that file is a fork and it is wrong to trust it — see rule 14
+of these rules, that file is a fork and it is wrong to trust it — see rule 15
 below, which exists because this exact thing happened in three repositories at
 once.
 
@@ -151,7 +151,7 @@ Do not pass `label` or `triggerLabel`, and do not wrap it — an application
 supplies placement and nothing else. Two instances on one page means two
 elements claiming the same accessible name.
 
-## Rule 14, stated plainly, because it is the one that compounds
+## Rule 15, stated plainly, because it is the one that compounds
 
 **Documentation that contradicts the code is a defect with a severity.** It
 ranks above a wrong colour, because enforcement hooks feed these files to agents

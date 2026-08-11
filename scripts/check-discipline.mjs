@@ -236,6 +236,38 @@ if (!IS_PACKAGE_ITSELF && PACKAGE_EXPORTS.length === 0) {
   process.exit(2);
 }
 
+// Class names that a stylesheet sets to a Greek-capable family. Commissioner and
+// Fira Code both ship Greek; Crimson Pro does not, which is the whole of rule 4.
+//
+// Without this, every Greek string in markup warned forever, including the ones
+// already set correctly — and a permanent warning is worse than either a pass or
+// a failure, because it teaches a reader to skip the column it appears in. Now a
+// Greek string warns only when nothing can be shown to give it a face that
+// covers the glyphs.
+function greekCapableClasses(cssFiles) {
+  const names = new Set();
+  for (const f of cssFiles) {
+    let src;
+    try { src = stripCssComments(readFileSync(f, 'utf8')); } catch { continue; }
+    for (const rule of src.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (!/--font-sans|--font-mono/.test(rule[2])) continue;
+      for (const cls of rule[1].matchAll(/\.([A-Za-z0-9_-]+)/g)) names.add(cls[1]);
+    }
+  }
+  return names;
+}
+const GREEK_OK = greekCapableClasses(files.filter((f) => extname(f) === '.css'));
+
+// A CSS Module is authored kebab-case and reached camelCase through the styles
+// object, so both spellings have to resolve to the same class.
+const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+function hasGreekCapableClass(line) {
+  for (const m of line.matchAll(/[A-Za-z][\w-]*/g)) {
+    if (GREEK_OK.has(m[0]) || GREEK_OK.has(kebab(m[0]))) return true;
+  }
+  return false;
+}
+
 for (const file of files) {
   const raw = readFileSync(file, 'utf8');
   const isCss = extname(file) === '.css';
@@ -273,9 +305,9 @@ for (const file of files) {
       }
     }
 
-    if (GREEK.test(line)) {
+    if (GREEK.test(line) && !(!isCss && hasGreekCapableClass(line))) {
       add('greek', file, n, rawLines[i],
-        isCss ? 'Greek in CSS — confirm the face' : 'Greek text — must not resolve to --font-serif');
+        isCss ? 'Greek in CSS — confirm the face' : 'Greek text with no class that sets --font-sans');
     }
   });
 
@@ -317,10 +349,18 @@ for (const file of files) {
 const SHIPPED_DOCS = new Set(['design-tokens.md', 'visual-ruleset.md']);
 const PACKAGE_DOCS = 'node_modules/@ekdotico/domico/docs';
 
-// Only files that are actually fed to an agent. A changelog or a design note may
-// mention a filename in passing; an instruction file naming a local path is what
-// sends the next edit to the wrong document.
-const INSTRUCTION_FILE = /(^|\/)(CLAUDE|AGENTS)\.md$|\.impeccable\.md$|(^|\/)\.claude\//;
+// Only files that are actually fed to an agent as instructions. A changelog or a
+// design note may mention a filename in passing; an instruction file naming a
+// local path is what sends the next edit to the wrong document.
+//
+// Deliberately NOT all of .claude/. That directory also holds archived reviews
+// and audit records, which are dated accounts of what was true when they were
+// written — a record that named a path correctly in May is not a defect in
+// August, and rewriting it to satisfy a guard would falsify the history the
+// record exists to keep. Only the directories whose contents are loaded as
+// instructions are checked.
+const INSTRUCTION_FILE =
+  /(^|\/)(CLAUDE|AGENTS)\.md$|\.impeccable\.md$|(^|\/)\.claude\/(commands|hooks|agents|skills|rules)\//;
 
 function walkMarkdown(dir, out = []) {
   let entries;
@@ -359,6 +399,10 @@ if (!IS_PACKAGE_ITSELF) {
         // itself, because the package path sits in front of the filename.
         if (line.slice(Math.max(0, m.index - 60), m.index).includes('@ekdotico/domico')) continue;
         add('docfork', file, i + 1, line, `sends an agent to a local ${m[1]}.md`);
+        // One finding per line. A markdown link names the file twice — once as
+        // the text and once as the target — so counting matches double-reported
+        // every link and inflated the total by roughly half.
+        break;
       }
     });
   }

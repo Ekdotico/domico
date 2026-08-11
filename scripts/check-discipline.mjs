@@ -380,31 +380,42 @@ if (!IS_PACKAGE_ITSELF) {
   const markdown = walkMarkdown(APP);
   const DOC_REF = /(design-tokens|visual-ruleset)\.md/g;
 
-  for (const file of markdown) {
-    const name = basename(file);
-    const rel = relative(APP, file);
+  const localCopies = markdown.filter((f) => SHIPPED_DOCS.has(basename(f)));
+  for (const file of localCopies) {
+    add('docfork', file, 1, relative(APP, file),
+      `@ekdotico/domico ships this document — delete it and read ${PACKAGE_DOCS}/${basename(file)}`);
+  }
 
-    if (SHIPPED_DOCS.has(name)) {
-      add('docfork', file, 1, rel,
-        `@ekdotico/domico ships this document — delete it and read ${PACKAGE_DOCS}/${name}`);
-      continue;
+  // The prose half runs ONLY where a local copy actually exists, and that
+  // condition is the rule rather than an optimisation. A reference cannot send
+  // anyone to a stale catalogue that is not there: with the file deleted, naming
+  // it is either a dead link or — far more often — a sentence explaining that it
+  // was removed and what to read instead. Documenting a removal is exactly what
+  // these files should do, and the first two attempts at this check forbade it.
+  //
+  // Attempt one looked back 60 characters from each match for the package path,
+  // which failed on a sentence that pointed at node_modules and then named the
+  // old path while explaining why it went. Attempt two allowed any line
+  // mentioning the package, which failed on wrapped markdown, where the package
+  // path and the filename land on different lines. Both were guesses at intent
+  // from surrounding text. Whether the file exists is not a guess.
+  if (localCopies.length > 0) {
+    for (const file of markdown) {
+      const rel = relative(APP, file);
+      if (SHIPPED_DOCS.has(basename(file))) continue;
+      if (!INSTRUCTION_FILE.test(rel)) continue;
+
+      readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+        if (line.includes('@ekdotico/domico')) return;
+        for (const m of line.matchAll(DOC_REF)) {
+          add('docfork', file, i + 1, line, `sends an agent to the local ${m[1]}.md`);
+          // One finding per line. A markdown link names the file twice — once as
+          // the text and once as the target — so counting matches double-reported
+          // every link and inflated the total by roughly half.
+          break;
+        }
+      });
     }
-
-    if (!INSTRUCTION_FILE.test(rel)) continue;
-
-    readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
-      for (const m of line.matchAll(DOC_REF)) {
-        // A reference that already goes through the package is the correct form.
-        // Checked against the text preceding the match rather than the match
-        // itself, because the package path sits in front of the filename.
-        if (line.slice(Math.max(0, m.index - 60), m.index).includes('@ekdotico/domico')) continue;
-        add('docfork', file, i + 1, line, `sends an agent to a local ${m[1]}.md`);
-        // One finding per line. A markdown link names the file twice — once as
-        // the text and once as the target — so counting matches double-reported
-        // every link and inflated the total by roughly half.
-        break;
-      }
-    });
   }
 }
 

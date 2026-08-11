@@ -30,6 +30,13 @@ const SKIP_DIRS = new Set([
   // pattern necessarily contains that pattern, and this script flagged its own
   // source on the first run.
   'scripts',
+  // Same category as scripts/, reached from the other direction: ruleset/ holds
+  // the visual ruleset's build script and its self-compliance guard. The build
+  // EMITS @font-face rules for a standalone document, so it necessarily writes a
+  // literal font-family — there is no cascade in an inlined artifact to read a
+  // token from — and the guard necessarily contains every pattern it forbids.
+  // Not shipped in the package's files array either.
+  'ruleset',
   // The pre-package design system, kept as reference material. It is superseded
   // by @ekdotico/domico and is not app code; auditing it reports 143 literals
   // that are correct in their own context and actionable in none.
@@ -229,6 +236,38 @@ if (!IS_PACKAGE_ITSELF && PACKAGE_EXPORTS.length === 0) {
   process.exit(2);
 }
 
+// Class names that a stylesheet sets to a Greek-capable family. Commissioner and
+// Fira Code both ship Greek; Crimson Pro does not, which is the whole of rule 4.
+//
+// Without this, every Greek string in markup warned forever, including the ones
+// already set correctly — and a permanent warning is worse than either a pass or
+// a failure, because it teaches a reader to skip the column it appears in. Now a
+// Greek string warns only when nothing can be shown to give it a face that
+// covers the glyphs.
+function greekCapableClasses(cssFiles) {
+  const names = new Set();
+  for (const f of cssFiles) {
+    let src;
+    try { src = stripCssComments(readFileSync(f, 'utf8')); } catch { continue; }
+    for (const rule of src.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (!/--font-sans|--font-mono/.test(rule[2])) continue;
+      for (const cls of rule[1].matchAll(/\.([A-Za-z0-9_-]+)/g)) names.add(cls[1]);
+    }
+  }
+  return names;
+}
+const GREEK_OK = greekCapableClasses(files.filter((f) => extname(f) === '.css'));
+
+// A CSS Module is authored kebab-case and reached camelCase through the styles
+// object, so both spellings have to resolve to the same class.
+const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+function hasGreekCapableClass(line) {
+  for (const m of line.matchAll(/[A-Za-z][\w-]*/g)) {
+    if (GREEK_OK.has(m[0]) || GREEK_OK.has(kebab(m[0]))) return true;
+  }
+  return false;
+}
+
 for (const file of files) {
   const raw = readFileSync(file, 'utf8');
   const isCss = extname(file) === '.css';
@@ -266,9 +305,9 @@ for (const file of files) {
       }
     }
 
-    if (GREEK.test(line)) {
+    if (GREEK.test(line) && !(!isCss && hasGreekCapableClass(line))) {
       add('greek', file, n, rawLines[i],
-        isCss ? 'Greek in CSS — confirm the face' : 'Greek text — must not resolve to --font-serif');
+        isCss ? 'Greek in CSS — confirm the face' : 'Greek text with no class that sets --font-sans');
     }
   });
 
@@ -295,9 +334,84 @@ for (const file of files) {
   }
 }
 
+// -------------------------------------------------------------- 5. doc forks
+// Rule 15. The package ships the token catalogue and the ruleset, so a copy in a
+// consuming repository is a snapshot of a moving target. This is not a tidiness
+// check: enforcement hooks feed these files to agents on every edit, so a stale
+// copy does not merely mislead a reader — it instructs a machine to reintroduce
+// the fault it describes. Two consumers each kept their own catalogue and drifted
+// until 388 of 452 lines differed; neither was updated when the applications
+// migrated onto the package.
+//
+// Markdown is not in WALK_EXT, so this walks separately. The package is where the
+// canonical documents live, so it is exempt by the same manifest test as the
+// reimplementation check.
+const SHIPPED_DOCS = new Set(['design-tokens.md', 'visual-ruleset.md']);
+const PACKAGE_DOCS = 'node_modules/@ekdotico/domico/docs';
+
+// Only files that are actually fed to an agent as instructions. A changelog or a
+// design note may mention a filename in passing; an instruction file naming a
+// local path is what sends the next edit to the wrong document.
+//
+// Deliberately NOT all of .claude/. That directory also holds archived reviews
+// and audit records, which are dated accounts of what was true when they were
+// written — a record that named a path correctly in May is not a defect in
+// August, and rewriting it to satisfy a guard would falsify the history the
+// record exists to keep. Only the directories whose contents are loaded as
+// instructions are checked.
+const INSTRUCTION_FILE =
+  /(^|\/)(CLAUDE|AGENTS)\.md$|\.impeccable\.md$|(^|\/)\.claude\/(commands|hooks|agents|skills|rules)\//;
+
+function walkMarkdown(dir, out = []) {
+  let entries;
+  try { entries = readdirSync(dir); } catch { return out; }
+  for (const e of entries) {
+    if (SKIP_DIRS.has(e)) continue;
+    const p = join(dir, e);
+    let st;
+    try { st = statSync(p); } catch { continue; }
+    if (st.isDirectory()) walkMarkdown(p, out);
+    else if (extname(p) === '.md') out.push(p);
+  }
+  return out;
+}
+
+if (!IS_PACKAGE_ITSELF) {
+  const markdown = walkMarkdown(APP);
+  const DOC_REF = /(design-tokens|visual-ruleset)\.md/g;
+
+  for (const file of markdown) {
+    const name = basename(file);
+    const rel = relative(APP, file);
+
+    if (SHIPPED_DOCS.has(name)) {
+      add('docfork', file, 1, rel,
+        `@ekdotico/domico ships this document — delete it and read ${PACKAGE_DOCS}/${name}`);
+      continue;
+    }
+
+    if (!INSTRUCTION_FILE.test(rel)) continue;
+
+    readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+      for (const m of line.matchAll(DOC_REF)) {
+        // A reference that already goes through the package is the correct form.
+        // Checked against the text preceding the match rather than the match
+        // itself, because the package path sits in front of the filename.
+        if (line.slice(Math.max(0, m.index - 60), m.index).includes('@ekdotico/domico')) continue;
+        add('docfork', file, i + 1, line, `sends an agent to a local ${m[1]}.md`);
+        // One finding per line. A markdown link names the file twice — once as
+        // the text and once as the target — so counting matches double-reported
+        // every link and inflated the total by roughly half.
+        break;
+      }
+    });
+  }
+}
+
 // ------------------------------------------------------------------- report
-const ORDER = ['greek', 'dupes', 'fallbacks', 'literals'];
+const ORDER = ['docfork', 'greek', 'dupes', 'fallbacks', 'literals'];
 const LABEL = {
+  docfork: 'Local copy of a document the package ships (Rule 15)',
   greek: 'Greek glyphs must never resolve to --font-serif',
   dupes: 'App reimplements a package export',
   fallbacks: 'var(--token, literal) — a second source of truth',

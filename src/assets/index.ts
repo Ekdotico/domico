@@ -55,15 +55,17 @@ export function logoAssetPath(
 /**
  * Standalone marks and wordmarks, outside the sized grid.
  *
- * The Greek wordmark is the Ekdotico name set in Greek characters. It is a
- * brand asset in its own right, not a localisation of the Latin wordmark, and
- * it is not interchangeable with it — check before using either.
+ * There is one logo and it is the hand-drawn mark. A Greek wordmark used to sit
+ * here as well, described as a brand asset in its own right rather than a
+ * localisation of the Latin one; it was removed because it was never finished.
+ * It set its letterforms in live `<text>`, so what it drew depended on a webfont
+ * resolving in whatever context it was placed — which makes it a rendering of a
+ * name rather than a mark.
  */
 export const brandAssets = {
   mark: '../assets/logo/logo-mark.svg',
   markBranded: '../assets/logo/logo-mark-branded.svg',
   wordmark: '../assets/logo/logo-wordmark.svg',
-  wordmarkGreek: '../assets/logo/logo-wordmark-greek.svg',
 } as const;
 
 /**

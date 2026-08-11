@@ -3,3 +3,11 @@ dist/
 *.tsbuildinfo
 .DS_Store
 *.log
+
+# The built visual ruleset. A build output, not a source: it inlines six woff2
+# faces as base64, so committing it would put a quarter of a megabyte of binary
+# into every diff that rebuilds it, and the faces are content-hashed by the docs
+# font build so that diff would churn on an unrelated repository's build. Build it
+# with `pnpm build:ruleset`; `pnpm check:ruleset` falls back to the template when
+# it is absent, which is how the gate runs in CI.
+ruleset/ruleset.html

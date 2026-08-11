@@ -107,11 +107,16 @@ the word most likely to be affected.
 Use `--font-sans`. This is a stated exception to the role rule, for glyphs the
 serif cannot set at all, and it is not licence to mix roles elsewhere.
 
-**A standalone asset is a second exception, in the other direction.** An SVG
-that ships as a file has no cascade to read a custom property from, so the Greek
-wordmark names `Commissioner` as a literal family. That is correct there and
-nowhere else. A mark whose letterforms depend on a webfont resolving is not a
-mark: outline the glyphs to paths.
+**A standalone asset is a second exception, in the other direction.** An SVG that
+ships as a file has no cascade to read a custom property from, so naming a family
+literally is the only thing that can work there. That is correct in a shipped
+asset and nowhere else.
+
+But prefer not to need the exception at all: **a mark whose letterforms depend on
+a webfont resolving is not a mark.** Outline the glyphs to paths. There is one
+logo and it is the hand-drawn mark, which is paths throughout; a Greek wordmark
+that set its name in live `<text>` was deleted rather than finished, because what
+it drew depended on the context it was placed in.
 
 *Enforced by* `ekdotico-check discipline`, which fails on Greek codepoints in a
 rule that resolves to `--font-serif`, and by the ruleset's own build, which fails
@@ -418,11 +423,12 @@ Three findings survive.
 | --- | --- | --- | --- |
 | 1 | `docs` and `deree` depend on `^0.11.0`; only `praktico` pins exactly | 16 | `docs/package.json`, `deree/package.json` |
 | 2 | One consuming repository still declares its own local token catalogue authoritative | 15 | `internal/praktico/CLAUDE.md` |
-| 3 | The Greek wordmark still uses live `<text>` rather than outlined paths | 4 | `assets/logo/logo-wordmark-greek.svg` |
+| 3 | The Latin wordmark sets two nodes in live `<text>` rather than outlined paths | 4 | `assets/logo/logo-wordmark.svg` |
 
-Finding 3 is marked `UNFINISHED` in the asset itself and needs font tooling this
-repository does not have. The `.latin` and `.greek` classes it references are
-undefined on purpose, as consumer styling hooks — that part is not a defect.
+Finding 3 is what remains of a pair. The Greek wordmark had the same fault and was
+deleted rather than outlined: there is one logo, the hand-drawn mark, and it is
+paths throughout. The Latin wordmark is kept for now and carries the defect, so
+anything that places it is depending on a webfont resolving in that context.
 
 ## Provenance
 

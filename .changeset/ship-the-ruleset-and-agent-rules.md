@@ -50,6 +50,22 @@ file sends an agent to a local catalogue rather than the one in `node_modules`.
 It was the only rule in the set with no mechanical enforcement, which is why it
 was the one every repository broke.
 
+### Removed: the Greek wordmark
+
+`assets/logo/logo-wordmark-greek.svg` is deleted, and `brandAssets.wordmarkGreek`
+goes with it. **This removes a public export**, which in 0.x lands in a minor.
+Verified unused: no consumer references either the key or the file.
+
+There is one logo and it is the hand-drawn mark, which is paths throughout. The
+Greek wordmark set its letterforms in live `<text>`, so what it drew depended on a
+webfont resolving in whatever context it was placed — a rendering of a name rather
+than a mark. It was marked `UNFINISHED` in the asset itself and outlining it needed
+tooling this repository does not have, so it was deleted rather than carried as a
+permanent open finding.
+
+The Latin wordmark has the same fault in two nodes and is kept for now. It is
+recorded as the one remaining finding under rule 4 rather than left implicit.
+
 ### Also
 
 - `check:contrast` now states two token constraints instead of omitting them. It

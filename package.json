@@ -30,6 +30,8 @@
     "scripts",
     "assets",
     "expression/*.md",
+    "docs/*.md",
+    "AGENTS.md",
     "LICENSE",
     "README.md"
   ],
@@ -96,6 +98,9 @@
     "./expression/guidelines.md": "./expression/guidelines.md",
     "./expression/registers.md": "./expression/registers.md",
     "./assets/*": "./assets/*",
+    "./AGENTS.md": "./AGENTS.md",
+    "./docs/design-tokens.md": "./docs/design-tokens.md",
+    "./docs/visual-ruleset.md": "./docs/visual-ruleset.md",
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -112,9 +117,11 @@
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:styles": "node scripts/check-styles.mjs",
     "check:discipline": "node scripts/check-discipline.mjs .",
+    "check:ruleset": "node ruleset/verify.mjs",
+    "build:ruleset": "node ruleset/build.mjs",
     "lint:copy": "node dist/src/lint/cli.js",
     "lint:fixture": "node scripts/check-lint-fixture.mjs",
-    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:styles && pnpm check:discipline && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
+    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:styles && pnpm check:discipline && pnpm check:ruleset && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
     "release": "changeset publish"
   },
   "peerDependencies": {

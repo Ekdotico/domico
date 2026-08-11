@@ -1,0 +1,438 @@
+# Staying true to Domico — the sixteen rules
+
+The house style, as rules rather than as prose. Every rule here was established
+by a defect that reached real code, and most are now enforced by a guard you can
+run. Where a guard exists it is named, because a rule with a guard needs no
+argument and a rule without one needs a reader who understands why.
+
+Companion documents, both shipped in this package:
+
+- [`AGENTS.md`](../AGENTS.md) — the short form, for an agent about to make an edit
+- [`docs/design-tokens.md`](./design-tokens.md) — the token catalogue
+
+## How to read this document
+
+**The rules are timeless. The state is dated, and lives in one section at the
+end.**
+
+That separation is deliberate and it is the correction of a real failure. The
+first version of this ruleset interleaved the two — each rule carried the file
+and line of the violation that motivated it, in the present tense. Within a day
+of publication seventeen of its twenty factual claims were stale, because the
+estate fixed them. A document that reports state inside its rules obliges a
+reader to re-verify every rule before trusting any of it, which is the same as
+having no document.
+
+So: a rule states what must hold and why the requirement exists. If a rule cites
+an incident, the incident is provenance, not a bug report. Anything that is true
+only today is in [Current state](#current-state), with a date on it.
+
+---
+
+## 1 · Tokens
+
+Four themes, two modes, eight palettes. Values live in exactly one place —
+`tokens/generated/tokens.css`, generated from `tokens/source/*.json`.
+
+### Rule 1 — A new design need is a new token, never a literal
+
+Colour, type, spacing, radius, shadow, and motion come from custom properties. A
+literal in an application stylesheet forks the design system; a token added to
+`tokens/source` resolves in all eight palettes at once.
+
+A literal `px` font size is a defect on its own terms, independent of the
+system: the scale is `rem` so that a reader who raised their browser font size
+scales the whole interface with it.
+
+*Enforced by* `ekdotico-check discipline`, and `check:styles` within the package.
+
+### Rule 2 — Never write a fallback value into `var()`
+
+`var(--sp-12, 4rem)` is a second source of truth with nothing keeping it honest.
+
+Why it is worse than it looks, because the obvious reading is the wrong one:
+`var()` reaches its fallback **only when the custom property is unset**, and the
+token layer sets all of them. So a stale fallback was never rendering. Verified
+by computing values in a running build, where `var(--sp-12, 4rem)` resolved to
+`128px` and not `64px`; stripping the fallbacks moved nothing on screen.
+
+That makes it worse, not milder. A wrong value that renders gets found. A wrong
+value that *cannot* render sits in the stylesheet where no pixel is able to
+contradict it, waiting to become true the day a token is renamed.
+
+One precision, because the rule reads more strictly than it means. Token
+definitions themselves carry full font stacks, and that is correct: the stack
+belongs in the token, authored once. The prohibition is on a *consumer*
+restating a value `var()` already knows.
+
+*Enforced by* `ekdotico-check discipline`, which flags a fallback only when the
+property is one this system defines.
+
+### Rule 3 — Auto is the absence of `data-mode`, not a value of it
+
+This is a mechanism, not a convention. `:not([data-mode])` is what arms the
+`prefers-color-scheme` block, and what stops a dark operating system from
+overriding an explicit Light choice. Writing `data-mode="auto"` breaks both
+directions at once.
+
+The explicit-dark and automatic-dark blocks are duplicated, because CSS cannot
+alias an attribute selector to a media-query selector. **They are generated from
+one source and are not hand-maintained.** Do not edit the generated stylesheet
+to keep them in step; edit the source and rebuild.
+
+*Enforced by* `check:generated`, which byte-compares the generated output
+against a fresh build and so rejects any hand edit, and `check:appearance` over
+the resolution rule itself.
+
+---
+
+## 2 · Typography
+
+Three faces, three fixed roles, never mixed. Serif reads. Sans labels. Mono
+identifies.
+
+### Rule 4 — Greek glyphs never come from `--font-serif`
+
+Crimson Pro publishes no Greek subset. It is a limitation of the face and not a
+subsetting choice: a single font build emits six Crimson Pro faces — normal and
+italic across latin, latin-ext, and vietnamese — and not one covers
+`U+0370–03FF`, while Commissioner and Fira Code each got a Greek face from the
+same tool in the same build.
+
+The failure is silent. No error and no warning: Greek set in the serif falls
+through to whatever the operating system substitutes, which is a different face
+on macOS, Windows, and Linux. The word carrying the brand's own name is exactly
+the word most likely to be affected.
+
+Use `--font-sans`. This is a stated exception to the role rule, for glyphs the
+serif cannot set at all, and it is not licence to mix roles elsewhere.
+
+**A standalone asset is a second exception, in the other direction.** An SVG
+that ships as a file has no cascade to read a custom property from, so the Greek
+wordmark names `Commissioner` as a literal family. That is correct there and
+nowhere else. A mark whose letterforms depend on a webfont resolving is not a
+mark: outline the glyphs to paths.
+
+*Enforced by* `ekdotico-check discipline`, which fails on Greek codepoints in a
+rule that resolves to `--font-serif`, and by the ruleset's own build, which fails
+if a Crimson Pro face ever gains Greek coverage — because then this rule would
+need rewriting rather than quietly contradicting.
+
+### Rule 5 — Load the italic subset, or lose it silently
+
+The package sets `font-style: italic` on `.lede` and on the selected theme's
+name. A build that omits the italic axis renders those as browser-synthesised
+oblique — a mechanical shear, visibly worse, and exactly the failure where an
+individually tuned set stops reading as a set.
+
+**Take the axis list from `fontConfig` in `@ekdotico/domico/fonts`, but expect to
+restate it, because `next/font` will not accept anything else.** It is a
+compile-time SWC transform that reads its argument out of the source, so
+`Crimson_Pro(fontConfig.serif)` fails the build with "Font loader values must be
+explicitly written literals" and spreading it fails with "Unexpected spread".
+Both were tried. A written literal is the only argument the API accepts.
+
+Since the restatement cannot be removed, guard it instead of conventionalising
+it: a test that reads the layout source and fails if any option `fontConfig`
+declares is missing from the call that should carry it, deriving both the option
+set and the export name from the package so a new axis is covered the day it
+lands.
+
+*Enforced by* a consumer-side test. The package supplies `fontConfig`; it cannot
+see how an application calls it.
+
+---
+
+## 3 · The appearance control
+
+### Rule 6 — One trigger, top right, disclosing the full optionset
+
+`AppearanceMenu` from `@ekdotico/domico/theme`, with
+`@ekdotico/domico/styles/appearance.css`. A 36×36 trigger, and a panel holding
+the label with the mode pill on one row and the four theme swatches below.
+
+The requirement decides the ARIA pattern. A reader picks a theme by comparing it
+against real content, so the surface must stay visible while choosing. That
+makes it a **disclosure plus a non-modal popover** wrapping two existing
+radiogroups — not a menu, because a menu closes on activation and would force a
+re-open per comparison; and not a dialog, because focus-trapping a preference
+with no confirm step hides the page the swatches are meant to preview.
+
+Accordingly it takes no `aria-modal` and no focus trap. **The inverse rule holds
+for anything that does claim `aria-modal="true"`: it owes a Tab cycle and an
+inert background, both of them, every time.** Claiming the role without keeping
+its promise is worse than not claiming it. Where an inert background is
+genuinely wrong — a drawer nested inside the region the inert helper would
+inert — decline it explicitly and record why, rather than leaving the absence to
+look like an oversight.
+
+An application supplies placement and nothing else. Do not pass `label` or
+`triggerLabel`, do not wrap it, and never render two instances on one page: two
+elements would claim the same accessible name.
+
+*Enforced by* `check:appearance` and `check:exports`.
+
+### Rule 7 — Swatches carry both candidates; CSS picks
+
+Only one `[data-theme]` is live at a time, so an inactive theme's canvas cannot
+be read from computed CSS — and asking a hook would ask what no server can
+answer, because Auto defers to a preference that never leaves the reader's
+machine. Each swatch is therefore handed both its light and dark value and the
+stylesheet resolves at paint.
+
+`aria-hidden` on the swatch is correct rather than an oversight: it is
+decorative, and the button takes its accessible name from the sibling label, so
+colour is never the sole carrier of the choice.
+
+*Enforced by* `check:appearance`.
+
+---
+
+## 4 · Components
+
+Ten components ship in this package, each with its own stylesheet **export
+entry** — `styles/badge.css`, `callout.css`, `figure.css`, `keyvalue.css`,
+`logo.css`, `primitives.css`, `section-rule.css`, `stat.css`, `table.css`,
+`tabs.css`. They are build outputs sliced from one source stylesheet; there is no
+per-component source file, so do not cite one.
+
+### Rule 8 — A component used twice comes from the package
+
+The split above is why this is possible rather than aspirational. Components
+hardcode unprefixed global class names, which a CSS Module cannot own, so an
+application that forbids a global component layer could once import nothing at
+all. Shipping one stylesheet per component means an application imports only the
+CSS for what it renders — the same factoring this package had already performed
+twice, for `reset.css` at 0.7.0 and `appearance.css` at 0.8.0.
+
+An import arrives with the first requirement that needs it. Shipping ten entries
+is not licence to import ten.
+
+*Enforced by* `ekdotico-check discipline`, which fails on a local
+reimplementation of anything this package exports, deriving the export list from
+the package barrels rather than from a hardcoded list.
+
+### Rule 9 — Never fork a projection of the palette
+
+The dangerous fork is not a rogue colour in a component. It is a second copy of
+the whole palette projected into another format — a diagram theme, a chart
+config, an email template — because it looks like configuration rather than like
+design.
+
+Such a fork is recognisable by its own diff: 202 of 216 values identical and 14
+drifted is the signature of a copy that has diverged, not of an independent
+design. The token pipeline generates these projections for exactly this reason;
+`@ekdotico/domico/mermaid` is one, and its build fails if any colour drifts more
+than 0.6 in lightness or chroma through the `oklch → hex → oklch` round trip.
+
+When a fork turns out to be *better* than the package, promote it rather than
+reverting it. Per-theme diagram edge colours were adopted that way, into
+`tokens/source` as `--diagram-edge`, and are now measured by the contrast guard
+at the 3:1 non-text threshold. Either way the local map is deleted and the import
+taken.
+
+And verify a swap of this kind **against painted pixels, not serialised
+markup**. Emitted SVG retains presentation attributes that a stylesheet
+overrides and that never render, so grepping the output finds fills and strokes
+that are not on screen. Reading `fill`, `stroke`, and `color` back from the DOM
+is the check that means something.
+
+*Enforced by* `check:generated` and `ekdotico-check discipline`.
+
+---
+
+## 5 · Motion
+
+### Rule 10 — Fades, at `--dur-base` with `--ease-soft`
+
+Transform is permitted only where a surface enters or leaves the viewport — a
+drawer sliding, a popover rising. It is prohibited on anything already on
+screen: hover, focus, and state changes fade, they do not move.
+
+No bounce, no spring, no elastic. Press should feel like paper pressing on a
+soft surface, not a button bouncing. Timing lives in `--dur-fast` (140ms),
+`--dur-base` (220ms), and `--dur-slow`, never as a literal — and a literal that
+numerically equals a token today is not exempt, because it forks the moment
+either moves.
+
+*Enforced by* `check:styles`, and by the ruleset build, which rejects a
+`cubic-bezier` with a control point outside `[0,1]` on the y axis.
+
+### Rule 11 — Reduced motion is a flat prohibition, and nothing may wait on `transitionend`
+
+The idiom is a `0.01ms` duration ceiling. It is wrong here, and this rule was
+established by discovering that the written brief and the shipped code disagreed
+and **the code was right**.
+
+The ceiling exists to keep `transitionend` and `animationend` firing so a script
+waiting on one is not stranded. What it brings instead is a failure mode: it sets
+duration and iteration count, which does not stop an animation already running,
+so a blinking caret or a pulsing indicator freezes at whatever opacity the frame
+caught it instead of resting visible. The package therefore ships a universal
+`animation: none !important; transition: none !important`.
+
+The stated rationale for the ceiling was checked and did not hold: zero
+`transitionend` or `animationend` listeners existed across the whole estate.
+Anything that genuinely needs the event states its own transition inside the
+query, rather than making every element pay for it.
+
+Be precise about what a surviving ceiling is, because "two rules fighting" and
+"one rule that never applied" call for different fixes. A `0.01ms` block
+overrides `transition-duration` only, while the flat prohibition's shorthand
+also sets `transition-property: none`. Nothing overrode that, so nothing
+transitioned regardless of the duration the ceiling specified: it was dead code,
+not a competing philosophy.
+
+**Never gate an unmount on `transitionend`.** Under a flat prohibition the event
+never fires, so the component hangs on screen permanently — for exactly the
+readers least able to work around it. Keep the surface mounted and toggle a
+class.
+
+*Enforced by* `check:styles`, and by the ruleset build, which requires the flat
+prohibition present and `0.01ms` absent.
+
+### Rule 12 — Never transition `visibility` with a duration
+
+This one was found by shipping it. The appearance panel is specified to focus the
+reader's current theme when it opens. The effect and the selector were both
+correct and it did not work — focus stayed on the trigger.
+
+`visibility` is a **discrete** property. Under a transition it does not
+interpolate: it flips when the easing output passes 0.5, which with `--ease-soft`
+is roughly 15ms into a 220ms transition. That is inside the first frame, so the
+effect ran while the panel still computed `visibility: hidden`, and `focus()` on
+a hidden element is silently ignored. No error, no warning, and nothing in the
+source that reads as wrong.
+
+A duration on `visibility` also truncates the closing fade, so both halves need
+stating:
+
+```css
+/* closing — hold visible through the fade */
+transition: opacity var(--dur-base) var(--ease-soft), visibility 0s linear var(--dur-base);
+/* opening — visible in the same frame, so the surface is focusable at once */
+transition: opacity var(--dur-base) var(--ease-soft), visibility 0s linear 0s;
+```
+
+*Enforced by* `check:appearance`, which asserts that every transition mentioning
+`visibility` specifies `visibility 0s`. The assertion was mutation-tested by
+reintroducing the duration and confirming it fails.
+
+---
+
+## 6 · Prohibitions
+
+These are the ones with teeth, because each has been violated at least once.
+
+### Rule 13 — No coloured edge stripe, by any mechanism
+
+**The rule is the pattern, not the property.** A 3px tinted `::before` evades the
+letter of a ban written about `border-left` while being precisely what the ban
+exists to prevent — and the component library itself was the offender, which is
+how the rule came to be written this way.
+
+A card that needs to signal tone gets a full hairline and a background wash; it
+already carries a title and a role. A bare `blockquote` rule with no card
+surface is typographic convention rather than decoration and is permitted — but
+if that exception is house style, it belongs in writing with its ceiling named.
+An unwritten exception is how a ban erodes.
+
+*Enforced by* `check:styles`, and by the ruleset build, which fails on any
+`border-inline-start` above 1px.
+
+### Rule 14 — Contrast is owed by all eight palettes, not the default one
+
+A check that samples the default theme, or only the light modes, will report one
+failure where three exist.
+
+Two traps that a naive check misses entirely:
+
+**Tokens whose only current use is non-text.** A muted foreground can sit below
+4.5:1 against a surface and not be a violation, because its one use is an icon
+where the 3:1 threshold applies. It becomes a violation the first time someone
+reads it as a muted *text* colour. Either raise it or mark it icon-only where it
+is defined; leaving the constraint unrecorded is the defect.
+
+**Opacity-derived colours, which sit outside a token checker altogether.** This
+is where real failures live. Compositing an ink colour onto a saturated accent at
+reduced opacity fails in every palette at once. The fix is not a tuned opacity —
+it is no opacity. Differentiate text by size and weight, never by transparency on
+a saturated field.
+
+*Enforced by* `check:contrast`, across all eight palettes, at 4.5:1 for text and
+3:1 for non-text.
+
+### Rule 15 — Documentation that contradicts the code is a defect with a severity
+
+It ranks above a wrong colour. Enforcement hooks feed these files to agents on
+every edit, so a stale document does not merely mislead a reader — **it
+instructs a machine to reintroduce the fault it describes.** The most likely
+"corrective" action becomes undoing the correct architecture.
+
+The failure mode is specific and it has happened: every application in this
+estate migrated onto this package, and not one updated its own written account of
+it. Documents then pointed Rule 1 at a deleted stylesheet, cited a guard file
+that had never existed, stated a token value that had changed, and described a
+switcher as absent from a site that had rendered one since it landed.
+
+Three obligations:
+
+- When you change behaviour a document describes, change the document in the
+  same commit. Not afterwards.
+- **Do not restate this package's rules or its token catalogue inside a consuming
+  repository.** Point at the copy in `node_modules`, which travels with the
+  version it describes. A local copy is a snapshot, and a snapshot is the defect.
+- When a local document disagrees with the package's, the package is newer and
+  the code is the authority. Report the contradiction rather than acting on the
+  local document.
+
+*Enforced by* `ekdotico-check discipline`, which fails a consuming repository that
+declares a local token catalogue authoritative.
+
+### Rule 16 — A version you cannot read is a version you cannot adopt
+
+A consumer cannot judge a bump it cannot inspect, which is the whole argument
+against taking one. Every release carries a changeset, a changelog entry, and a
+tag.
+
+**Pin exactly.** A caret range on a design system is a latent fork that arms
+itself the day the next minor publishes: an unreviewed visual change reaches the
+application through a routine install, bypassing the four-theme review gate. An
+upgrade is a deliberate act, reviewed across four themes in both modes.
+
+*Enforced by* changesets and tags in this repository. **Not** enforced in
+consumers — a caret in an application's manifest is caught by review only.
+
+---
+
+## Current state
+
+**Dated 2026-08-11, against `@ekdotico/domico@0.11.0`.** Everything above is a
+rule; everything here is a fact with a shelf life. Twenty claims from the first
+edition were re-verified against the code on this date; seventeen had been fixed
+and are not repeated.
+
+Three findings survive.
+
+| # | Finding | Rule | Where |
+| --- | --- | --- | --- |
+| 1 | `docs` and `deree` depend on `^0.11.0`; only `praktico` pins exactly | 16 | `docs/package.json`, `deree/package.json` |
+| 2 | One consuming repository still declares its own local token catalogue authoritative | 15 | `internal/praktico/CLAUDE.md` |
+| 3 | The Greek wordmark still uses live `<text>` rather than outlined paths | 4 | `assets/logo/logo-wordmark-greek.svg` |
+
+Finding 3 is marked `UNFINISHED` in the asset itself and needs font tooling this
+repository does not have. The `.latin` and `.greek` classes it references are
+undefined on purpose, as consumer styling hooks — that part is not a defect.
+
+## Provenance
+
+Compiled against `@ekdotico/domico@0.11.0` as consumed by `docs`, `deree`, and
+`internal/praktico`. Every colour, size, and duration named here is the token
+value it names. Contrast figures are measured, not asserted. Where a rule cites a
+mechanism, the mechanism was verified in a running build rather than reasoned
+about — the `var()` fallback finding, the `visibility` discrete-property finding,
+and the painted-pixel diagram check were each established that way, and each
+contradicted the reading that source code alone supported.
+
+The visual edition of this document is built by `ruleset/build.mjs` and checked
+against its own rules by `ruleset/verify.mjs`.

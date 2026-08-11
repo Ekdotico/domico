@@ -1,0 +1,1168 @@
+<title>Domico — Visual Ruleset</title>
+<style>
+/*@FONTS@*/
+
+/* ===========================================================================
+   Domico visual ruleset.
+
+   Every colour below is copied verbatim from
+   domico/tokens/generated/tokens.css. Nothing here is invented: a ruleset
+   rendered in a palette other than the one it specifies would refute itself.
+
+   ADAPTATION, stated because it is a real difference from the apps: the host
+   page stamps data-theme="dark"|"light" on :root, and Domico uses data-theme
+   for the PALETTE. So palette rides on body[data-palette] here, and mode is
+   derived from the host. In docs, deree and praktico it is data-theme +
+   data-mode on <html>, exactly as documented in section 2.
+
+   The dark blocks below use the same three-selector structure the real token
+   file uses, for the same reason: an explicit choice must beat the operating
+   system, and the absence of a choice must defer to it.
+   =========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* WCAG 2.2 SC 2.4.7 — a visible focus indicator on every interactive element,
+   matching the package reset rather than inventing a second treatment. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+:root {
+  /* Theme-invariant scales — tokens.css:608-686 */
+  --font-serif: 'Crimson Pro', 'Iowan Old Style', Baskerville, 'Times New Roman', serif;
+  --font-sans: 'Commissioner', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Fira Code', ui-monospace, Menlo, monospace;
+
+  --fs-3xs: 0.6875rem; --fs-2xs: 0.75rem;  --fs-xs: 0.8125rem;
+  --fs-sm: 0.875rem;   --fs-base: 0.9375rem; --fs-md: 1.0625rem;
+  --fs-lg: 1.1875rem;  --fs-xl: 1.4375rem; --fs-2xl: 1.875rem;
+  --fs-3xl: 2.25rem;   --fs-4xl: 2.75rem;
+
+  --lh-tight: 1.12; --lh-snug: 1.35; --lh-base: 1.5; --lh-prose: 1.65;
+  --tr-tight: -0.01em; --tr-wide: 0.02em; --tr-wider: 0.08em; --tr-widest: 0.18em;
+  --fw-regular: 400; --fw-medium: 500; --fw-semi: 600; --fw-bold: 700;
+
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px; --sp-5: 24px;
+  --sp-6: 32px; --sp-7: 40px; --sp-8: 48px; --sp-9: 56px; --sp-10: 72px;
+  --sp-11: 96px; --sp-12: 128px;
+
+  --radius-xs: 2px; --radius-sm: 4px; --radius-md: 6px;
+  --radius-lg: 10px; --radius-xl: 14px; --radius-pill: 999px;
+
+  --dur-fast: 140ms; --dur-base: 220ms; --dur-slow: 320ms;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-crisp: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --content-w: 760px; --measure: 72ch; --topbar-h: 52px;
+}
+
+/* --- LIGHT: the four palettes, tokens.css:23, :72, :118, :164 ------------- */
+body[data-palette="parchment"] {
+  --bg-canvas: oklch(95.877% 0.0127 86.83);
+  --bg-surface: oklch(97.625% 0.011 89.72);
+  --bg-surface-2: oklch(93.466% 0.021 88.72);
+  --bg-inset: oklch(91.954% 0.0252 89.22);
+  --fg-1: oklch(28.427% 0.0036 106.63);
+  --fg-2: oklch(39.949% 0.0077 75.32);
+  --fg-3: oklch(50.893% 0.0186 82.76);
+  --fg-4: oklch(53.525% 0.0267 90.88);
+  --rule-strong: oklch(80.668% 0.0334 87.3);
+  --rule: oklch(86.795% 0.0325 89.15);
+  --rule-soft: oklch(90.768% 0.0281 88.76);
+  --accent: oklch(44.632% 0.0788 298.5);
+  --accent-soft: oklch(92.128% 0.0185 306.65);
+  --gilt: oklch(47.298% 0.0739 84.45);
+  --gilt-soft: oklch(89.728% 0.037 86.17);
+  --burgundy: oklch(43.182% 0.0895 21.48);
+  --ok: oklch(48.996% 0.0799 137.28);
+  --warn: oklch(46.022% 0.0841 82.6);
+  --danger: oklch(45.843% 0.111 22.46);
+  --info: oklch(45.706% 0.0647 249.41);
+  --shadow-2: 0 2px 6px rgba(60,45,20,0.08), 0 0 0 1px rgba(60,45,20,0.05);
+  --shadow-3: 0 8px 24px rgba(60,45,20,0.10), 0 0 0 1px rgba(60,45,20,0.05);
+  color-scheme: light;
+}
+body[data-palette="library"] {
+  --bg-canvas: oklch(98.427% 0.004 106.47);
+  --bg-surface: oklch(100% 0 0);
+  --bg-surface-2: oklch(95.753% 0.0067 97.35);
+  --bg-inset: oklch(94.219% 0.0081 98.88);
+  --fg-1: oklch(23.225% 0.012 145.18);
+  --fg-2: oklch(36.122% 0.0108 145.35);
+  --fg-3: oklch(47.942% 0.0101 145.42);
+  --fg-4: oklch(55.393% 0.009 139.44);
+  --rule-strong: oklch(82.681% 0.0144 124.6);
+  --rule: oklch(89.882% 0.0125 121.72);
+  --rule-soft: oklch(93.555% 0.0111 123.46);
+  --accent: oklch(31.748% 0.0544 170.22);
+  --accent-soft: oklch(92.1% 0.0142 162.45);
+  --gilt: oklch(47.276% 0.0674 90.52);
+  --gilt-soft: oklch(90.5% 0.032 90.2);
+  --burgundy: oklch(43.182% 0.0895 21.48);
+  --ok: oklch(48.996% 0.0799 137.28);
+  --warn: oklch(46.022% 0.0841 82.6);
+  --danger: oklch(45.843% 0.111 22.46);
+  --info: oklch(45.706% 0.0647 249.41);
+  --shadow-2: 0 2px 6px rgba(20,40,30,0.07), 0 0 0 1px rgba(20,40,30,0.05);
+  --shadow-3: 0 8px 24px rgba(20,40,30,0.09), 0 0 0 1px rgba(20,40,30,0.05);
+  color-scheme: light;
+}
+body[data-palette="sepia"] {
+  --bg-canvas: oklch(96.531% 0.0102 81.8);
+  --bg-surface: oklch(98.2% 0.009 82.4);
+  --bg-surface-2: oklch(94.1% 0.016 81.5);
+  --bg-inset: oklch(92.6% 0.019 81.4);
+  --fg-1: oklch(30.1% 0.0201 47.5);
+  --fg-2: oklch(41.2% 0.0243 47.9);
+  --fg-3: oklch(51.8% 0.0287 49.2);
+  --fg-4: oklch(55.1% 0.0295 50.1);
+  --rule-strong: oklch(81.2% 0.0284 78.4);
+  --rule: oklch(87.4% 0.0246 79.6);
+  --rule-soft: oklch(91.2% 0.019 80.2);
+  --accent: oklch(50.352% 0.1134 50.6);
+  --accent-soft: oklch(92.4% 0.0284 55.2);
+  --gilt: oklch(47.298% 0.0739 84.45);
+  --gilt-soft: oklch(89.9% 0.035 85.1);
+  --burgundy: oklch(43.182% 0.0895 21.48);
+  --ok: oklch(48.996% 0.0799 137.28);
+  --warn: oklch(46.022% 0.0841 82.6);
+  --danger: oklch(45.843% 0.111 22.46);
+  --info: oklch(45.706% 0.0647 249.41);
+  --shadow-2: 0 2px 6px rgba(90,45,20,0.08), 0 0 0 1px rgba(90,45,20,0.05);
+  --shadow-3: 0 8px 24px rgba(90,45,20,0.10), 0 0 0 1px rgba(90,45,20,0.05);
+  color-scheme: light;
+}
+body[data-palette="mono"] {
+  --bg-canvas: oklch(100% 0 0);
+  --bg-surface: oklch(98.6% 0 0);
+  --bg-surface-2: oklch(95.8% 0 0);
+  --bg-inset: oklch(94% 0 0);
+  --fg-1: oklch(19.5% 0 0);
+  --fg-2: oklch(34% 0 0);
+  --fg-3: oklch(47% 0 0);
+  --fg-4: oklch(52% 0 0);
+  --rule-strong: oklch(78% 0 0);
+  --rule: oklch(87% 0 0);
+  --rule-soft: oklch(92.5% 0 0);
+  --accent: oklch(17.764% 0 0);
+  --accent-soft: oklch(92% 0 0);
+  --gilt: oklch(47.298% 0.0739 84.45);
+  --gilt-soft: oklch(90% 0.03 85);
+  --burgundy: oklch(43.182% 0.0895 21.48);
+  --ok: oklch(48.996% 0.0799 137.28);
+  --warn: oklch(46.022% 0.0841 82.6);
+  --danger: oklch(45.843% 0.111 22.46);
+  --info: oklch(45.706% 0.0647 249.41);
+  --shadow-2: 0 2px 6px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.05);
+  --shadow-3: 0 8px 24px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.05);
+  color-scheme: light;
+}
+
+/* --- DARK: three selectors per palette, mirroring tokens.css:217 / :409 ----
+   1. an explicit in-page mode choice
+   2. the host's explicit theme toggle, where the page has made no choice
+   3. the OS preference, where neither has made a choice
+   ------------------------------------------------------------------------- */
+body[data-mode="dark"][data-palette="parchment"],
+:root[data-theme="dark"] body:not([data-mode])[data-palette="parchment"] {
+  --bg-canvas: oklch(20.983% 0.0083 84.59);
+  --bg-surface: oklch(23.626% 0.012 84.56);
+  --bg-surface-2: oklch(27.089% 0.0123 78.08);
+  --bg-inset: oklch(18.758% 0.0085 84.57);
+  --fg-1: oklch(93.691% 0.0247 91.62);
+  --fg-2: oklch(84.828% 0.0295 91.67);
+  --fg-3: oklch(71.32% 0.031 89.62);
+  --fg-4: oklch(67.154% 0.0231 85.96);
+  --rule-strong: oklch(39.132% 0.0221 89.49);
+  --rule: oklch(33.007% 0.0229 89.49);
+  --rule-soft: oklch(28.549% 0.0147 89.9);
+  --accent: oklch(65.701% 0.0707 299.08);
+  --accent-soft: oklch(28.051% 0.0309 307.23);
+  --gilt: oklch(74.542% 0.1009 85.89);
+  --gilt-soft: oklch(31.121% 0.0399 84.58);
+  --burgundy: oklch(65.388% 0.0956 19.97);
+  --ok: oklch(69.9% 0.0748 135.19);
+  --warn: oklch(75.596% 0.1093 80.19);
+  --danger: oklch(65.388% 0.0956 19.97);
+  --info: oklch(68.67% 0.069 250.21);
+  --shadow-2: 0 2px 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.05);
+  --shadow-3: 0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+  color-scheme: dark;
+}
+body[data-mode="dark"][data-palette="library"],
+:root[data-theme="dark"] body:not([data-mode])[data-palette="library"] {
+  --bg-canvas: oklch(18.333% 0.0123 155.82);
+  --bg-surface: oklch(21.002% 0.0119 156.05);
+  --bg-surface-2: oklch(24.4% 0.0131 156.1);
+  --bg-inset: oklch(16.2% 0.0116 155.7);
+  --fg-1: oklch(93.2% 0.0146 130.1);
+  --fg-2: oklch(84.1% 0.0163 133.4);
+  --fg-3: oklch(70.6% 0.0179 136.2);
+  --fg-4: oklch(66.4% 0.0154 138.1);
+  --rule-strong: oklch(38.2% 0.0163 149.2);
+  --rule: oklch(31.8% 0.0155 152.4);
+  --rule-soft: oklch(26.9% 0.0139 154.1);
+  --accent: oklch(71.423% 0.0917 162.68);
+  --accent-soft: oklch(27.1% 0.0362 165.2);
+  --gilt: oklch(74.054% 0.0992 89.19);
+  --gilt-soft: oklch(30.4% 0.0388 87.6);
+  --burgundy: oklch(65.388% 0.0956 19.97);
+  --ok: oklch(69.9% 0.0748 135.19);
+  --warn: oklch(75.596% 0.1093 80.19);
+  --danger: oklch(65.388% 0.0956 19.97);
+  --info: oklch(68.67% 0.069 250.21);
+  --shadow-2: 0 2px 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.05);
+  --shadow-3: 0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+  color-scheme: dark;
+}
+body[data-mode="dark"][data-palette="sepia"],
+:root[data-theme="dark"] body:not([data-mode])[data-palette="sepia"] {
+  --bg-canvas: oklch(19.996% 0.0154 47.93);
+  --bg-surface: oklch(22.8% 0.0169 48.1);
+  --bg-surface-2: oklch(26.2% 0.0178 47.4);
+  --bg-inset: oklch(17.8% 0.0142 47.8);
+  --fg-1: oklch(93.1% 0.0219 71.2);
+  --fg-2: oklch(84.2% 0.0264 70.4);
+  --fg-3: oklch(70.8% 0.0291 68.1);
+  --fg-4: oklch(66.6% 0.0268 65.2);
+  --rule-strong: oklch(38.6% 0.0261 52.4);
+  --rule: oklch(32.4% 0.0246 51.2);
+  --rule-soft: oklch(27.6% 0.0198 50.1);
+  --accent: oklch(68.817% 0.1151 48.86);
+  --accent-soft: oklch(28.4% 0.0416 49.6);
+  --gilt: oklch(73.707% 0.1007 82.71);
+  --gilt-soft: oklch(30.8% 0.0392 82.1);
+  --burgundy: oklch(65.388% 0.0956 19.97);
+  --ok: oklch(69.9% 0.0748 135.19);
+  --warn: oklch(75.596% 0.1093 80.19);
+  --danger: oklch(65.388% 0.0956 19.97);
+  --info: oklch(68.67% 0.069 250.21);
+  --shadow-2: 0 2px 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.05);
+  --shadow-3: 0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+  color-scheme: dark;
+}
+body[data-mode="dark"][data-palette="mono"],
+:root[data-theme="dark"] body:not([data-mode])[data-palette="mono"] {
+  --bg-canvas: oklch(14.479% 0 0);
+  --bg-surface: oklch(18.2% 0 0);
+  --bg-surface-2: oklch(22.4% 0 0);
+  --bg-inset: oklch(11.8% 0 0);
+  --fg-1: oklch(95% 0 0);
+  --fg-2: oklch(85% 0 0);
+  --fg-3: oklch(71% 0 0);
+  --fg-4: oklch(66% 0 0);
+  --rule-strong: oklch(38% 0 0);
+  --rule: oklch(31% 0 0);
+  --rule-soft: oklch(25% 0 0);
+  --accent: oklch(95.514% 0 0);
+  --accent-soft: oklch(27% 0 0);
+  --gilt: oklch(74.054% 0.0992 89.19);
+  --gilt-soft: oklch(30% 0.038 88);
+  --burgundy: oklch(65.388% 0.0956 19.97);
+  --ok: oklch(69.9% 0.0748 135.19);
+  --warn: oklch(75.596% 0.1093 80.19);
+  --danger: oklch(65.388% 0.0956 19.97);
+  --info: oklch(68.67% 0.069 250.21);
+  --shadow-2: 0 2px 6px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+  --shadow-3: 0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) body:not([data-mode])[data-palette="parchment"] {
+    --bg-canvas: oklch(20.983% 0.0083 84.59); --bg-surface: oklch(23.626% 0.012 84.56);
+    --bg-surface-2: oklch(27.089% 0.0123 78.08); --bg-inset: oklch(18.758% 0.0085 84.57);
+    --fg-1: oklch(93.691% 0.0247 91.62); --fg-2: oklch(84.828% 0.0295 91.67);
+    --fg-3: oklch(71.32% 0.031 89.62); --fg-4: oklch(67.154% 0.0231 85.96);
+    --rule-strong: oklch(39.132% 0.0221 89.49); --rule: oklch(33.007% 0.0229 89.49);
+    --rule-soft: oklch(28.549% 0.0147 89.9); --accent: oklch(65.701% 0.0707 299.08);
+    --accent-soft: oklch(28.051% 0.0309 307.23); --gilt: oklch(74.542% 0.1009 85.89);
+    --gilt-soft: oklch(31.121% 0.0399 84.58); --burgundy: oklch(65.388% 0.0956 19.97);
+    --ok: oklch(69.9% 0.0748 135.19); --warn: oklch(75.596% 0.1093 80.19);
+    --danger: oklch(65.388% 0.0956 19.97); --info: oklch(68.67% 0.069 250.21);
+    --shadow-2: 0 2px 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.05);
+    --shadow-3: 0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+    color-scheme: dark;
+  }
+  :root:not([data-theme]) body:not([data-mode])[data-palette="library"] {
+    --bg-canvas: oklch(18.333% 0.0123 155.82); --bg-surface: oklch(21.002% 0.0119 156.05);
+    --bg-surface-2: oklch(24.4% 0.0131 156.1); --bg-inset: oklch(16.2% 0.0116 155.7);
+    --fg-1: oklch(93.2% 0.0146 130.1); --fg-2: oklch(84.1% 0.0163 133.4);
+    --fg-3: oklch(70.6% 0.0179 136.2); --fg-4: oklch(66.4% 0.0154 138.1);
+    --rule-strong: oklch(38.2% 0.0163 149.2); --rule: oklch(31.8% 0.0155 152.4);
+    --rule-soft: oklch(26.9% 0.0139 154.1); --accent: oklch(71.423% 0.0917 162.68);
+    --accent-soft: oklch(27.1% 0.0362 165.2); --gilt: oklch(74.054% 0.0992 89.19);
+    --gilt-soft: oklch(30.4% 0.0388 87.6); --burgundy: oklch(65.388% 0.0956 19.97);
+    --ok: oklch(69.9% 0.0748 135.19); --warn: oklch(75.596% 0.1093 80.19);
+    --danger: oklch(65.388% 0.0956 19.97); --info: oklch(68.67% 0.069 250.21);
+    --shadow-2: 0 2px 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.05);
+    --shadow-3: 0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+    color-scheme: dark;
+  }
+  :root:not([data-theme]) body:not([data-mode])[data-palette="sepia"] {
+    --bg-canvas: oklch(19.996% 0.0154 47.93); --bg-surface: oklch(22.8% 0.0169 48.1);
+    --bg-surface-2: oklch(26.2% 0.0178 47.4); --bg-inset: oklch(17.8% 0.0142 47.8);
+    --fg-1: oklch(93.1% 0.0219 71.2); --fg-2: oklch(84.2% 0.0264 70.4);
+    --fg-3: oklch(70.8% 0.0291 68.1); --fg-4: oklch(66.6% 0.0268 65.2);
+    --rule-strong: oklch(38.6% 0.0261 52.4); --rule: oklch(32.4% 0.0246 51.2);
+    --rule-soft: oklch(27.6% 0.0198 50.1); --accent: oklch(68.817% 0.1151 48.86);
+    --accent-soft: oklch(28.4% 0.0416 49.6); --gilt: oklch(73.707% 0.1007 82.71);
+    --gilt-soft: oklch(30.8% 0.0392 82.1); --burgundy: oklch(65.388% 0.0956 19.97);
+    --ok: oklch(69.9% 0.0748 135.19); --warn: oklch(75.596% 0.1093 80.19);
+    --danger: oklch(65.388% 0.0956 19.97); --info: oklch(68.67% 0.069 250.21);
+    --shadow-2: 0 2px 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.05);
+    --shadow-3: 0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+    color-scheme: dark;
+  }
+  :root:not([data-theme]) body:not([data-mode])[data-palette="mono"] {
+    --bg-canvas: oklch(14.479% 0 0); --bg-surface: oklch(18.2% 0 0);
+    --bg-surface-2: oklch(22.4% 0 0); --bg-inset: oklch(11.8% 0 0);
+    --fg-1: oklch(95% 0 0); --fg-2: oklch(85% 0 0);
+    --fg-3: oklch(71% 0 0); --fg-4: oklch(66% 0 0);
+    --rule-strong: oklch(38% 0 0); --rule: oklch(31% 0 0);
+    --rule-soft: oklch(25% 0 0); --accent: oklch(95.514% 0 0);
+    --accent-soft: oklch(27% 0 0); --gilt: oklch(74.054% 0.0992 89.19);
+    --gilt-soft: oklch(30% 0.038 88); --burgundy: oklch(65.388% 0.0956 19.97);
+    --ok: oklch(69.9% 0.0748 135.19); --warn: oklch(75.596% 0.1093 80.19);
+    --danger: oklch(65.388% 0.0956 19.97); --info: oklch(68.67% 0.069 250.21);
+    --shadow-2: 0 2px 6px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+    --shadow-3: 0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+    color-scheme: dark;
+  }
+}
+
+/* --- document ------------------------------------------------------------- */
+
+body {
+  margin: 0;
+  background: var(--bg-canvas);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  -webkit-font-smoothing: antialiased;
+  transition: background var(--dur-base) var(--ease-soft), color var(--dur-base) var(--ease-soft);
+}
+
+.page { max-width: var(--content-w); margin: 0 auto; padding: 0 var(--sp-5) var(--sp-12); }
+
+/* Prose is capped tighter than the column, because the column also has to hold
+   tables. --measure is 72ch; the token catalogue documented 68ch and was wrong. */
+p, .prose { max-width: var(--measure); }
+
+h1, h2, h3, h4 { font-family: var(--font-serif); color: var(--fg-1); text-wrap: balance; margin: 0; }
+h1 { font-size: var(--fs-4xl); line-height: var(--lh-tight); letter-spacing: var(--tr-tight); font-weight: var(--fw-semi); }
+h2 { font-size: var(--fs-2xl); line-height: var(--lh-tight); font-weight: var(--fw-semi); margin-block: var(--sp-9) var(--sp-3); }
+h3 { font-size: var(--fs-lg); line-height: var(--lh-snug); font-weight: var(--fw-semi); margin-block: var(--sp-6) var(--sp-2); }
+h4 { font-size: var(--fs-base); font-family: var(--font-sans); font-weight: var(--fw-semi); margin-block: var(--sp-5) var(--sp-2); }
+
+p { margin: 0 0 var(--sp-4); color: var(--fg-2); line-height: var(--lh-prose); }
+a { color: var(--accent); text-underline-offset: 2px; text-decoration-thickness: 1px; }
+strong { font-weight: var(--fw-semi); color: var(--fg-1); }
+code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
+:not(pre) > code {
+  background: var(--bg-surface-2); border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-xs); padding: 0.1em 0.32em; color: var(--fg-1);
+}
+
+.eyebrow {
+  font-family: var(--font-sans); font-size: var(--fs-3xs); font-weight: var(--fw-medium);
+  letter-spacing: var(--tr-widest); text-transform: uppercase; color: var(--fg-4);
+}
+
+/* SectionRule — 40px gilt over a full hairline. components.css:32 */
+.sect-rule { border: 0; margin: var(--sp-10) 0 var(--sp-8); border-top: 1px solid var(--rule); position: relative; }
+.sect-rule::after {
+  content: ''; position: absolute; top: -1px; left: 0; width: 40px;
+  border-top: 1px solid var(--gilt);
+}
+
+/* --- masthead ------------------------------------------------------------- */
+
+.masthead { padding: var(--sp-11) 0 0; }
+.masthead h1 { margin-block: var(--sp-2) var(--sp-4); }
+.greek {
+  /* THE GREEK RULE, demonstrated. This is --font-sans, deliberately, because
+     Crimson Pro ships no Greek subset. See section 3. */
+  font-family: var(--font-sans); font-size: var(--fs-md); color: var(--fg-3);
+  letter-spacing: var(--tr-wide); margin-bottom: var(--sp-6);
+}
+.lede {
+  font-family: var(--font-serif); font-size: var(--fs-xl); line-height: var(--lh-snug);
+  color: var(--fg-2); font-weight: var(--fw-regular); max-width: 34ch;
+}
+
+/* --- scoreboard ----------------------------------------------------------- */
+
+.tbl-wrap { overflow-x: auto; margin: var(--sp-5) 0; border: 1px solid var(--rule); border-radius: var(--radius-lg); }
+table { border-collapse: collapse; width: 100%; font-size: var(--fs-xs); }
+thead th {
+  background: var(--bg-surface-2); text-align: left; font-family: var(--font-sans);
+  font-size: var(--fs-3xs); font-weight: var(--fw-semi); letter-spacing: var(--tr-wider);
+  text-transform: uppercase; color: var(--fg-3);
+  padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+tbody td { padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--rule-soft); color: var(--fg-2); vertical-align: top; }
+tbody tr:last-child td { border-bottom: 0; }
+td.num, th.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+caption { caption-side: bottom; text-align: left; padding: var(--sp-2) var(--sp-3); font-size: var(--fs-2xs); color: var(--fg-4); }
+
+/* Verdict marks — form as well as colour, so state reads without hue alone */
+.mark { font-family: var(--font-sans); font-size: var(--fs-3xs); font-weight: var(--fw-semi);
+  letter-spacing: var(--tr-wide); padding: 2px 7px; border-radius: var(--radius-pill);
+  border: 1px solid; white-space: nowrap; display: inline-block; }
+.mark-ok { color: var(--ok); border-color: var(--ok); }
+.mark-warn { color: var(--warn); border-color: var(--warn); }
+.mark-bad { color: var(--danger); border-color: var(--danger); }
+.mark-info { color: var(--info); border-color: var(--info); }
+
+/* --- rule blocks ---------------------------------------------------------- */
+
+.rule-block {
+  border: 1px solid var(--rule); border-radius: var(--radius-lg);
+  background: var(--bg-surface); padding: var(--sp-4) var(--sp-5);
+  margin: var(--sp-4) 0; box-shadow: var(--shadow-2);
+}
+.rule-block > :last-child { margin-bottom: 0; }
+.rule-n {
+  font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--gilt);
+  letter-spacing: var(--tr-wide);
+}
+.rule-block h3 { margin-top: var(--sp-1); }
+
+/* Resolution notes — what was decided after the rule was written. A full
+   hairline and a tint, never an edge stripe: Rule 12 applies to this page. */
+.resolved {
+  border: 1px solid color-mix(in oklab, var(--ok) 26%, var(--rule));
+  background: color-mix(in oklab, var(--ok) 5%, var(--bg-surface));
+  border-radius: var(--radius-md);
+  padding: var(--sp-3) var(--sp-4);
+  margin: var(--sp-3) 0;
+  max-width: none;
+}
+.resolved + .resolved { margin-top: calc(var(--sp-3) * -1 + var(--sp-2)); }
+
+/* Do / Don't — no side stripes anywhere. A full hairline and a mark instead. */
+.pair { display: grid; gap: var(--sp-3); margin: var(--sp-4) 0; }
+@media (min-width: 620px) { .pair { grid-template-columns: 1fr 1fr; } }
+.pair > div { border: 1px solid var(--rule); border-radius: var(--radius-md); padding: var(--sp-3) var(--sp-4); background: var(--bg-surface); }
+.pair .h { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.pair pre { margin: 0; }
+.do { border-color: color-mix(in oklab, var(--ok) 34%, var(--rule)); }
+.dont { border-color: color-mix(in oklab, var(--danger) 34%, var(--rule)); }
+
+pre {
+  font-family: var(--font-mono); font-size: var(--fs-2xs); line-height: 1.55;
+  background: var(--bg-inset); border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-md); padding: var(--sp-3); overflow-x: auto;
+  color: var(--fg-1); margin: var(--sp-3) 0;
+}
+
+/* --- specimens ------------------------------------------------------------ */
+
+.specimen { border: 1px solid var(--rule); border-radius: var(--radius-lg); background: var(--bg-surface); margin: var(--sp-5) 0; overflow: hidden; }
+.specimen-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4); background: var(--bg-surface-2);
+  border-bottom: 1px solid var(--rule); flex-wrap: wrap;
+}
+.specimen-body { padding: var(--sp-5) var(--sp-4); }
+
+/* The eight palettes, rendered the way the real ThemeSwitcher renders them:
+   both candidates handed to CSS, CSS picks. appearance.css:64-68 */
+.palettes { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.pal { border: 1px solid var(--rule); border-radius: var(--radius-md); overflow: hidden; }
+.pal-bar { height: 46px; display: flex; }
+.pal-bar span { flex: 1; }
+.pal-meta { padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--rule-soft); }
+.pal-name { font-size: var(--fs-2xs); font-weight: var(--fw-semi); color: var(--fg-1); }
+.pal-val { font-family: var(--font-mono); font-size: 10px; color: var(--fg-4); display: block; margin-top: 2px; }
+
+/* type specimens */
+.type-row { display: flex; align-items: baseline; gap: var(--sp-4); padding: var(--sp-3) 0; border-bottom: 1px solid var(--rule-soft); flex-wrap: wrap; }
+.type-row:last-child { border-bottom: 0; }
+.type-label { font-family: var(--font-mono); font-size: var(--fs-3xs); color: var(--fg-4); min-width: 128px; }
+.sp-serif { font-family: var(--font-serif); }
+.sp-sans { font-family: var(--font-sans); }
+.sp-mono { font-family: var(--font-mono); }
+
+/* --- the appearance control: the proposed canonical pattern, working ------ */
+
+.appearance { position: fixed; top: var(--sp-3); right: var(--sp-3); z-index: 20; }
+.appearance-trigger {
+  width: 36px; height: 36px; display: grid; place-items: center;
+  background: var(--bg-canvas); color: var(--fg-2);
+  border: 1px solid var(--rule); border-radius: var(--radius-md);
+  cursor: pointer; box-shadow: var(--shadow-2);
+  transition: background var(--dur-fast) var(--ease-soft), color var(--dur-fast) var(--ease-soft), border-color var(--dur-fast) var(--ease-soft);
+}
+.appearance-trigger:hover { background: var(--bg-surface); color: var(--fg-1); border-color: var(--rule-strong); }
+.appearance-popover {
+  position: absolute; top: calc(100% + 6px); right: 0; min-width: 244px;
+  background: var(--bg-surface); border: 1px solid var(--rule);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-3);
+  padding: var(--sp-3);
+  /* Transform is permitted here: the surface enters and leaves the viewport.
+     It is prohibited on hover and state change, which is why nothing above
+     this line moves. */
+  opacity: 0; transform: translateY(-4px); visibility: hidden;
+  transition: opacity var(--dur-base) var(--ease-soft), transform var(--dur-base) var(--ease-soft), visibility var(--dur-base);
+}
+.appearance[data-open="true"] .appearance-popover { opacity: 1; transform: none; visibility: visible; }
+
+.theme-header { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); margin-bottom: 6px; }
+.theme-header-label {
+  font-family: var(--font-sans); font-size: var(--fs-3xs); letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--fg-4);
+}
+.theme-switcher { display: grid; grid-template-columns: repeat(var(--theme-count, 4), 1fr); gap: 2px; }
+.theme-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 6px 4px; background: none; border: 0; border-radius: var(--radius-sm);
+  cursor: pointer; color: var(--fg-3);
+  transition: color var(--dur-fast) var(--ease-soft), background var(--dur-fast) var(--ease-soft);
+}
+.theme-btn:hover { color: var(--fg-1); background: var(--bg-surface-2); }
+.theme-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.theme-swatch {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1px solid var(--rule-strong); background: var(--swatch-light);
+  box-shadow: 0 0 0 1px rgba(60,45,20,0.04);
+  transition: border-color var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
+}
+body[data-mode="dark"] .theme-swatch,
+:root[data-theme="dark"] body:not([data-mode]) .theme-swatch { background: var(--swatch-dark); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) body:not([data-mode]) .theme-swatch { background: var(--swatch-dark); }
+}
+.theme-btn[aria-checked="true"] .theme-swatch { border-color: var(--gilt); box-shadow: 0 0 0 1px var(--gilt-soft); }
+.theme-name { font-size: var(--fs-3xs); }
+.theme-btn[aria-checked="true"] .theme-name {
+  font-style: italic; font-family: var(--font-serif); font-size: var(--fs-2xs);
+  font-variation-settings: 'opsz' 12; color: var(--fg-1);
+}
+.mode-switcher {
+  display: inline-flex; align-items: stretch; gap: 0; padding: 2px;
+  border: 1px solid var(--rule); border-radius: var(--radius-pill); background: var(--bg-surface-2);
+}
+.mode-btn {
+  width: 26px; height: 26px; display: grid; place-items: center;
+  background: none; border: 0; border-radius: var(--radius-pill);
+  color: var(--fg-4); cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft), color var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
+}
+.mode-btn:hover { color: var(--fg-2); }
+.mode-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.mode-btn[aria-checked="true"] { background: var(--bg-canvas); color: var(--fg-1); box-shadow: inset 0 1px 2px rgba(60,45,20,0.08); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* Reduced motion — the flat prohibition, matching reset.css rather than the
+   briefs. A 0.01ms ceiling sets duration but does not stop a running
+   animation, which is how a blinking caret ends up frozen mid-fade. Nothing on
+   this page waits on transitionend, so nothing breaks. Rule 11. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.foot { margin-top: var(--sp-10); padding-top: var(--sp-5); border-top: 1px solid var(--rule); font-size: var(--fs-2xs); color: var(--fg-4); }
+.foot p { color: var(--fg-4); font-size: var(--fs-2xs); }
+ul, ol { color: var(--fg-2); max-width: var(--measure); line-height: var(--lh-prose); padding-left: 1.3em; }
+li { margin-bottom: var(--sp-2); }
+li::marker { color: var(--fg-4); }
+.cite { font-family: var(--font-mono); font-size: 0.9em; color: var(--fg-4); }
+</style>
+
+<div class="appearance" id="appearance" data-open="false">
+  <button type="button" class="appearance-trigger" id="appearance-trigger"
+          aria-label="Appearance" aria-expanded="false" aria-controls="appearance-popover">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+      <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2Z"/>
+    </svg>
+  </button>
+  <div class="appearance-popover" id="appearance-popover" role="group" aria-label="Appearance">
+    <div class="theme-header">
+      <span class="theme-header-label">Theme</span>
+      <div class="mode-switcher" role="radiogroup" aria-label="Colour mode" id="mode-group"></div>
+    </div>
+    <div class="theme-switcher" role="radiogroup" aria-label="Colour theme" id="theme-group"></div>
+  </div>
+</div>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">Ekdotico &middot; Domico &middot; visual ruleset v1</p>
+    <h1>Staying true to Domico</h1>
+    <p class="greek">&epsilon;&kappa;&delta;&omicron;&tau;&iota;&kappa;&#972; &middot; of publishing</p>
+    <p class="lede">One definition, generated everywhere. This page is rendered in the system it specifies &mdash; the control in the corner is the proposal in section&nbsp;4.</p>
+  </header>
+
+  <hr class="sect-rule">
+
+  <h2>1 &middot; Where the three apps actually stand</h2>
+
+  <p>The brief for this work assumed <code>praktico</code> had drifted furthest. It has not. Measured against <code>docs</code> as the reference, on a scale where 0 is byte-identical in every shared concern and 100 shares nothing but the name:</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <caption>Audited 2026-08-10 against <code>@ekdotico/domico@0.10.0</code>. All three apps already declare and consume the package.</caption>
+      <thead>
+        <tr><th>App</th><th class="num">Audit</th><th class="num">Drift</th><th class="num">Local tokens</th><th class="num">Forked components</th><th>Verdict</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>praktico</strong></td><td class="num">18/20</td><td class="num">16</td><td class="num">0</td><td class="num">0</td><td><span class="mark mark-ok">Most conformant</span></td></tr>
+        <tr><td><strong>docs</strong></td><td class="num">15/20</td><td class="num">reference</td><td class="num">1</td><td class="num">1</td><td><span class="mark mark-warn">Holds the last fork</span></td></tr>
+        <tr><td><strong>deree</strong></td><td class="num">13/20</td><td class="num">22</td><td class="num">0</td><td class="num">2</td><td><span class="mark mark-bad">Furthest drifted</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Two things follow, and they set the shape of every rule below.</p>
+
+  <p><strong>The token layer is already solved.</strong> All three apps define effectively zero colour, type, spacing, radius, shadow, or motion tokens of their own &mdash; docs declares one per-app geometry value, <code>--chat-panel-w</code>, and re-declares <code>--table-sticky-offset</code> on <code>body</code> rather than <code>:root</code> to win a cascade tie it verified by reading link order out of a production build. Nothing needs unifying here. <span class="cite">docs/app/globals.css:25&ndash;29, :34&ndash;58 &middot; deree/app/globals.css:6&ndash;13 &middot; praktico/src/styles/global.css</span></p>
+
+  <p><strong>Drift now arrives as a fork of one projection, or as documentation nobody updated.</strong> Not as a rogue hex value. The rules below are aimed at those two failure modes, because those are the two that are actually happening.</p>
+
+  <hr class="sect-rule">
+
+  <h2>2 &middot; Tokens</h2>
+
+  <p>Four themes, two modes, eight palettes. 43 colour tokens resolve under every one of them, plus 71 theme-invariant scale tokens. Values live in exactly one place: <code>domico/tokens/generated/tokens.css</code>, generated from <code>tokens/source/*.json</code>.</p>
+
+  <div class="specimen">
+    <div class="specimen-head">
+      <span class="eyebrow">The eight palettes</span>
+      <span class="cite">--bg-canvas, light and dark</span>
+    </div>
+    <div class="specimen-body">
+      <div class="palettes" id="palette-specimen"></div>
+    </div>
+  </div>
+
+  <p>Each pair above is what the theme switcher samples: the light and dark <code>--bg-canvas</code> of each theme. Note <code>mono</code> light is <code>oklch(100% 0 0)</code> &mdash; deliberately pure white, the one place the system uses it, because a monochrome high-focus reading theme wants no cast at all.</p>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 01</p>
+    <h3>A new design need is a new token, never a literal</h3>
+    <p>Colour, type, spacing, radius, shadow, and motion come from custom properties. A token added to an app stylesheet forks the design system; a token added to <code>tokens/source</code> resolves in all eight palettes at once.</p>
+    <div class="pair">
+      <div class="do">
+        <div class="h"><span class="mark mark-ok">Do</span></div>
+        <pre>border-radius: var(--radius-lg);
+color: var(--accent);
+font-size: var(--fs-base);</pre>
+      </div>
+      <div class="dont">
+        <div class="h"><span class="mark mark-bad">Don't</span></div>
+        <pre>border-radius: 10px;
+color: #5a4a7a;
+font-size: 15px;</pre>
+      </div>
+    </div>
+    <p>A literal <code>font-size</code> in px is a defect on its own terms: the scale is rem so a reader who raised their browser font size scales the whole interface with it.</p>
+  </div>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 02</p>
+    <h3>Never write a fallback value into <code>var()</code></h3>
+    <p>A fallback that restates a token is a second source of truth with nothing keeping it honest. <code>deree</code> has 44 of them and <strong>seven have already gone stale</strong> &mdash; silently, because a fallback only shows itself when the token is missing.</p>
+    <div class="tbl-wrap">
+      <table>
+        <caption>deree/app/globals.css:200, 209, 245, 258, 259, 265, 384. docs has one fallback in 4,144 lines, and it falls back to another token.</caption>
+        <thead><tr><th>Written in deree</th><th>Fallback says</th><th>Token actually is</th></tr></thead>
+        <tbody>
+          <tr><td><code>var(--radius-sm, 6px)</code></td><td class="num">6px</td><td class="num">4px</td></tr>
+          <tr><td><code>var(--sp-12, 4rem)</code></td><td class="num">64px</td><td class="num">128px</td></tr>
+          <tr><td><code>var(--sp-10, 3rem)</code></td><td class="num">48px</td><td class="num">72px</td></tr>
+          <tr><td><code>var(--fs-2xl, 1.5rem)</code></td><td class="num">24px</td><td class="num">30px</td></tr>
+          <tr><td><code>var(--lh-tight, 1.2)</code></td><td class="num">1.2</td><td class="num">1.12</td></tr>
+          <tr><td><code>var(--fs-md, 1rem)</code></td><td class="num">16px</td><td class="num">17px</td></tr>
+          <tr><td><code>var(--fs-sm, 0.875rem)</code></td><td class="num">14px</td><td class="num">13px</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>One precision, because the brief reads more strictly than it means.</strong> It says to reference the token &ldquo;with no fallback list&rdquo; &mdash; but the token definitions themselves carry full font stacks, and that is correct: the stack belongs <em>in</em> the token, where it is authored once, and consumers reference only the token. The prohibition is on a consumer restating a value <code>var()</code> already knows. Thirteen of deree's fallbacks restate the family name, which is the banned form exactly.</p>
+    <p><strong>And note precisely why this is dangerous, because the obvious reading is wrong.</strong> Those seven stale fallbacks were never rendering. <code>var()</code> reaches its fallback only when the custom property is <em>unset</em>, and the token layer sets all of them &mdash; verified by computing the values in a running build, where <code>var(--sp-12, 4rem)</code> resolved to 128px, not 64px. Stripping them moved nothing on screen.</p>
+    <p>That makes the defect worse, not milder. Seven false statements about the design system sat in the stylesheet where <em>no pixel was able to contradict them</em>, waiting to become true the day a token was renamed. A wrong value that renders gets found. A wrong value that cannot render does not.</p>
+  </div>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 03</p>
+    <h3>Auto is the absence of <code>data-mode</code>, not a value of it</h3>
+    <p>This is the mechanism, not a convention. <code>:not([data-mode])</code> is what arms the <code>prefers-color-scheme</code> block, and what stops a dark operating system from overriding an explicit Light choice. Writing <code>data-mode="auto"</code> breaks both directions at once.</p>
+    <pre>&lt;html data-theme="parchment"&gt;                    &larr; auto: defers to the OS
+&lt;html data-theme="parchment" data-mode="light"&gt;  &larr; explicit: beats the OS
+&lt;html data-theme="parchment" data-mode="auto"&gt;   &larr; wrong. never emit this</pre>
+    <p>The explicit-dark and automatic-dark blocks are hand-maintained twins &mdash; CSS cannot alias an attribute selector to a media query. They are verified identical across 43 declarations &times; 4 themes. Change one, change the other.</p>
+  </div>
+
+  <hr class="sect-rule">
+
+  <h2>3 &middot; Typography</h2>
+
+  <p>Three faces, three fixed roles, never mixed. Serif reads. Sans labels. Mono identifies.</p>
+
+  <div class="specimen">
+    <div class="specimen-head">
+      <span class="eyebrow">The three roles</span>
+      <span class="cite">rendered in the real binaries</span>
+    </div>
+    <div class="specimen-body">
+      <div class="type-row">
+        <span class="type-label">--font-serif<br>Crimson&nbsp;Pro</span>
+        <span class="sp-serif" style="font-size: var(--fs-2xl); line-height: 1.2;">Provenance is a record, not a verdict</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">--font-sans<br>Commissioner</span>
+        <span class="sp-sans" style="font-size: var(--fs-md);">Seal document &middot; Export &middot; Session history</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">--font-mono<br>Fira&nbsp;Code</span>
+        <span class="sp-mono" style="font-size: var(--fs-sm);">10.1007/s40979-026-00213-1</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 04</p>
+    <h3>Greek glyphs never come from <code>--font-serif</code></h3>
+    <p><strong>Crimson Pro ships no Greek subset.</strong> The docs build emits six Crimson Pro faces &mdash; normal and italic across latin, latin-ext, and vietnamese &mdash; and not one covers <code>U+0370&ndash;03FF</code>. Commissioner and Fira Code both got a Greek face in the same build from the same tool, so this is a limitation of the face, not a subsetting choice.</p>
+    <p>The consequence is live on the reference app's own title page. <code>docs/app/page.tsx:49</code> renders <code>&epsilon;&kappa;&delta;&omicron;&tau;&iota;&kappa;&#972;</code>, and <code>docs/app/globals.css:1637</code> sets it in <code>var(--font-serif)</code>. It therefore falls through to <em>Iowan Old Style</em> on macOS and <em>Times New Roman</em> elsewhere: the one word carrying the brand's name is the one word not in the brand's typeface, and it looks different per operating system.</p>
+    <div class="pair">
+      <div class="do">
+        <div class="h"><span class="mark mark-ok">Do</span></div>
+        <pre>.title-page-greek {
+  font-family: var(--font-sans);
+}</pre>
+        <p style="font-size: var(--fs-2xs); margin: var(--sp-2) 0 0;">Commissioner has Greek coverage. A stated exception to the role rule, for glyphs the serif cannot set.</p>
+      </div>
+      <div class="dont">
+        <div class="h"><span class="mark mark-bad">Don't</span></div>
+        <pre>.title-page-greek {
+  font-family: var(--font-serif);
+}</pre>
+        <p style="font-size: var(--fs-2xs); margin: var(--sp-2) 0 0;">Silent fallback. No error, no warning &mdash; just a different typeface per OS.</p>
+      </div>
+    </div>
+    <p>The Greek wordmark has the same fault one layer deeper: <code>domico/assets/logo/logo-wordmark-greek.svg:10&ndash;11</code> uses live <code>&lt;text&gt;</code> with no <code>font-family</code>, its <code>&lt;defs&gt;</code> block is empty, and the <code>.latin</code> and <code>.greek</code> classes it references are defined nowhere. Outline both nodes to paths: a mark whose letterforms depend on a webfont resolving is not a mark.</p>
+  </div>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 05</p>
+    <h3>Load the italic subset, or lose it silently</h3>
+    <p><code>praktico/src/app/layout.tsx:39&ndash;43</code> omits <code>style: ["normal", "italic"]</code>, which <code>docs/app/layout.tsx:40</code> has. The package sets <code>font-style: italic</code> on the selected theme's name and on <code>.lede</code>, so those render as browser-synthesised oblique &mdash; visibly worse, and exactly the failure where an individually tuned set stops reading as a set. Take <code>fontConfig</code> from <code>@ekdotico/domico/fonts</code>, which already declares it; all three apps currently restate the config by hand instead.</p>
+  </div>
+
+  <hr class="sect-rule">
+
+  <h2>4 &middot; The appearance control</h2>
+
+  <p>This is already one component, not three: <code>docs</code>, <code>deree</code>, and <code>praktico</code> all render <code>ThemeSwitcher</code> and <code>ModeSwitcher</code> from <code>@ekdotico/domico/theme</code>. Every attribute you would want identical &mdash; swatch mechanism, four-theme grid, segmented mode pill, <code>role="radiogroup"</code>, roving tabindex, both arrow axes, Home and End, focus-follows-selection, transition timing &mdash; is already identical, because it is the same module.</p>
+
+  <p>Only the composition differs, and only in one app. <code>praktico</code> imports the narrow <code>@ekdotico/domico/styles/appearance.css</code> rather than the full stylesheet, and <code>.theme-header</code> lives in <code>components.css</code>. It therefore <em>cannot</em> render the header row in markup alone. That single import line is the whole visible difference.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Concern</th><th>docs</th><th>deree</th><th>praktico</th></tr></thead>
+      <tbody>
+        <tr><td>Component source</td><td colspan="3" style="text-align:center"><span class="mark mark-ok">identical &mdash; one package module</span></td></tr>
+        <tr><td>ARIA, keyboard, focus, swatches</td><td colspan="3" style="text-align:center"><span class="mark mark-ok">identical</span></td></tr>
+        <tr><td>Persistence &amp; pre-paint</td><td colspan="3" style="text-align:center"><span class="mark mark-ok">identical &mdash; cookie, server-restored, no inline script</span></td></tr>
+        <tr><td>Placement</td><td>sidebar foot</td><td>page footer</td><td>shell footer</td></tr>
+        <tr><td>Header row</td><td>present</td><td>present</td><td><span class="mark mark-bad">unavailable</span></td></tr>
+        <tr><td>Group label</td><td>&ldquo;Theme&rdquo;</td><td>&ldquo;Theme&rdquo;</td><td>&ldquo;Appearance&rdquo;</td></tr>
+        <tr><td>Order</td><td>mode, then themes</td><td>mode, then themes</td><td>themes, then mode</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 06</p>
+    <h3>One trigger, top right, disclosing the full optionset</h3>
+    <p>The control in this page's corner is the proposal. Open it, change the theme, and the page you are reading retints &mdash; which is the point: the swatches exist to be compared against real content, so the surface must stay visible while choosing.</p>
+    <p>That requirement decides the ARIA pattern. It is a <strong>disclosure</strong> plus a non-modal popover wrapping the two existing radiogroups &mdash; <em>not</em> a menu, because a menu closes on activation and would force a re-open per comparison; and not a dialog, because focus-trapping a preference with no confirm step hides the page the swatches are meant to preview. The disclosure adds <code>aria-expanded</code> and <code>aria-controls</code> to one new button and changes nothing inside either radiogroup.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Key</th><th>Behaviour</th></tr></thead>
+        <tbody>
+          <tr><td><code>Enter</code> / <code>Space</code></td><td>Toggle the popover; <code>aria-expanded</code> reflects state</td></tr>
+          <tr><td>on open</td><td>Focus the <strong>checked</strong> theme, not the first</td></tr>
+          <tr><td><code>Escape</code></td><td>Close, return focus to the trigger</td></tr>
+          <tr><td><code>Tab</code></td><td>Two stops inside, then leaves. Non-modal, no focus trap</td></tr>
+          <tr><td><code>&larr; &rarr; &uarr; &darr;</code></td><td>Move and select within a group; both axes, because a reader cannot see which one the author had in mind</td></tr>
+          <tr><td><code>Home</code> / <code>End</code></td><td>Ends of the group</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Ships once, in the package, as <code>domico/src/theme/AppearanceMenu.tsx</code>. Each app then deletes its own composition: three lines in <code>praktico</code>, seven each in <code>docs</code> and <code>deree</code>. Do not ship it in two places on one page &mdash; two instances means two elements claiming <code>aria-label="Colour theme"</code>.</p>
+    <p>Because it is a disclosure and not a dialogue, it takes no <code>aria-modal</code> and no focus trap. The inverse rule holds for anything that <em>does</em> claim <code>aria-modal="true"</code>: it owes a Tab cycle and an inert background, both of them, every time. docs gets this right in two of three overlays &mdash; the command palette and the chat panel share a refcounted inert helper and trap Tab explicitly, while the mobile drawer declares <code>aria-modal="true"</code> and does neither, so a keyboard reader tabs silently out of the open drawer into the page behind it. Claiming the role without keeping its promise is worse than not claiming it.</p>
+  </div>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 07</p>
+    <h3>Swatches carry both candidates; CSS picks</h3>
+    <p>Only one <code>[data-theme]</code> is live at a time, so an inactive theme's canvas cannot be read from computed CSS &mdash; and asking a hook would ask what no server can answer, because Auto defers to a preference that never leaves the reader's machine. So each swatch is handed both values and the stylesheet resolves at paint. The specimen in section 2 uses exactly this mechanism.</p>
+    <pre>&lt;span class="theme-swatch" aria-hidden="true"
+      style="--swatch-light: …; --swatch-dark: …" /&gt;</pre>
+    <p><code>aria-hidden</code> is correct here, not an oversight: the swatch is decorative and the button takes its accessible name from the sibling label, so colour is never the sole carrier of the choice.</p>
+  </div>
+
+  <hr class="sect-rule">
+
+  <h2>5 &middot; Components</h2>
+
+  <p>Ten components ship in the package. <code>docs</code> uses all ten, <code>deree</code> two, <code>praktico</code> two &mdash; and <code>praktico</code>'s figure is not a preference. Eight of them hardcode unprefixed global class names that a CSS Module cannot own, and praktico forbids importing a global component layer.</p>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 08</p>
+    <h3>A component used twice comes from the package</h3>
+    <p>The unblocking move is not a new mechanism. It is the factoring the package has already done twice for exactly this reason &mdash; <code>reset.css</code> split out at 0.7.0, <code>appearance.css</code> at 0.8.0. Continue it: ship one stylesheet per component, so an app imports only the CSS for what it renders.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Concern</th><th>Verdict</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>Mermaid palette</td><td><span class="mark mark-bad">Share</span></td><td>docs holds 216 hex literals; 7 of 8 palettes drifted. Import <code>@ekdotico/domico/mermaid</code></td></tr>
+          <tr><td><code>fontConfig</code></td><td><span class="mark mark-bad">Share</span></td><td>All three restate it by hand; two silently lose italics</td></tr>
+          <tr><td>Brand assets</td><td><span class="mark mark-warn">Share</span></td><td>87 files in <code>docs/public/logo/</code> duplicate the package</td></tr>
+          <tr><td>Expression guidelines</td><td><span class="mark mark-bad">Share</span></td><td>docs holds a local copy claiming v0.2; package ships v0.3</td></tr>
+          <tr><td><code>Badge</code></td><td><span class="mark mark-warn">Share</span></td><td>deree's <code>.site-header-badge</code> is a Badge in all but name</td></tr>
+          <tr><td><code>UnlockScreen</code>, <code>PageLoader</code></td><td><span class="mark mark-warn">Variant</span></td><td>Forked in <em>opposite</em> directions across docs and deree &mdash; each is ahead on different axes</td></tr>
+          <tr><td><code>KeyValue</code></td><td><span class="mark mark-info">Variant</span></td><td>Already prop-driven; a third variant covers deree's team grid</td></tr>
+          <tr><td>Marketing sections, doc tables, auth shell</td><td><span class="mark mark-ok">Local</span></td><td>Each appears once, in one app. Correctly excluded</td></tr>
+          <tr><td>App chrome geometry</td><td><span class="mark mark-ok">Local</span></td><td><code>--chat-panel-w</code>, <code>--site-header-h</code> &mdash; per-app, explicitly out of scope</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 09</p>
+    <h3>Never fork a projection of the palette</h3>
+    <p>The last surviving fork in the estate is not a rogue colour in a component. It is a second copy of the whole palette, projected into another format, in the reference app. <code>docs/components/docs/Mermaid.tsx:45&ndash;278</code> carries 216 hex literals across eight palettes and never imports <code>@ekdotico/domico/mermaid</code>, which the token pipeline generates for exactly this purpose.</p>
+    <p>Diffed value by value: <strong>202 identical, 14 drifted.</strong> That ratio is the proof &mdash; it is a copy that has since diverged, not an independent design.</p>
+    <div class="tbl-wrap">
+      <table>
+        <caption>The other seven drifted values are <code>tertiaryColor</code>. All 216 pairs were compared.</caption>
+        <thead><tr><th>Palette</th><th>docs <code>lineColor</code></th><th>package</th><th>docs is</th></tr></thead>
+        <tbody>
+          <tr><td>parchment light</td><td class="num">#8b6f3a</td><td class="num">#6f5826</td><td><span class="mark mark-bad">pre-WCAG gilt</span></td></tr>
+          <tr><td>parchment dark</td><td class="num">#c9a85e</td><td class="num">#c9a85e</td><td><span class="mark mark-ok">matches</span></td></tr>
+          <tr><td>library light</td><td class="num">#0d3b2e</td><td class="num">#6a5a2c</td><td><span class="mark mark-info">forest, per theme</span></td></tr>
+          <tr><td>library dark</td><td class="num">#6ab592</td><td class="num">#c4a85e</td><td><span class="mark mark-info">forest, per theme</span></td></tr>
+          <tr><td>sepia light</td><td class="num">#a85a28</td><td class="num">#6f5826</td><td><span class="mark mark-info">terracotta, per theme</span></td></tr>
+          <tr><td>sepia dark</td><td class="num">#d48458</td><td class="num">#c9a45c</td><td><span class="mark mark-info">terracotta, per theme</span></td></tr>
+          <tr><td>mono light</td><td class="num">#111111</td><td class="num">#6f5826</td><td><span class="mark mark-info">black, per theme</span></td></tr>
+          <tr><td>mono dark</td><td class="num">#f0f0f0</td><td class="num">#c4a85e</td><td><span class="mark mark-info">white, per theme</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>This one needs a decision, not a revert &mdash; and it is the only rule on this page where the reference app may be right and the package wrong.</strong> On <code>lineColor</code>, docs gives each theme its own accent while the package flattens all four to gilt. Diagram edges that pick up the theme's own colour are arguably the better design, and nothing in the house style forbids it.</p>
+    <p>But docs is also running a stale value: <code>#8b6f3a</code> is the pre-correction gilt, and <code>#6f5826</code> is the darkened one adopted after the original failed AA as small text. On a parchment canvas that is 4.43:1 against 6.33:1. Since <code>lineColor</code> paints edge strokes, the 3:1 non-text threshold applies and <em>both</em> pass &mdash; so this is an integrity defect, not an accessibility one. Do not report it as an AA failure.</p>
+    <p>So: decide whether per-theme diagram edges are canonical. If they are, add them to <code>tokens/source/</code> and regenerate, so the better design becomes the generated one. Either way the local map is deleted and the import taken. The generated file is trustworthy: its build fails if any colour drifts more than 0.6 in lightness or chroma through the <code>oklch &rarr; hex &rarr; oklch</code> round trip.</p>
+    <p class="resolved"><strong>Resolved.</strong> Per-theme edges were adopted as canonical and promoted into the token source as <code>--diagram-edge</code>, which is also now measured by the contrast guard at the 3:1 non-text threshold. That promotion reconciled seven of the eight <code>lineColor</code> values above, leaving parchment-light &mdash; where the corrected gilt stands and the fork's pre-remediation value goes &mdash; plus <code>tertiaryColor</code> in seven palettes: <strong>eight residual values, not fourteen</strong>. The table above is the pre-promotion snapshot, and the difference between the two counts is the promotion itself.</p>
+    <p class="resolved">The swap was then verified against <em>painted pixels</em>, not serialised markup, which turned out to matter: the emitted SVG retains presentation attributes the stylesheet overrides, so grepping the markup finds actor fills, note fills and lifeline strokes that never render. Reading <code>fill</code>, <code>stroke</code> and <code>color</code> back from the DOM gave <strong>168 assertions across eight palettes and five diagram types, zero failures</strong>, and confirmed that of Mermaid's 251 resolved slots the only six our 27 never touch belong to architecture and gantt diagrams, which this estate does not draw.</p>
+  </div>
+
+  <hr class="sect-rule">
+
+  <h2>6 &middot; Motion</h2>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 10</p>
+    <h3>Fades, at <code>--dur-base</code> with <code>--ease-soft</code></h3>
+    <p>Transform is permitted <strong>only where a surface enters or leaves the viewport</strong> &mdash; a drawer sliding, a popover rising. It is prohibited on anything already on screen: hover, focus, and state changes fade, they do not move. The popover in this page's corner uses <code>translateY(-4px)</code> because it enters; nothing else on the page moves at all.</p>
+    <p>No bounce, no spring, no elastic. Press should feel like paper pressing on a soft surface, not a button bouncing. Timing lives in <code>--dur-fast</code> (140ms), <code>--dur-base</code> (220ms), and <code>--dur-slow</code> &mdash; never as a literal. The package itself breaks this at <code>appearance.css:116&ndash;119</code>, where three raw <code>140ms cubic-bezier(0.22, 1, 0.36, 1)</code> values numerically equal the tokens today and will fork the moment either moves.</p>
+  </div>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 11</p>
+    <h3>Reduced motion is a flat prohibition, and nothing may wait on <code>transitionend</code></h3>
+    <p><strong>The written rule is wrong here and the code is right.</strong> Both <code>.impeccable.md</code> files state that reduced motion shortens durations to <code>0.01ms</code> rather than setting <code>transition: none</code>, and call the distinction load-bearing. The package ships the opposite &mdash; a universal <code>animation: none !important; transition: none !important</code> &mdash; and it is correct: a duration ceiling sets how long a transition takes but does not stop an <em>already running</em> animation, so a blinking caret freezes at whatever opacity the frame caught it. That bug is why the ceiling was abandoned.</p>
+    <p>The stated rationale for the ceiling was that components wait on <code>transitionend</code>. That was checked: <strong>zero</strong> <code>transitionend</code> or <code>animationend</code> listeners exist across all four repositories. Nothing depends on it, so nothing breaks.</p>
+    <p>Two consequences. Amend both briefs to the flat prohibition, and delete the surviving <code>0.01ms</code> blocks &mdash; there were <strong>eight</strong> of them in the reference app, and they were <em>dead code, not a competing philosophy</em>. They override <code>transition-duration</code> only, while the package's shorthand also sets <code>transition-property: none</code>, which nothing overrode; so nothing transitioned regardless of the duration they specified. Same conclusion, and worth stating precisely, because "two rules fighting" and "one rule that never applied" call for different fixes.</p>
+    <p>And never gate an unmount on <code>transitionend</code>: under a flat prohibition the event never fires, so a component that waits for it hangs permanently, for exactly the readers least able to work around it. Keep the surface mounted and toggle a class instead.</p>
+  </div>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 11a</p>
+    <h3>Never transition <code>visibility</code> with a duration</h3>
+    <p>This one was found by shipping it. The appearance control is specified to focus the reader's current theme when it opens; the effect and the selector were both correct, and it did not work &mdash; focus stayed on the trigger.</p>
+    <p><code>visibility</code> is a <strong>discrete</strong> property. Under a transition it does not interpolate: it flips when the easing output passes 0.5, which with <code>--ease-soft</code> is roughly 15ms into a 220ms transition. That is inside the first frame, so the effect ran while the panel still computed <code>visibility: hidden</code> &mdash; and <code>focus()</code> on a hidden element is silently ignored. No error, no warning, and nothing in the source that reads as wrong.</p>
+    <div class="pair">
+      <div class="do">
+        <div class="h"><span class="mark mark-ok">Do</span></div>
+        <pre>/* closed */
+transition: opacity var(--dur-base) var(--ease-soft),
+            visibility 0s linear var(--dur-base);
+/* open */
+transition: opacity var(--dur-base) var(--ease-soft),
+            visibility 0s linear 0s;</pre>
+      </div>
+      <div class="dont">
+        <div class="h"><span class="mark mark-bad">Don't</span></div>
+        <pre>transition: opacity var(--dur-base) var(--ease-soft),
+            visibility var(--dur-base) var(--ease-soft);</pre>
+        <p style="font-size: var(--fs-2xs); margin: var(--sp-2) 0 0;">Focusable only after the flip. Also cuts the closing fade off halfway.</p>
+      </div>
+    </div>
+    <p>Zero duration, delayed to the end of the fade. Instant on opening, so the surface is focusable in the same frame; held visible through the close, so the fade is not truncated. The guard now asserts it, and the assertion was mutation-tested by reintroducing the duration and confirming it fails.</p>
+  </div>
+
+  <hr class="sect-rule">
+
+  <h2>7 &middot; Prohibitions</h2>
+
+  <p>These are the ones with teeth, because each has been violated at least once.</p>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 12</p>
+    <h3>No coloured edge stripe, by any mechanism</h3>
+    <p>The house style prohibits coloured left-border accent cards by name. It is violated in two places, by two different mechanisms, and one of them is the component library itself.</p>
+    <p><strong>In the package:</strong> <code>components.css:378&ndash;385</code> draws a 3px tinted <code>::before</code> stripe on every non-<code>note</code> Callout. A pseudo-element evades the letter of a ban written about <code>border-left</code> while being precisely what the ban exists to prevent. Both <code>docs</code> and <code>deree</code> render it.</p>
+    <p><strong>In docs:</strong> four uses of <code>border-inline-start: 2px</code>, of which one is a true violation &mdash; <code>globals.css:563</code> puts a 2px gilt stripe on a blockquote that already has a surface, a hairline border, and a radius. That is a card with a coloured edge, exactly the named pattern. The other three are bare blockquote rules with no card surface, plus a transient <code>:target</code> locator; those are typographic convention rather than decoration.</p>
+    <p><strong>The rule is the pattern, not the property.</strong> Re-treat Callout with a full hairline and a background tint &mdash; it already carries a title and <code>role="note"</code> to signal tone. Drop <code>globals.css:563</code> to a hairline and carry the gilt as a <code>--hl-quote</code> wash, or remove the card surface and keep the rule. Then rule explicitly on the bare 2px blockquote: if it is house style, write it into the brief and name the ceiling. An unwritten exception is how a ban erodes.</p>
+  </div>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 13</p>
+    <h3>Contrast is owed by all eight palettes, not the default one</h3>
+    <p>Measured across every foreground and surface pair the apps actually render: <strong>96 of 96 checks pass</strong>. But three sit close enough that a single lightness nudge breaks one, and nothing in any app catches it:</p>
+    <div class="tbl-wrap">
+      <table>
+        <caption>Threshold 4.5:1, WCAG 2.2 SC 1.4.3. The three <code>--bg-surface-2</code> rows are below the text threshold but are not live failures &mdash; no app currently sets text in those pairs.</caption>
+        <thead><tr><th>Pair</th><th>Palette</th><th class="num">Ratio</th><th class="num">Headroom</th></tr></thead>
+        <tbody>
+          <tr><td><code>--accent</code> on <code>--accent-soft</code></td><td>parchment dark</td><td class="num">4.568</td><td class="num">0.068</td></tr>
+          <tr><td><code>--fg-4</code> on <code>--bg-canvas</code></td><td>library light</td><td class="num">4.550</td><td class="num">0.050</td></tr>
+          <tr><td><code>--accent</code> on <code>--accent-soft</code></td><td>sepia light</td><td class="num">4.636</td><td class="num">0.136</td></tr>
+          <tr><td><code>--fg-3</code> on <code>--bg-surface-2</code></td><td>sepia light</td><td class="num">4.320</td><td class="num">&minus;0.180</td></tr>
+          <tr><td><code>--fg-4</code> on <code>--bg-surface-2</code></td><td>library light</td><td class="num">4.200</td><td class="num">&minus;0.300</td></tr>
+          <tr><td><code>--fg-4</code> on <code>--bg-surface-2</code></td><td>all four light</td><td class="num">4.20&ndash;4.36</td><td class="num">below</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Every semantic colour &mdash; <code>--accent</code>, <code>--gilt</code>, <code>--ok</code>, <code>--warn</code>, <code>--danger</code>, <code>--info</code>, <code>--burgundy</code>, and both cross-reference tokens &mdash; clears 4.5:1 on all three surfaces in all eight palettes. The brief's claim that the brand palette was amended for contrast is borne out by measurement.</p>
+    <p>The trap is <code>--fg-4</code> on <code>--bg-surface-2</code>, which sits below 4.5:1 in all four light palettes. It is not a violation today because its only use is the mode pill, where the content is icons and the 3:1 non-text threshold applies. It becomes a violation the first time someone reads it as a muted text colour. Either darken it by about 3% lightness in the light sources, or mark it icon-only in the token source. The same applies to <code>--fg-5</code> at 1.41&ndash;2.01:1 &mdash; decorative separators only, and it should say so where it is defined.</p>
+    <p><strong>Opacity-derived colours sit outside the checker entirely, and that is where the real failures are.</strong> <code>deree/app/lis/lis.module.css</code> composited <code>--accent-ink</code> onto <code>--accent</code> at three different opacities. Measured across all eight palettes, every one of the three fails:</p>
+    <div class="tbl-wrap">
+      <table>
+        <caption>Threshold 4.5:1. Bold fails. An audit that checks only the light palettes finds one of these; there are three.</caption>
+        <thead><tr><th>Palette</th><th class="num">60%</th><th class="num">70%</th><th class="num">75%</th><th class="num">full</th></tr></thead>
+        <tbody>
+          <tr><td>parchment light</td><td class="num">3.99</td><td class="num">4.79</td><td class="num">5.23</td><td class="num">7.79</td></tr>
+          <tr><td>library dark</td><td class="num"><strong>3.58</strong></td><td class="num">4.54</td><td class="num">5.09</td><td class="num">7.91</td></tr>
+          <tr><td>sepia light</td><td class="num"><strong>3.30</strong></td><td class="num"><strong>3.91</strong></td><td class="num"><strong>4.24</strong></td><td class="num">6.17</td></tr>
+          <tr><td>sepia dark</td><td class="num"><strong>2.89</strong></td><td class="num"><strong>3.50</strong></td><td class="num"><strong>3.86</strong></td><td class="num">5.86</td></tr>
+          <tr><td>parchment dark</td><td class="num"><strong>2.80</strong></td><td class="num"><strong>3.37</strong></td><td class="num"><strong>3.68</strong></td><td class="num">5.41</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Full opacity is 5.41:1 at its worst. So the fix is not a tuned opacity &mdash; it is no opacity. <strong>Differentiate text by size and weight, never by transparency on a saturated field.</strong> And note what this does to the audit method: a contrast check that samples the default theme, or only the light modes, will report one failure where three exist.</p>
+  </div>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 14</p>
+    <h3>Documentation that contradicts the code is a defect with a severity</h3>
+    <p>Every app migrated onto the package. Not one updated its written account of it. This is the drift that matters most, because the enforcement hooks feed these files to agents on every edit &mdash; so the most likely &ldquo;corrective&rdquo; action is to undo the correct architecture.</p>
+    <ul>
+      <li><code>praktico/CLAUDE.md</code> and its token catalogue point Rule 1 at <code>src/styles/tokens.css</code>, deleted in commit <code>0a76b63</code>. The PreToolUse hook injects that dead path on every CSS or TSX edit.</li>
+      <li>Both cite <code>src/lib/appearance.test.ts</code> as guarding the dark twins. The file does not exist, so the documented guard is absent.</li>
+      <li><code>--measure</code> is documented as 68ch and is 72ch. Three tokens listed &ldquo;deliberately absent&rdquo; are defined and in use.</li>
+      <li><code>deree/app/layout.tsx</code> states there is no switcher on the site. <code>SiteFooter.tsx:31</code> has rendered one since it landed.</li>
+      <li><code>deree/.impeccable.md</code> is a verbatim copy of the docs brief &mdash; still titled &ldquo;Ekdotico Docs&rdquo;, still naming the superseded Source Serif&nbsp;4 / Inter&nbsp;Tight / JetBrains&nbsp;Mono trio.</li>
+      <li>praktico's specification forbids the shared package its own <code>package.json</code> depends on.</li>
+    </ul>
+  </div>
+
+  <hr class="sect-rule">
+
+  <h2>8 &middot; Enforcement</h2>
+
+  <p>Advisory guards did not prevent any of the above. Seven checks already exist in the package and all seven pass &mdash; they simply cannot be run from the apps, because <code>domico/package.json</code> excludes <code>scripts/</code> from its <code>files</code> array. Fixing that is the precondition for everything in this section.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Check</th><th>Fails the build when</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td><code>check-contrast</code></td><td>Any pair drops below AA in any of the eight palettes</td><td><span class="mark mark-warn">exists, unreachable</span></td></tr>
+        <tr><td><code>check-generated</code></td><td>A token artefact no longer matches <code>tokens/source</code></td><td><span class="mark mark-warn">exists, unreachable</span></td></tr>
+        <tr><td><code>check-appearance</code></td><td>The dark twins drift, or <code>data-mode="auto"</code> is ever emitted</td><td><span class="mark mark-warn">exists, unreachable</span></td></tr>
+        <tr><td><code>check-literals</code></td><td>A hex, px font-size, family name, or duration appears outside the token source</td><td><span class="mark mark-bad">to write</span></td></tr>
+        <tr><td><code>check-fallbacks</code></td><td>Any <code>var(--token, literal)</code> appears in an app stylesheet</td><td><span class="mark mark-bad">to write</span></td></tr>
+        <tr><td><code>check-no-local-dupes</code></td><td>An app reimplements something the package exports</td><td><span class="mark mark-bad">to write</span></td></tr>
+        <tr><td><code>check-greek</code></td><td>Greek codepoints appear in a rule resolving to <code>--font-serif</code></td><td><span class="mark mark-bad">to write</span></td></tr>
+        <tr><td><code>ekdotico-lint</code></td><td>Copy violates the expression guidelines</td><td><span class="mark mark-bad">configured in all three, run in none</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="rule-block">
+    <p class="rule-n">Rule 15</p>
+    <h3>A version you cannot read is a version you cannot adopt</h3>
+    <p><code>domico/package.json</code> declares <code>0.10.0</code>. Its <code>CHANGELOG.md</code> stops at <code>0.4.1</code> and its git tags stop at <code>v0.2.0</code> &mdash; six published versions with no changelog and no tag. A consumer cannot tell what a bump contains, which is the whole argument against taking one.</p>
+    <p>Pin exactly, as <code>praktico</code> does. <code>docs</code> and <code>deree</code> both carry <code>^0.10.0</code>; all three resolve to 0.10.0 today, so the caret is a latent fork that arms itself the day 0.11.0 publishes.</p>
+  </div>
+
+  <footer class="foot">
+    <p><strong>Provenance.</strong> Compiled 2026-08-10 against <code>@ekdotico/domico@0.10.0</code> as consumed by <code>docs</code>, <code>deree</code>, and <code>internal/praktico</code>. Every colour, size, and duration on this page is the token value it names; the three typefaces are the binaries the docs site ships, inlined. Contrast figures are measured, not asserted. Where a claim cites a file and line, the claim was read there.</p>
+    <p>Rendered in Crimson Pro, Commissioner, and Fira Code &mdash; all SIL OFL 1.1.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Palette canvases, lifted from tokens.css. Both candidates per theme,
+  // because CSS resolves which one shows — see Rule 07.
+  var THEMES = [
+    { key: 'parchment', label: 'Parchment', light: 'oklch(95.877% 0.0127 86.83)', dark: 'oklch(20.983% 0.0083 84.59)', accentL: 'oklch(44.632% 0.0788 298.5)', accentD: 'oklch(65.701% 0.0707 299.08)' },
+    { key: 'library',   label: 'Library',   light: 'oklch(98.427% 0.004 106.47)', dark: 'oklch(18.333% 0.0123 155.82)', accentL: 'oklch(31.748% 0.0544 170.22)', accentD: 'oklch(71.423% 0.0917 162.68)' },
+    { key: 'sepia',     label: 'Sepia',     light: 'oklch(96.531% 0.0102 81.8)',  dark: 'oklch(19.996% 0.0154 47.93)', accentL: 'oklch(50.352% 0.1134 50.6)',  accentD: 'oklch(68.817% 0.1151 48.86)' },
+    { key: 'mono',      label: 'Mono',      light: 'oklch(100% 0 0)',             dark: 'oklch(14.479% 0 0)',          accentL: 'oklch(17.764% 0 0)',          accentD: 'oklch(95.514% 0 0)' }
+  ];
+  // MODES order matches the package: light, auto, dark.
+  var MODES = [
+    { key: 'light', label: 'Light', path: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/>' },
+    { key: 'auto',  label: 'Follow the system', path: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>' },
+    { key: 'dark',  label: 'Dark',  path: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>' }
+  ];
+
+  var body = document.body;
+  body.setAttribute('data-palette', 'parchment');
+
+  var themeGroup = document.getElementById('theme-group');
+  var modeGroup = document.getElementById('mode-group');
+  var wrap = document.getElementById('appearance');
+  var trigger = document.getElementById('appearance-trigger');
+
+  var theme = 'parchment';
+  var mode = 'auto';
+
+  function icon(d) {
+    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+  }
+
+  // Build both radiogroups. Roving tabindex: exactly one tab stop per group,
+  // and it is the checked option — mirrors useRadioGroup.ts.
+  THEMES.forEach(function (t) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'theme-btn';
+    b.setAttribute('role', 'radio');
+    b.dataset.value = t.key;
+    b.innerHTML = '<span class="theme-swatch" aria-hidden="true" style="--swatch-light:' + t.light +
+      ';--swatch-dark:' + t.dark + '"></span><span class="theme-name">' + t.label + '</span>';
+    themeGroup.appendChild(b);
+  });
+  MODES.forEach(function (m) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'mode-btn';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-label', m.label);
+    b.dataset.value = m.key;
+    b.innerHTML = icon(m.path);
+    modeGroup.appendChild(b);
+  });
+
+  function sync() {
+    if (theme) body.setAttribute('data-palette', theme);
+    // Auto is the ABSENCE of the attribute, never a value of it — Rule 03.
+    if (mode === 'auto') body.removeAttribute('data-mode');
+    else body.setAttribute('data-mode', mode);
+
+    [[themeGroup, theme], [modeGroup, mode]].forEach(function (pair) {
+      var buttons = pair[0].querySelectorAll('[role="radio"]');
+      Array.prototype.forEach.call(buttons, function (b) {
+        var on = b.dataset.value === pair[1];
+        b.setAttribute('aria-checked', on ? 'true' : 'false');
+        b.tabIndex = on ? 0 : -1;
+      });
+    });
+  }
+
+  function wire(group, onPick) {
+    group.addEventListener('click', function (e) {
+      var b = e.target.closest('[role="radio"]');
+      if (b) { onPick(b.dataset.value); }
+    });
+    group.addEventListener('keydown', function (e) {
+      var keys = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'];
+      if (keys.indexOf(e.key) === -1) return;
+      var buttons = Array.prototype.slice.call(group.querySelectorAll('[role="radio"]'));
+      var i = buttons.indexOf(document.activeElement);
+      if (i === -1) return;
+      e.preventDefault();
+      var next = i;
+      // Both axes are accepted: a reader cannot see which one the author meant.
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = i === buttons.length - 1 ? 0 : i + 1;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = i === 0 ? buttons.length - 1 : i - 1;
+      else if (e.key === 'Home') next = 0;
+      else next = buttons.length - 1;
+      onPick(buttons[next].dataset.value);
+      // Focus follows selection, so arrowing previews each option.
+      group.querySelector('[aria-checked="true"]').focus();
+    });
+  }
+
+  wire(themeGroup, function (v) { theme = v; sync(); });
+  wire(modeGroup, function (v) { mode = v; sync(); });
+
+  function open(next) {
+    wrap.dataset.open = next ? 'true' : 'false';
+    trigger.setAttribute('aria-expanded', next ? 'true' : 'false');
+    if (next) {
+      // Focus the CHECKED option, not the first — arrowing from the wrong
+      // place is how a reader loses their current theme.
+      var checked = themeGroup.querySelector('[aria-checked="true"]');
+      if (checked) checked.focus();
+    }
+  }
+
+  trigger.addEventListener('click', function () { open(wrap.dataset.open !== 'true'); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && wrap.dataset.open === 'true') { open(false); trigger.focus(); }
+  });
+  document.addEventListener('click', function (e) {
+    if (wrap.dataset.open === 'true' && !wrap.contains(e.target)) open(false);
+  });
+
+  // The palette specimen in section 2, built from the same source of truth as
+  // the switcher, so the two can never disagree.
+  var spec = document.getElementById('palette-specimen');
+  THEMES.forEach(function (t) {
+    var el = document.createElement('div');
+    el.className = 'pal';
+    el.innerHTML =
+      '<div class="pal-bar">' +
+        '<span style="background:' + t.light + '"></span>' +
+        '<span style="background:' + t.accentL + '"></span>' +
+        '<span style="background:' + t.dark + '"></span>' +
+        '<span style="background:' + t.accentD + '"></span>' +
+      '</div>' +
+      '<div class="pal-meta"><span class="pal-name">' + t.label + '</span>' +
+      '<span class="pal-val">' + t.light + '</span>' +
+      '<span class="pal-val">' + t.dark + '</span></div>';
+    spec.appendChild(el);
+  });
+
+  sync();
+}());
+</script>

@@ -51,6 +51,26 @@ const PAIRS = [
   // exactly the shape of thing that passes on the theme it was picked against
   // and fails on one of the other three.
   ['diagram-edge', 'bg-surface', 3],
+  // --fg-4 on --bg-surface-2 at the NON-TEXT threshold, and the threshold is the
+  // whole point of the entry. Measured, it is 4.20:1 to 4.36:1 across the four
+  // light palettes: short of 4.5:1, and not a violation, because its only use is
+  // the appearance control's mode pill where the content is icons and SC 1.4.11
+  // applies at 3:1.
+  //
+  // Listed rather than omitted so the constraint is executable. The pair used to
+  // be simply absent, and an absence cannot distinguish "checked and permitted"
+  // from "never considered" — so the day someone reaches for --fg-4 as a muted
+  // body text colour on that surface, nothing here would have objected. At 3:1
+  // this entry keeps the token honest for the use it has, and the catalogue
+  // records that it is icon-only. Raising this to 4.5 is the correct change if
+  // the token ever carries prose; darkening the light sources by about 3%
+  // lightness is what that would take.
+  ['fg-4', 'bg-surface-2', 3],
+  // --fg-5 is decorative only — hairlines and separators — at 1.41:1 to 2.01:1.
+  // No text threshold applies and none is claimed; 1.4.11 does not cover purely
+  // decorative graphics either, so this is deliberately not in the list. Stated
+  // here because the catalogue says it is decorative, and a reader checking
+  // whether that claim is enforced should find the answer rather than silence.
 ];
 
 const read = (theme, mode) => {

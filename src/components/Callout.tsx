@@ -1,13 +1,20 @@
 import type { ReactNode } from 'react';
 
 // Callout — editorial aside with semantic tone. Six types, each mapped
-// to a token pair (--*-soft for the wash, --* for the stripe and label).
+// to a token pair (--*-soft for the wash, --* for the hairline border
+// and the label).
 //
 //   <Callout type="warn" title="Caution">…</Callout>
 //
 // Authors compose in MDX. The component itself is intentionally
-// minimal — the per-type styling lives in app/globals.css under a
-// `[data-type=…]` selector, mirroring the kv-row tone pattern.
+// minimal — the per-type styling lives in the package stylesheet under a
+// `[data-type=…]` selector, mirroring the kv-row tone pattern. Take it
+// from `@ekdotico/domico/styles/callout.css` if the whole component layer
+// is more than the application wants.
+//
+// `role="note"` on warn and danger is what keeps the tone out of colour
+// alone: with the title above it, the aside announces itself as an aside
+// whether or not the reader can distinguish the wash from the canvas.
 //
 // "quote" is for editorial pull-quotes. Source quotations should still
 // use the native <blockquote> element, which has its own styling.

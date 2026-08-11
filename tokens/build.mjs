@@ -241,7 +241,15 @@ const pick = (theme, mode) => {
     primaryColor: hex('bg-surface'),
     primaryTextColor: hex('fg-1'),
     primaryBorderColor: hex('rule-strong'),
-    lineColor: hex('gilt'),
+    // Diagram edges are per-theme, and --gilt is not the token for them. This
+    // slot read hex('gilt'), which flattened all four themes to the same warm
+    // gold — a gilt arrow on the Library canvas and on the Mono canvas alike.
+    // The documentation site had already diverged on exactly this, giving each
+    // theme its own edge colour in a 216-literal fork of this file, and that
+    // treatment is the one being adopted: gilt under Parchment, forest under
+    // Library, terracotta under Sepia, and ink or paper under Mono. It is a
+    // token rather than a branch here, so the same colour is available to CSS.
+    lineColor: hex('diagram-edge'),
     secondaryColor: hex('bg-surface-2'),
     secondaryTextColor: hex('fg-1'),
     secondaryBorderColor: hex('rule'),

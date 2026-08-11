@@ -15,19 +15,45 @@
    fork this package exists to end. It had in fact done neither, and the
    switchers rendered unstyled.
 
-   The header row that pairs a label with the mode pill is NOT here. That row
-   is markup each application writes itself, so it belongs with the shared
-   components rather than with the controls.
+   The header row that pairs a label with the mode pill IS here, and used not to
+   be: it lived with the shared components on the reasoning that the markup is
+   an application's own. The reasoning was sound and the outcome was not. An
+   application that imports only this entry — which is the entire reason this
+   entry exists — could not reach .theme-header, so the label and the mode pill
+   stacked instead of sitting on one line. That was praktico's only visible
+   divergence from docs, and one import boundary was the whole cause of it. A
+   row that exists to lay out two controls this file styles belongs with them.
 
    Included in styles/components.css and in the combined styles.css, so a
    consumer that already takes either needs no change.
    =========================================================================== */
 
+/* --- Header row — label on the left, mode pill on the right --------------- */
+
+.theme-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.theme-header-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-3xs);
+  letter-spacing: var(--tr-label);
+  text-transform: uppercase;
+  color: var(--fg-4);
+}
+
 /* --- Theme switcher ------------------------------------------------------ */
 
+/* The column count comes from --theme-count rather than from the literal 4 it
+   used to hold. Everything else about the control is driven by the generated
+   `themeNames` array, so a fifth theme in the token source would have added a
+   fifth button to a four-column grid and wrapped it onto a second row. */
 .theme-switcher {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--theme-count, 4), 1fr);
   gap: 2px;
 }
 .theme-btn {
@@ -45,6 +71,14 @@
 }
 .theme-btn:hover { color: var(--fg-1); }
 .theme-btn:hover .theme-swatch { border-color: var(--fg-3); }
+/* The global ring in reset.css sits at outline-offset: 2px, which on a grid
+   with a 2px gap lands the ring inside the neighbouring cell — the focused
+   theme reads as though both it and its neighbour were selected. 1px keeps the
+   ring wholly inside its own button. */
+.theme-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 .theme-swatch {
   width: 18px;
   height: 18px;
@@ -70,7 +104,11 @@
   font-family: var(--font-sans);
   font-size: var(--fs-3xs);
   font-weight: var(--fw-medium);
-  letter-spacing: 0.04em;
+  /* Rounded to the scale from an unnamed 0.04em. This is the one sentence-case
+     label among the small sans labels, so it wants less tracking than the
+     uppercase ones; at fs-3xs the difference from 0.04em is under a quarter of
+     a pixel, which does not earn a seventh tracking step. */
+  letter-spacing: var(--tr-wide);
 }
 .theme-btn.active {
   color: var(--fg-1);
@@ -113,10 +151,15 @@
   color: var(--fg-4);
   cursor: pointer;
   border-radius: var(--radius-pill);
+  /* The tokens, not the values they currently hold. These read 140ms and
+     cubic-bezier(0.22, 1, 0.36, 1) as literals, which is exactly what
+     --dur-fast and --ease-soft resolve to today — and precisely why they had to
+     go: a retune of the motion scale would have left this one control moving at
+     the old timing with nothing to notice. */
   transition:
-    background 140ms cubic-bezier(0.22, 1, 0.36, 1),
-    color 140ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 140ms cubic-bezier(0.22, 1, 0.36, 1);
+    background var(--dur-fast) var(--ease-soft),
+    color var(--dur-fast) var(--ease-soft),
+    box-shadow var(--dur-fast) var(--ease-soft);
 }
 .mode-btn:hover {
   color: var(--fg-2);
@@ -129,4 +172,109 @@
 .mode-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+}
+
+/* --- Appearance menu — disclosure button + non-modal popover --------------- */
+
+/* AppearanceMenu wraps the header row and both switchers in a popover, for
+   chrome with no room for the pair laid out. The panel is a disclosure rather
+   than a menu: a reader picks a theme by comparing it against the page, so the
+   surface stays open through every activation.
+   ------------------------------------------------------------------------ */
+
+.appearance-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.appearance-trigger {
+  appearance: none;
+  /* WCAG 2.2 SC 2.5.8 wants 24px; 36px is the chrome button size, and the
+     icon is the whole control, so there is no label to lean on. */
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  color: var(--fg-3);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-soft),
+    color var(--dur-fast) var(--ease-soft),
+    border-color var(--dur-fast) var(--ease-soft);
+}
+.appearance-trigger:hover {
+  color: var(--fg-1);
+  border-color: var(--rule-strong);
+}
+.appearance-menu[data-open="true"] .appearance-trigger {
+  background: var(--bg-surface-2);
+  color: var(--fg-1);
+  border-color: var(--rule-strong);
+}
+
+/* The panel stays in the document, open or closed. Unmounting it on
+   transitionend would hang for any reader who has asked for reduced motion:
+   reset.css sets `transition: none !important` inside that query, so the event
+   never fires and a component waiting on it waits for ever.
+
+   `visibility` is what makes the closed panel genuinely closed — out of the tab
+   order and out of the accessibility tree — and it is a discrete property, so
+   it flips to visible at the start of the opening transition and to hidden at
+   the end of the closing one. Opacity alone would leave an invisible panel
+   collecting Tab stops.
+
+   The 4px lift is a transform, which the house rule permits here and nowhere
+   near a hover or a state change: this surface is entering and leaving the
+   viewport, and the movement is what says where it came from. */
+.appearance-panel {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  right: 0;
+  z-index: 20;
+  min-width: 240px;
+  padding: var(--sp-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-3);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  /* visibility is a DISCRETE property. Transitioned, it flips when the easing
+     output passes 0.5 — with --ease-soft, roughly 15ms into a 220ms transition,
+     which is inside the first frame. So `visibility var(--dur-base)` left a
+     window at the start of opening where the panel was laid out but still
+     computed `visibility: hidden`, and a focus() call in that window is
+     silently ignored: opening the panel left focus on the trigger instead of on
+     the reader's current theme.
+
+     Zero duration, delayed to the end of the fade instead. Opening flips
+     visibility in the same frame, so the panel is focusable immediately;
+     closing keeps it visible for the whole fade rather than cutting the
+     animation off halfway. Under prefers-reduced-motion the reset drops all of
+     this and visibility flips instantly in both directions, which is correct. */
+  transition:
+    opacity var(--dur-base) var(--ease-soft),
+    transform var(--dur-base) var(--ease-soft),
+    visibility 0s linear var(--dur-base);
+}
+.appearance-menu[data-open="true"] .appearance-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition:
+    opacity var(--dur-base) var(--ease-soft),
+    transform var(--dur-base) var(--ease-soft),
+    visibility 0s linear 0s;
+}
+
+/* The row inside the panel carries the panel's own padding, so it does not
+   need the standalone row's bottom margin doubled up against the switcher. */
+.appearance-panel .theme-header {
+  margin-bottom: var(--sp-2);
 }

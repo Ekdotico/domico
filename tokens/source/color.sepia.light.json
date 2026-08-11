@@ -79,6 +79,10 @@
     "$value": "oklch(89.728% 0.037 86.17)",
     "$type": "color"
   },
+  "diagram-edge": {
+    "$value": "oklch(55.097% 0.1199 50.3)",
+    "$type": "color"
+  },
   "burgundy": {
     "$value": "oklch(42.853% 0.0935 35.15)",
     "$type": "color"

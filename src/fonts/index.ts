@@ -9,16 +9,46 @@
  *
  * Each family exposes the CSS variable that the token layer expects. Wire all
  * three at the application root, then the `--font-serif`, `--font-sans`, and
- * `--font-mono` tokens resolve:
+ * `--font-mono` tokens resolve.
+ *
+ * IMPORTANT, and it is not a style preference: `next/font` is a COMPILE-TIME
+ * transform, and it requires every option to be an explicitly written literal
+ * at the call site. It cannot be handed this object.
+ *
+ *     const serif = Crimson_Pro(fontConfig.serif);   // Font loader values must
+ *                                                   // be explicitly written
+ *                                                   // literals
+ *     const serif = Crimson_Pro({ ...fontConfig.serif });          // Unexpected
+ *                                                                 // spread
+ *
+ * Both forms fail the build, and neither fails typecheck — which is how they
+ * reached a branch that had passed typecheck, lint and tests. So the options are
+ * retyped at the call site, and `fontConfig` below is the statement of what they
+ * must say rather than a value to pass:
  *
  *   import { Crimson_Pro, Commissioner, Fira_Code } from 'next/font/google';
- *   import { fontConfig } from '@ekdotico/domico/fonts';
  *
- *   const serif = Crimson_Pro(fontConfig.serif);
- *   const sans  = Commissioner(fontConfig.sans);
- *   const mono  = Fira_Code(fontConfig.mono);
+ *   const serif = Crimson_Pro({
+ *     subsets: ['latin'], display: 'swap',
+ *     variable: '--font-crimson-pro', style: ['normal', 'italic'],
+ *   });
+ *   const sans = Commissioner({
+ *     subsets: ['latin'], display: 'swap', variable: '--font-commissioner',
+ *   });
+ *   const mono = Fira_Code({
+ *     subsets: ['latin'], display: 'swap', variable: '--font-fira-code',
+ *   });
  *
  *   <html className={`${serif.variable} ${sans.variable} ${mono.variable}`}>
+ *
+ * Because that duplication cannot be removed, it should be guarded. praktico
+ * asserts in `src/app/layout.test.ts` that every option `fontConfig` declares is
+ * present at the call site, deriving the expected set from this module — so the
+ * copy stays honest even though it is a copy. Do the same in any consumer.
+ *
+ * The serif MUST request the italic axis. `.theme-btn.active .theme-name` and
+ * the `.lede` utility both set `font-style: italic` on `--font-serif`, so an
+ * application that omits it renders a browser-synthesised oblique on every page.
  *
  * For a non-Next consumer, `fontFaceUrls` gives the equivalent stylesheet
  * hrefs; define the same three CSS variables yourself.

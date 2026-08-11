@@ -25,6 +25,15 @@ export { ModeSwitcher } from './ModeSwitcher.js';
 export { useRadioGroup } from './useRadioGroup.js';
 
 /**
+ * Both switchers behind one 36px button, for chrome with no room for the pair.
+ * A disclosure and a non-modal popover: the reader is comparing themes against
+ * the page, so the surface stays open on activation and never seals the page
+ * off behind a focus trap. Composes the two controls above rather than
+ * restating them.
+ */
+export { AppearanceMenu, type AppearanceMenuProps } from './AppearanceMenu.js';
+
+/**
  * Carries the server's reading of the cookie into the client tree, so that a
  * component asking which theme is active gets the reader's answer on the first
  * render rather than the default. Optional: without it the hooks fall back to

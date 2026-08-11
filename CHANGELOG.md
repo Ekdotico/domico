@@ -1,5 +1,33 @@
 # @ekdotico/domico
 
+## 0.5.0 – 0.10.0
+
+**No entries. Six versions were published without a changeset and without a git
+tag**, and this note exists so the gap is explicit rather than silent. Tags stop
+at `v0.2.0`; the entries below stop at 0.4.1; `package.json` reached 0.10.0.
+
+Nothing is reconstructed here beyond what the commit history states, because a
+changelog that invents what a release contained is worse than one that admits it
+does not know. What the version bumps in `package.json` are attached to, for
+anyone tracing a change to a release:
+
+| Version | Commit subject |
+|---|---|
+| 0.5.0 | `feat(icons): add plus, minus, and arrow-up-right, and a draw variant for the mark` |
+| 0.6.0 | `feat(icons): add pencil, for the rename affordance` |
+| 0.7.0 | `feat(styles): split the base layer, absorb four gaps, and prohibit motion flatly` |
+| 0.8.0 | `feat(styles): ship the appearance controls as their own entry` |
+| 0.9.0 | `feat(styles): move td-strong here, so the table cell pair lives in one place` |
+| 0.10.0 | `chore: rename the package and repository to Domico` |
+
+Three of those are load-bearing for consumers and were never announced anywhere
+a consumer reads: `styles/reset.css` and `styles/type.css` became separate
+entries at 0.7.0, `styles/appearance.css` at 0.8.0, and the package was renamed
+from `@ekdotico/design-system` to `@ekdotico/domico` at 0.10.0.
+
+The missing tags are not recreated. Tagging six commits retrospectively would
+assert that each was the published tree, which nothing here can confirm.
+
 ## 0.4.1
 
 ### Patch Changes

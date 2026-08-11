@@ -15,14 +15,19 @@
   },
   "type": "module",
   "bin": {
-    "ekdotico-lint": "./dist/src/lint/cli.js"
+    "ekdotico-lint": "./dist/src/lint/cli.js",
+    "ekdotico-check": "./dist/src/check/cli.js"
   },
   "sideEffects": [
     "*.css"
   ],
   "files": [
     "dist",
+    "src",
     "tokens/generated",
+    "tokens/source",
+    "tokens/lib",
+    "scripts",
     "assets",
     "expression/*.md",
     "LICENSE",
@@ -44,6 +49,16 @@
     "./styles/type.css": "./dist/styles/type-only.css",
     "./styles/components.css": "./dist/styles/components.css",
     "./styles/appearance.css": "./dist/styles/appearance-only.css",
+    "./styles/primitives.css": "./dist/styles/primitives.css",
+    "./styles/badge.css": "./dist/styles/badge.css",
+    "./styles/callout.css": "./dist/styles/callout.css",
+    "./styles/figure.css": "./dist/styles/figure.css",
+    "./styles/keyvalue.css": "./dist/styles/keyvalue.css",
+    "./styles/logo.css": "./dist/styles/logo.css",
+    "./styles/section-rule.css": "./dist/styles/section-rule.css",
+    "./styles/stat.css": "./dist/styles/stat.css",
+    "./styles/table.css": "./dist/styles/table.css",
+    "./styles/tabs.css": "./dist/styles/tabs.css",
     "./components": {
       "types": "./dist/src/components/index.d.ts",
       "default": "./dist/src/components/index.js"
@@ -96,9 +111,10 @@
     "check:appearance": "node scripts/check-appearance.mjs",
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:styles": "node scripts/check-styles.mjs",
+    "check:discipline": "node scripts/check-discipline.mjs .",
     "lint:copy": "node dist/src/lint/cli.js",
     "lint:fixture": "node scripts/check-lint-fixture.mjs",
-    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:styles && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
+    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:styles && pnpm check:discipline && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
     "release": "changeset publish"
   },
   "peerDependencies": {

@@ -82,7 +82,9 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/reset.css` | The reset, document defaults, accessibility primitives, scrollbars |
 | `@ekdotico/domico/styles/type.css` | The semantic type utilities alone |
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
-| `@ekdotico/domico/styles/appearance.css` | The theme switcher and the mode switcher alone |
+| `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
+| `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, and `tabs.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/domico/fonts` | Font loading configuration for the three locked families |
@@ -159,12 +161,21 @@ components are optional.
 
 An internal tool whose conventions forbid a global class layer can still render
 the appearance controls: `styles/appearance.css` is exactly the markup
-`ThemeSwitcher` and `ModeSwitcher` emit and carries nothing else.
+`ThemeSwitcher`, `ModeSwitcher`, and `AppearanceMenu` emit and carries nothing
+else.
+
+The same holds for the shared components. Each has its own entry, so a tool
+that renders three of them imports three stylesheets rather than a component
+layer holding a dozen classes it never uses. A global component layer was the
+one thing standing between the internal tools and the shared components, and
+`styles/components.css` remains for consumers that want the whole set.
 
 ```ts
 import '@ekdotico/domico/tokens.css';
 import '@ekdotico/domico/styles/reset.css';
 import '@ekdotico/domico/styles/appearance.css';
+import '@ekdotico/domico/styles/callout.css';
+import '@ekdotico/domico/styles/table.css';
 import { resolveTokens } from '@ekdotico/domico/tokens';
 
 // Values are available outside CSS, for canvas rendering, chart libraries,
@@ -199,6 +210,28 @@ consistent across the three applications:
 ```tsx
 import { ThemeSwitcher, ModeSwitcher } from '@ekdotico/domico/theme';
 ```
+
+Where the chrome has no room for the pair laid out, `AppearanceMenu` puts both
+behind one 36px button:
+
+```tsx
+import { AppearanceMenu } from '@ekdotico/domico/theme';
+
+<AppearanceMenu />;
+```
+
+It is a disclosure button and a non-modal popover, and neither a menu nor a
+dialog. A reader picks a theme by comparing each candidate against the page, so
+the surface stays open through every activation and never seals off the page it
+is being judged against. Escape closes it and returns focus to the button, a
+press outside closes it, and Tab leaves. On opening, focus lands on the theme
+already selected rather than on the first option, because the theme switcher is
+one tab stop parked on the active choice.
+
+Both properties are optional: `label` is the row label inside the panel, which
+defaults to "Theme", and `triggerLabel` is the accessible name on the button,
+which defaults to "Appearance". Its styles ship in `styles/appearance.css`
+alongside the two controls it composes.
 
 Add `themeInitScript()` to `<head>` as a blocking script. Without it the page
 renders one frame in Parchment light before the stored theme applies, which is
@@ -456,6 +489,31 @@ pnpm check          # drift gates and type check
 | `pnpm build:expression` | Regenerate the guidelines tables and `registers.md` from the JSON |
 | `pnpm check:generated` | Fail if a generated token artefact was edited by hand |
 | `pnpm check:expression` | Fail if the prose and the structured data disagree |
+
+### Running the guards from a consuming repository
+
+The drift gates were unavailable outside this repository, so no consuming
+application could make any of them a blocking check. `ekdotico-check` exposes
+them:
+
+```bash
+pnpm exec ekdotico-check              # contrast, styles, and appearance
+pnpm exec ekdotico-check contrast
+pnpm exec ekdotico-check --list
+```
+
+A command rather than a documented path into `node_modules`. A consumer
+invoking a script file by path depends on this package's internal layout, which
+then cannot change without breaking every pipeline that was never told it was
+coupled to it.
+
+Three of the seven run only here, and say so rather than failing on a missing
+import: `generated` rebuilds the tokens, `expression` validates the authoring
+schemas, and `exports` packs this package. Each needs a development dependency
+that is never published. `icons` compares against `lucide-static`, which is also
+a development dependency, so it reports that it cannot verify rather than
+passing vacuously.
+
 
 Everything under `tokens/generated/` and both generated regions of
 `expression/guidelines.md` are build output. They are committed so a consumer

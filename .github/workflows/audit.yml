@@ -1,0 +1,126 @@
+name: Audit
+
+# Decay, as opposed to drift.
+#
+# ci.yml gates what a change introduces. This looks for what rots without one: a
+# path that was correct until a file moved, a URL that was live until DNS changed, a
+# version that was current until a release. No pull request causes any of those, so
+# no per-pull-request gate can find them.
+#
+# Two triggers, because the two failure modes have different clocks.
+#
+#   schedule       the first of each month. Catches decay that arrives with no
+#                  commit at all — the class a commit-triggered gate is blind to by
+#                  construction. A dead apex domain sat in this estate for weeks and
+#                  every character of the sentence naming it still parsed.
+#
+#   push to main   but only once five commits have accumulated since the last audit.
+#                  Running on every push would be noise: the guard reads documents,
+#                  and documents do not change on most commits. Five is a batch size
+#                  rather than a threshold of concern.
+#
+# The marker is a lightweight tag, `audit-<sha>`. Tag writing is deliberately
+# non-fatal: if the token cannot push a tag the audit still runs, and the only
+# consequence is that it runs again sooner than it needed to. A gate that fails
+# because its bookkeeping failed teaches people to ignore it.
+
+on:
+  schedule:
+    # 09:14 UTC on the 1st. Not midnight and not on the hour: every scheduled
+    # workflow on the platform asks for 0 0, and GitHub drops runs under load.
+    - cron: '14 9 1 * *'
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Run even if fewer than five commits have accumulated'
+        type: boolean
+        default: false
+
+concurrency:
+  group: audit-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  decide:
+    name: Is an audit due?
+    runs-on: ubuntu-latest
+    outputs:
+      due: ${{ steps.count.outputs.due }}
+      since: ${{ steps.count.outputs.since }}
+    steps:
+      # Full history: `git describe` cannot find a tag in a shallow clone, and the
+      # commit count would be wrong rather than absent.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: count
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.force }}" = "true" ]; then
+            echo "due=true" >> "$GITHUB_OUTPUT"
+            echo "since=n/a — ${{ github.event_name }}" >> "$GITHUB_OUTPUT"
+            echo "Running: ${{ github.event_name }}."
+            exit 0
+          fi
+
+          last=$(git tag --list 'audit-*' --sort=-creatordate | head -1)
+          if [ -z "$last" ]; then
+            n=$(git rev-list --count HEAD)
+            echo "No audit tag yet; $n commits in history."
+          else
+            n=$(git rev-list --count "$last"..HEAD)
+            echo "$n commit(s) since $last."
+          fi
+
+          echo "since=$n" >> "$GITHUB_OUTPUT"
+          if [ "$n" -ge 5 ]; then
+            echo "due=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "due=false" >> "$GITHUB_OUTPUT"
+            echo "Fewer than five commits since the last audit. Nothing to do."
+          fi
+
+  audit:
+    name: Paths, scripts, guards, URLs, pin
+    needs: decide
+    if: needs.decide.outputs.due == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      # Matches ci.yml. There is no .nvmrc in this repository, so the version is
+      # literal here as it is there.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Decay
+        run: pnpm check:decay
+
+      # Only on a clean audit. A tag written after a failure would suppress the next
+      # five commits' worth of checking on the strength of a run that found problems.
+      - name: Record the audit
+        if: success()
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          tag="audit-$(git rev-parse --short HEAD)"
+          git tag -f "$tag"
+          git push origin "$tag" --force
+          echo "Recorded $tag (trigger: ${{ github.event_name }}, commits since last: ${{ needs.decide.outputs.since }})."

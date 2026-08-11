@@ -58,6 +58,13 @@ const GUARDS: Record<string, Guard> = {
       '--font-serif, and nothing reimplemented that this package already exports',
     targetsConsumer: true,
   },
+  decay: {
+    script: 'check-decay',
+    what:
+      'no path, pnpm script, guard name or URL named in an instruction file has ' +
+      'stopped resolving, and the design system is pinned exactly',
+    targetsConsumer: true,
+  },
   styles: {
     script: 'check-styles',
     what:

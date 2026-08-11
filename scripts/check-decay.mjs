@@ -27,6 +27,7 @@
  */
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join, relative, extname, dirname } from 'node:path';
 
 const APP = process.argv.find((a, i) => i >= 2 && !a.startsWith('--')) ?? process.cwd();
@@ -157,6 +158,14 @@ const isSpecifier = (p) => {
 const ABSENCE =
   /\b(there is no|there are no|no longer|does not exist|do not exist|has never existed|never existed|deleted|removed|is gone|are gone|used to|formerly|not authored|instead of|rather than|absent|neither|nor|earlier revision|earlier revisions|pre-v\d|no such|was replaced|superseded)\b/i;
 
+// Collected first, then filtered against .gitignore in one pass, because a path
+// that is ignored is EXPECTED to be absent from a checkout. `.vercel/project.json`
+// exists on every developer's machine and in no clone, so a document naming it is
+// correct — and this check passed locally and failed in CI on exactly that, which is
+// what CI is for. git is asked rather than .gitignore parsed, because git handles
+// nested ignore files and negations and a hand-rolled matcher would not.
+const missing = [];
+
 for (const file of targeted) {
   const src = blankFences(readFileSync(file, 'utf8'));
   const lines = src.split('\n');
@@ -177,9 +186,31 @@ for (const file of targeted) {
       if (existsSync(join(APP, p))) continue;
       // A path relative to the document rather than the repo root.
       if (existsSync(join(dirname(file), p))) continue;
-      add('paths', file, i + 1, p, 'the file does not exist — correct or remove the reference');
+      missing.push({ p, file, line: i + 1 });
     }
   });
+}
+
+// One `git check-ignore` for every candidate rather than one per path. If git is
+// unavailable or this is not a work tree, every candidate is reported: the check
+// degrades to its previous behaviour rather than silently passing, because a guard
+// that goes quiet when a tool is missing is worse than one that is noisy.
+if (missing.length) {
+  let ignored = new Set();
+  const res = spawnSync('git', ['-C', APP, 'check-ignore', '--stdin'], {
+    input: missing.map((m) => m.p).join('\n'),
+    encoding: 'utf8',
+  });
+  // Exit 0 means at least one path is ignored; 1 means none are; anything else is
+  // git failing, and then nothing is exempt.
+  if (!res.error && (res.status === 0 || res.status === 1)) {
+    ignored = new Set((res.stdout ?? '').split('\n').map((l) => l.trim()).filter(Boolean));
+  }
+  for (const m of missing) {
+    if (ignored.has(m.p)) continue;
+    add('paths', m.file, m.line, m.p,
+      'the file does not exist — correct or remove the reference');
+  }
 }
 
 // ----------------------------------------------------------------- 2. scripts

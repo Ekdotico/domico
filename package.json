@@ -118,6 +118,7 @@
     "check:styles": "node scripts/check-styles.mjs",
     "check:discipline": "node scripts/check-discipline.mjs .",
     "check:decay": "node scripts/check-decay.mjs .",
+    "check:consumers": "node scripts/check-consumers.mjs",
     "check:ruleset": "node ruleset/verify.mjs",
     "build:ruleset": "node ruleset/build.mjs",
     "lint:copy": "node dist/src/lint/cli.js",

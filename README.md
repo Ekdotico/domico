@@ -489,6 +489,28 @@ pnpm check          # drift gates and type check
 | `pnpm build:expression` | Regenerate the guidelines tables and `registers.md` from the JSON |
 | `pnpm check:generated` | Fail if a generated token artefact was edited by hand |
 | `pnpm check:expression` | Fail if the prose and the structured data disagree |
+| `pnpm check:consumers` | Report which repositories in the organisation are behind the published version |
+
+`check:consumers` is deliberately outside the `pnpm check` aggregate. It reads
+the GitHub API rather than this working tree, so it needs a network and a token
+that can see the organisation — `EKDOTICO_SUITE_TOKEN`, with Metadata and
+Contents read across the organisation's repositories. Putting it in the
+aggregate would make every pull request depend on an external service to
+answer a question that has nothing to do with the change under review.
+
+It runs on its own in `.github/workflows/consumers.yml`, on every published
+release and monthly as a backstop, and opens one reused issue when a consumer
+is behind. **It does not open a pull request bumping anybody's pin, and that is
+the point rather than a limitation.** Every consumer pins exactly so that an
+unreviewed visual change cannot reach an application through a routine install,
+and their specifications require an upgrade to be reviewed across four themes in
+both modes. A bot that bumps the pin automates past the gate the exact pin
+exists to hold. The issue is the notification; a person does the review and
+raises the bump.
+
+A pin carrying a caret or a tilde is reported more urgently than one that is
+behind: a range means the next install in that repository moves the design
+system with nobody deciding to.
 
 ### Running the guards from a consuming repository
 

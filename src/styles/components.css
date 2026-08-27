@@ -61,7 +61,6 @@
   font-family: var(--font-sans);
   font-weight: var(--fw-semi);
   font-size: var(--fs-3xs);
-  text-transform: uppercase;
   letter-spacing: var(--tr-label);
   padding: 10px 14px;
   text-align: left;
@@ -145,7 +144,6 @@
   font-weight: var(--fw-semi);
   font-size: var(--fs-3xs);
   color: var(--fg-3);
-  text-transform: uppercase;
   letter-spacing: var(--tr-label);
   border-top: 2px solid var(--rule);
   border-inline-start: 2px solid var(--rule);
@@ -249,7 +247,6 @@
   font-family: var(--font-sans);
   font-size: var(--fs-2xs);
   font-weight: var(--fw-semi);
-  text-transform: uppercase;
   letter-spacing: var(--tr-label);
   color: var(--fg-3);
   margin: 4px 0 0;
@@ -367,7 +364,6 @@
   font-family: var(--font-sans);
   font-size: var(--fs-2xs);
   font-weight: var(--fw-semi);
-  text-transform: uppercase;
   letter-spacing: var(--tr-wider);
   color: var(--fg-3);
   margin: 0 0 6px;
@@ -563,7 +559,6 @@
   font-family: var(--font-sans);
   font-size: var(--fs-xs);
   font-weight: var(--fw-medium);
-  text-transform: uppercase;
   letter-spacing: var(--tr-wider);
   color: var(--fg-3);
 }

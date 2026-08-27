@@ -1,4 +1,4 @@
-# Staying true to Domico — the sixteen rules
+# Staying true to Domico — the seventeen rules
 
 The house style, as rules rather than as prose. Every rule here was established
 by a defect that reached real code, and most are now enforced by a guard you can
@@ -416,16 +416,61 @@ upgrade is a deliberate act, reviewed across four themes in both modes.
 *Enforced by* changesets and tags in this repository. **Not** enforced in
 consumers — a caret in an application's manifest is caught by review only.
 
+### Rule 17 — Case is authored, never applied
+
+`text-transform` is the one design property that overwrites copy. Every other
+declaration changes how a string looks; this one changes what it says.
+
+The Expression Guidelines require sentence case for every label, heading, and
+piece of interface copy. Section 4 states that rule as universal — "regardless
+of register", "any copy submitted for Ekdotico, in any context" — and gives
+`"PROVENANCE RECORD"` as its counter-example. A stylesheet that applies
+`uppercase` produces exactly that counter-example from a string that was
+authored correctly.
+
+**The reason this is a rule and not a preference is where it hides.** The copy
+linter reads authored strings out of source; it is handed `Theme`, and it passes,
+correctly. The style guards read stylesheets; they see a declaration and have no
+string to compare it against. Nothing joined the two, so the defect sat in the
+gap between the two halves of the estate's own enforcement — which is how it came
+to ship in seven declarations across three stylesheets, render on all three
+surfaces, and survive every guard in the suite for fourteen minor versions. The
+document you are reading set three of its own labels the same way while stating
+the rule that forbids it.
+
+All three values are refused, not only `uppercase`. `lowercase` erases a proper
+noun, and `capitalize` forces title case onto a label the guidelines require in
+sentence case. The property has no compliant value in this system.
+
+A label does not need case to read as a label. It is already carried four ways —
+`--fs-3xs` or `--fs-xs`, a heavier weight, `--tr-label` tracking, and a receding
+`--fg-3` or `--fg-4` against body copy set in the serif. Case was the fifth
+signal on a label that was not struggling.
+
+**Small caps are not the alternative.** They preserve the authored casing and
+would satisfy the guidelines, but no house family ships the glyphs — Commissioner,
+Crimson Pro, and Fira Code all lack `smcp` and `c2sc` — so the browser scales
+capitals instead, which is rule 5's failure in a second costume. `.smallcaps`
+remains in `styles/type.css` as a correct instruction that renders properly the
+day `--font-sans` carries the feature, and it says so where it is defined.
+Reaching for it in the meantime trades a copy defect for a typographic one.
+
+*Enforced by* `check:styles`, which fails on the property in any shipped
+stylesheet, and by `check:ruleset`, which holds this document's own stylesheet to
+the same prohibition. Both assertions were mutation-tested by reintroducing the
+declaration and confirming the failure.
+
 ---
 
 ## Current state
 
-**Dated 2026-08-11, against `@ekdotico/domico@0.12.1`.** Everything above is a
+**Dated 2026-08-27, against `@ekdotico/domico@0.15.0`.** Everything above is a
 rule; everything here is a fact with a shelf life. Paths are relative to the
 estate root, one level above this package, since the findings concern sibling
 repositories.
 
-One finding survives.
+One finding survives, re-verified at this version rather than carried forward on
+trust.
 
 | # | Finding | Rule | Where |
 | --- | --- | --- | --- |
@@ -435,6 +480,13 @@ It is what remains of a pair. The Greek wordmark had the same fault and was dele
 rather than outlined: there is one logo, the hand-drawn mark, and it is paths
 throughout. The Latin wordmark is kept for now and carries the defect, so anything
 that places it depends on a webfont resolving in that context.
+
+**What 0.15.0 closed.** Ten declarations applied `text-transform: uppercase` to
+label roles — seven in the shipped stylesheets, three in this document's own —
+which the Expression Guidelines forbid in §4.1 and which no guard in the suite
+could see. All ten are gone, rule 17 states the prohibition, and two guards now
+assert it. The defect was reported from `praktico` as a rule 4 item rather than
+worked around locally, which is the route that rule exists to produce.
 
 ### What the previous edition listed, and why it is gone
 

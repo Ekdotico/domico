@@ -8,6 +8,11 @@
  * was made true instead of softened. It now also rejects a 0.01ms motion ceiling
  * and a coloured edge stripe. Both assertions were mutation-tested.
  *
+ * Rule 17 was added here at 0.15.0 for the opposite reason: not a rule whose
+ * guard did not enforce it, but a defect no guard could see. `text-transform`
+ * rewrites copy from inside the design system, where the copy linter — which
+ * reads authored strings and never opens a stylesheet — cannot reach it.
+ *
  * The original purpose, unchanged:
  *
  * They did not. `components.css` carried eight comment blocks whose opening
@@ -148,6 +153,38 @@ for (const dir of DIRS) {
       );
     }
 
+    // Rule 17. Case is authored, never applied.
+    //
+    // `text-transform` is the one design property that overwrites copy. Every
+    // other declaration in this file changes how a string looks; this one
+    // changes what the string says, and it does it in a layer no copy guard
+    // reads. `ekdotico-lint` is handed the authored `Theme` and passes it,
+    // correctly; the stylesheet then renders `THEME`, and §4.1 of the
+    // Expression Guidelines — universal, no register exempt — gives an
+    // all-capitals label as its counter-example.
+    //
+    // That gap is why this shipped in seven declarations across three
+    // stylesheets and survived every guard in the suite, on three surfaces, for
+    // fourteen minor versions. No assertion anywhere joined an authored string
+    // to the case treatment applied to it. This is that assertion.
+    //
+    // All three values are refused, not just `uppercase`: `lowercase` erases a
+    // proper noun, and `capitalize` forces title case onto a label §4.1 requires
+    // in sentence case. The property has no compliant value, so the test is its
+    // presence rather than its argument.
+    for (const m of decl.matchAll(/text-transform:\s*(uppercase|lowercase|capitalize)/g)) {
+      const line = decl.slice(0, m.index).split('\n').length;
+      failures.push(
+        `${name}: \`text-transform: ${m[1]}\` at line ${line}. Case is authored, never ` +
+          'applied: this rewrites the rendered string and leaves the authored one ' +
+          'correct in the DOM, so no copy guard can see the result. The Expression ' +
+          'Guidelines require sentence case for every label and heading (\u00a74.1, ' +
+          'universal). Delete the declaration and let size, weight, tracking, and ' +
+          'colour carry the role; if the label needs to read as a label at a glance, ' +
+          'that is a job for --fs-3xs and --tr-label, not for case.',
+      );
+    }
+
     // The rule is "no COLOURED edge stripe", and the adjective is the test.
     //
     // One-sidedness was the first attempt and it was the wrong shape: the table
@@ -178,12 +215,12 @@ for (const dir of DIRS) {
 }
 
 if (failures.length) {
-  console.error('check:styles — the shipped stylesheets do not parse:\n');
+  console.error('check:styles — the shipped stylesheets carry findings:\n');
   for (const f of failures) console.error(`  - ${f}`);
   process.exit(1);
 }
 
 console.log(
   `check:styles — ${checked} shipped stylesheets parse, carry no 0.01ms motion ceiling, ` +
-    'and draw no coloured edge stripe',
+    'draw no coloured edge stripe, and apply no case transform',
 );

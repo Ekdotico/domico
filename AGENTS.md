@@ -17,7 +17,7 @@ and the two documents it sends you to are:
 
 ```
 node_modules/@ekdotico/domico/docs/design-tokens.md    the token catalogue
-node_modules/@ekdotico/domico/docs/visual-ruleset.md   the sixteen rules, with the failures behind them
+node_modules/@ekdotico/domico/docs/visual-ruleset.md   the seventeen rules, with the failures behind them
 ```
 
 **Read the copy in `node_modules`, never a copy in the repository you are
@@ -75,7 +75,7 @@ token is added to this package, by proposal, and released before an application
 can consume it. That is slower on purpose. Most design-system damage arrives as
 a small fix that improvised one value.
 
-## The eight things an agent breaks first
+## The nine things an agent breaks first
 
 Each of these has been broken at least once, in real code, by someone who had
 read the rules. They are listed because knowing the rule has not been enough.
@@ -127,6 +127,17 @@ samples the default theme, or only the light modes, will report one failure
 where three exist. And never differentiate text by transparency on a saturated
 field — composite an opacity onto an accent and it fails in every palette at
 once. Differentiate by size and weight.
+
+**Case is authored, never applied.** `text-transform` is the one design property
+that overwrites copy: it changes what the string says, not merely how it looks,
+and it does so in a layer no copy guard reads. The Expression Guidelines require
+sentence case for every label and heading, universally, and give `"PROVENANCE
+RECORD"` as the counter-example — which is precisely what `uppercase` produces
+from a correctly authored string. All three values are refused; the property has
+no compliant value here. A label is already carried by size, weight, tracking,
+and a receding foreground. Small caps are not the escape route: no house family
+ships `smcp`, so the browser scales capitals and you have traded a copy defect
+for rule 5's typographic one.
 
 **A component used twice comes from the package.** Ten components ship here,
 each with its own stylesheet entry, so an application imports only the CSS for

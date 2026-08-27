@@ -92,6 +92,10 @@ const bouncy = beziers.filter((b) => {
 });
 check('bounce/elastic easing', bouncy.length, 0, bouncy.join(' '));
 check('pure #000 or #fff', rx(/#000\b|#fff\b|#000000|#ffffff/gi, cssNoFonts), 0);
+// Rule 17. The page states that case is authored and never applied, and it set
+// three of its own labels in uppercase while stating it. Scoped to the <style>
+// block, so the rule's own prose quoting `text-transform` is not a hit.
+check('applied case transforms', rx(/text-transform:\s*(uppercase|lowercase|capitalize)/gi, cssNoFonts), 0);
 
 console.log('\nRule 04 — Greek must not resolve to the serif');
 const greekRule = (cssNoFonts.match(/\.greek\s*\{[^}]*\}/) || [''])[0];

@@ -27,12 +27,17 @@ h1.display {
   font-variation-settings: "opsz" 48;
 }
 
+/* The category label above a title.
+   Case is authored, never applied — see rule 17. This role rendered
+   `text-transform: uppercase` until 0.15.0, which erased the sentence case the
+   Expression Guidelines require of every label (§4.1, universal). Size, weight,
+   tracking, and colour carry the role on their own; they always did, and case
+   was the fifth signal on a label that was not struggling to be read as one. */
 .eyebrow {
   font-family: var(--font-sans);
   font-weight: var(--fw-medium);
   font-size: var(--fs-xs);
   letter-spacing: var(--tr-widest);
-  text-transform: uppercase;
   color: var(--fg-3);
 }
 
@@ -50,6 +55,18 @@ h1.display {
 .mono { font-family: var(--font-mono); }
 .italic { font-style: italic; }
 
+/* SYNTHESISED, and stated rather than left to be discovered. No house family
+   ships the glyphs: Commissioner, Crimson Pro, and Fira Code all lack `smcp`
+   and `c2sc`, read from the `woff2` a browser is actually served. So a browser
+   asked for small capitals here does not decline — it scales capitals down, and
+   the result carries stems too light for the full-size capitals beside it.
+
+   That is the same failure rule 5 describes for a missing italic axis, and the
+   role is kept for the same reason `.display` keeps its inert `opsz` request:
+   it costs nothing, it is the correct instruction, and it renders properly the
+   day `--font-sans` resolves to a face that carries the feature. What is not
+   acceptable is a consumer reaching for it believing the glyphs are real, which
+   is why this note exists rather than only the declaration. */
 .smallcaps {
   font-variant-caps: all-small-caps;
   letter-spacing: var(--tr-wider);

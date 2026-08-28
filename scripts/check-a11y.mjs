@@ -240,11 +240,38 @@ function focusSelectors(cssFiles) {
   return styled;
 }
 
+const IDENT_CHAR = /[A-Za-z0-9_-]/;
+
 // Does anything restore a focus indicator for this selector?
+//
+// The base has to appear as a whole token, not merely as a substring. A plain
+// `includes` reads `.cmdk-input-row:focus-within` as restoring the ring for
+// `.cmdk-input`, and `.icon-button:focus` as restoring it for `button` — two
+// different elements that happen to share a prefix or a suffix. That is a
+// false negative in the direction that matters: a real missing ring, silently
+// cleared by an unrelated rule somewhere else in the stylesheet.
+//
+// A base beginning with `.` or `#` is bounded on the left by construction, so
+// `.a.b` still counts as styling `.b`. On the right the next character must
+// not continue the identifier.
+//
+// COVERAGE BOUNDARY: this asks whether the base is *named* in a focus rule,
+// which is all a static read can establish. Where an ancestor carries the
+// indicator, name the descendant so the relationship is visible —
+// `.row:has(.field:focus)` is checkable, `.row:focus-within` is not.
 const hasFocusReplacement = (styled, base) => {
   const b = base.trim();
   if (!b) return false;
-  for (const sel of styled) if (sel.includes(b)) return true;
+  const leftFree = /^[.#]/.test(b);
+  for (const sel of styled) {
+    for (let i = sel.indexOf(b); i !== -1; i = sel.indexOf(b, i + 1)) {
+      const before = i === 0 ? '' : sel[i - 1];
+      const after = sel[i + b.length] ?? '';
+      if (!leftFree && before !== '' && IDENT_CHAR.test(before)) continue;
+      if (after !== '' && IDENT_CHAR.test(after)) continue;
+      return true;
+    }
+  }
   return false;
 };
 
@@ -442,6 +469,24 @@ function selfCheck() {
   assert.equal(
     caught(() => checkFocusRingCss('t', '.b { outline: none; }', new Set(['.b:focus-visible']))),
     0,
+  );
+
+  // Token boundaries. A longer name that merely starts or ends with the base
+  // is a different element and must not clear the finding — this is the false
+  // negative a plain substring test allows.
+  assert.equal(hasFocusReplacement(new Set(['.b:focus-visible']), '.b'), true);
+  assert.equal(hasFocusReplacement(new Set(['.b-row:focus-within']), '.b'), false);
+  assert.equal(hasFocusReplacement(new Set(['.icon-button:focus']), 'button'), false);
+  assert.equal(hasFocusReplacement(new Set(['button:focus']), 'button'), true);
+  // Still true for the shapes that genuinely style the base: a descendant, a
+  // compound, and an ancestor that names it through :has().
+  assert.equal(hasFocusReplacement(new Set(['.a .b:focus']), '.b'), true);
+  assert.equal(hasFocusReplacement(new Set(['.a.b:focus']), '.b'), true);
+  assert.equal(hasFocusReplacement(new Set(['.row:has(.b:focus)']), '.b'), true);
+  // And the finding survives when only the longer name is styled.
+  assert.equal(
+    caught(() => checkFocusRingCss('t', '.b { outline: none; }', new Set(['.b-row:focus-within']))),
+    1,
   );
 
   findings.length = at;

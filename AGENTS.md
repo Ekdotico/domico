@@ -17,7 +17,7 @@ and the two documents it sends you to are:
 
 ```
 node_modules/@ekdotico/domico/docs/design-tokens.md    the token catalogue
-node_modules/@ekdotico/domico/docs/visual-ruleset.md   the seventeen rules, with the failures behind them
+node_modules/@ekdotico/domico/docs/visual-ruleset.md   the eighteen rules, with the failures behind them
 ```
 
 **Read the copy in `node_modules`, never a copy in the repository you are
@@ -75,7 +75,7 @@ token is added to this package, by proposal, and released before an application
 can consume it. That is slower on purpose. Most design-system damage arrives as
 a small fix that improvised one value.
 
-## The nine things an agent breaks first
+## The ten things an agent breaks first
 
 Each of these has been broken at least once, in real code, by someone who had
 read the rules. They are listed because knowing the rule has not been enough.
@@ -144,6 +144,15 @@ each with its own stylesheet entry, so an application imports only the CSS for
 what it renders. Reimplementing one locally is a defect, not a shortcut — and
 that includes the appearance control, which is one shared component and not
 three.
+
+**`role="img"` prunes everything inside it from the accessibility tree.** A
+diagram wrapped in that role reaches a screen reader as its `aria-label` and
+nothing else — twelve diagrams across five pages once arrived as the single word
+`Diagram`, because no call site passed a title. Put the text alternative on the
+wrapper, through `aria-label` and `aria-describedby`, and author it in the fence
+with Mermaid's own `accTitle:` and `accDescr:` so it travels with the diagram.
+Never put `tabIndex` on a non-operable role: keep the pan surface a
+`role="group"` wrapping the `role="img"` stage.
 
 ## The appearance control
 

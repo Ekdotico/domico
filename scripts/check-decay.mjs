@@ -240,7 +240,13 @@ const GUARDS = (() => {
   if (!path) return null;
   const src = readFileSync(path, 'utf8');
   const block = src.slice(src.indexOf('GUARDS'), src.indexOf('DEFAULT_GUARDS'));
-  return new Set([...block.matchAll(/^\s{4}([a-z]+):\s*\{/gm)].map((m) => m[1]));
+  // The same character class the reference scan below uses. These two were
+  // `[a-z]+` here and `[a-z][\w-]*` there, which agreed only for as long as no
+  // guard name carried a digit: `a11y` could be cited in a document and never
+  // derived from the map, so the check reported the guard that does exist as
+  // one that does not. A derivation narrower than its own matcher fails closed
+  // on correct documents.
+  return new Set([...block.matchAll(/^\s{4}([a-z][\w-]*):\s*\{/gm)].map((m) => m[1]));
 })();
 
 if (GUARDS && GUARDS.size > 0) {

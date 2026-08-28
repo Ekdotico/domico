@@ -58,6 +58,15 @@ const GUARDS: Record<string, Guard> = {
       '--font-serif, and nothing reimplemented that this package already exports',
     targetsConsumer: true,
   },
+  a11y: {
+    script: 'check-a11y',
+    what:
+      'every Mermaid diagram carries accTitle and accDescr, no non-operable role takes ' +
+      'focus, aria-modal keeps its Tab cycle and inert background, every aria reference ' +
+      'resolves, every removed outline returns on :focus-visible, and every icon-only ' +
+      'button carries a name',
+    targetsConsumer: true,
+  },
   decay: {
     script: 'check-decay',
     what:
@@ -78,6 +87,11 @@ const GUARDS: Record<string, Guard> = {
   icons: {
     script: 'check-icons',
     what: 'every vendored icon matches its Lucide original (needs lucide-static)',
+  },
+  svg: {
+    script: 'check-svg',
+    what: 'annotateSvg writes <title> and <desc> in document order and names the image only when it can',
+    developmentOnly: 'it builds a DOM with jsdom, which only this repository installs',
   },
   generated: {
     script: 'check-generated',

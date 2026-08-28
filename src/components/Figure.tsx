@@ -13,7 +13,13 @@ import type { ImgHTMLAttributes } from 'react';
 //     alt="Three-tier architecture diagram"
 //     caption="Architecture, cross-section."
 //     credit="Internal reference, 2026."
+//     description="The browser calls the API tier over HTTPS; the API
+//       tier reads and writes the database tier over a private
+//       network. No path connects the browser to the database."
 //   />
+//
+// An alt string cannot carry a graph, so an image of one takes
+// `description` as well. Rule 18.
 //
 // `align` is reserved for future breakout layouts; today both values
 // render the same width. The prop exists so authors can declare intent
@@ -22,11 +28,26 @@ import type { ImgHTMLAttributes } from 'react';
 
 export type FigureAlign = 'center' | 'wide';
 
+// A stable id for the long description, without useId — deliberately. useId is
+// a hook, so it would force 'use client' onto this component (Tabs carries that
+// directive for exactly this reason), and an image with a caption would start
+// shipping JavaScript. Hashing the source together with the description is
+// deterministic, so the server and the client agree on the id, and two figures
+// on one page collide only when both the image and its description are
+// identical — in which case either target is the right one.
+function descriptionId(src: string, description: string): string {
+  const input = `${src} ${description}`;
+  let h = 5381;
+  for (let i = 0; i < input.length; i++) h = ((h << 5) + h + input.charCodeAt(i)) | 0;
+  return `figure-desc-${(h >>> 0).toString(36)}`;
+}
+
 export function Figure({
   src,
   alt,
   caption,
   credit,
+  description,
   align = 'center',
   loading = 'lazy',
   decoding = 'async',
@@ -43,16 +64,29 @@ export function Figure({
   // Source / attribution / provenance line. Rendered small + italic
   // beneath the caption.
   credit?: string;
+  // Long description, for an image whose content an alt string cannot
+  // carry — a chart, a diagram, a graph. Rendered visually hidden and
+  // referenced by aria-describedby, so it reaches assistive tech and
+  // moves no pixels. `alt` stays the short name and stays required;
+  // this is the description, not a replacement for it.
+  //
+  // Needs `.sr-only`, which ships in this package's reset. An
+  // application importing only styles/figure.css and not the base would
+  // render this visibly — see Rule 18.
+  description?: string;
   // Layout intent — see the file-level comment.
   align?: FigureAlign;
   loading?: ImgHTMLAttributes<HTMLImageElement>['loading'];
   decoding?: ImgHTMLAttributes<HTMLImageElement>['decoding'];
 }) {
+  const descId = description ? descriptionId(src, description) : undefined;
+
   return (
     <figure className="figure" data-align={align}>
       <img
         src={src}
         alt={alt}
+        aria-describedby={descId}
         loading={loading}
         decoding={decoding}
         className="figure-img"
@@ -63,6 +97,11 @@ export function Figure({
           {caption && <span className="figure-caption-text">{caption}</span>}
           {credit && <span className="figure-credit">{credit}</span>}
         </figcaption>
+      )}
+      {description && (
+        <p id={descId} className="sr-only">
+          {description}
+        </p>
       )}
     </figure>
   );

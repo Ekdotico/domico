@@ -45,6 +45,14 @@
       "types": "./dist/tokens/generated/mermaid.d.ts",
       "default": "./dist/tokens/generated/mermaid.js"
     },
+    "./mermaid/accessibility": {
+      "types": "./dist/src/mermaid/accessibility.d.ts",
+      "default": "./dist/src/mermaid/accessibility.js"
+    },
+    "./svg": {
+      "types": "./dist/src/svg/annotate.d.ts",
+      "default": "./dist/src/svg/annotate.js"
+    },
     "./styles.css": "./dist/styles/base.css",
     "./styles/base.css": "./dist/styles/base-only.css",
     "./styles/reset.css": "./dist/styles/reset-only.css",
@@ -117,13 +125,15 @@
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:styles": "node scripts/check-styles.mjs",
     "check:discipline": "node scripts/check-discipline.mjs .",
+    "check:a11y": "node scripts/check-a11y.mjs .",
+    "check:svg": "node scripts/check-svg.mjs",
     "check:decay": "node scripts/check-decay.mjs .",
     "check:consumers": "node scripts/check-consumers.mjs",
     "check:ruleset": "node ruleset/verify.mjs",
     "build:ruleset": "node ruleset/build.mjs",
     "lint:copy": "node dist/src/lint/cli.js",
     "lint:fixture": "node scripts/check-lint-fixture.mjs",
-    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:styles && pnpm check:discipline && pnpm check:ruleset && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
+    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:styles && pnpm check:discipline && pnpm check:a11y && pnpm check:svg && pnpm check:ruleset && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
     "release": "changeset publish"
   },
   "peerDependencies": {
@@ -144,6 +154,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "ajv": "^8",
+    "jsdom": "^30.0.1",
     "lucide-static": "^1.31.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

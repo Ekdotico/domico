@@ -1,4 +1,4 @@
-# Staying true to Domico — the seventeen rules
+# Staying true to Domico — the eighteen rules
 
 The house style, as rules rather than as prose. Every rule here was established
 by a defect that reached real code, and most are now enforced by a guard you can
@@ -459,6 +459,54 @@ Reaching for it in the meantime trades a copy defect for a typographic one.
 stylesheet, and by `check:ruleset`, which holds this document's own stylesheet to
 the same prohibition. Both assertions were mutation-tested by reintroducing the
 declaration and confirming the failure.
+
+---
+
+## 7 · Diagrams
+
+### Rule 18 — A diagram is an image, and an image owes a text alternative
+
+`role="img"` prunes the element's entire subtree from the accessibility tree.
+Every shape, label, and edge inside a rendered diagram becomes unreachable. The
+role is correct for a diagram: the pruning is the defined behaviour of the role
+and not a defect to route around.
+
+What follows is the part that surprises. **The text alternative cannot live
+inside the SVG on a page that wraps it in `role="img"`.** It belongs on the
+wrapper's own elements, through `aria-label` and `aria-describedby`.
+
+Mermaid publishes directives for exactly this — `accTitle:` for the short
+accessible name, `accDescr:` or `accDescr { … }` for the long description. Take
+the directives Mermaid already defines rather than inventing a prop, and a fence
+carrying them stays valid Mermaid wherever it is pasted.
+
+The rule was established by a documentation site on which every Mermaid diagram
+reached a screen reader as the single word `Diagram`. Twelve diagrams across
+five pages, twelve failures of WCAG 1.1.1. The wrapper carried `role="img"`, and
+its `aria-label` fell back to the literal string `Diagram` because no call site
+passed a title.
+
+**The same element also carried `tabIndex`, and that is a second failure with
+its own cause.** An element never takes both a non-operable role and `tabIndex`:
+a keyboard reader is handed focus on something announced as a static image, with
+nothing stating what the arrow keys do (WCAG 4.1.2). The shape that works is two
+elements — an operable `role="group"` pan surface wrapping a `role="img"` stage.
+
+Three thresholds, because a text alternative that exists is not yet one that
+conveys anything: `accTitle` present and non-empty, `accDescr` present, and
+`accDescr` at least 60 characters. The floor exists so the gate cannot be
+satisfied with "A diagram." It was set against real content whose shortest
+legitimate description ran to 572 characters, so the margin is wide and what it
+catches is a placeholder rather than a terse description.
+
+A downloaded diagram is the same obligation reached by a different route. A file
+has no wrapper to carry the name, so it carries its own `<title>` and `<desc>`;
+`annotateSvg` from `@ekdotico/domico/svg` writes them, and sets `role="img"`
+only when there is a title to name the image with.
+
+*Enforced by* `ekdotico-check a11y`, which reads the directives out of the fence
+and additionally rejects any element carrying a non-operable role together with
+`tabIndex`.
 
 ---
 

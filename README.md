@@ -89,6 +89,8 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/domico/fonts` | Font loading configuration for the three locked families |
 | `@ekdotico/domico/mermaid` | Mermaid `themeVariables` for all eight palettes |
+| `@ekdotico/domico/mermaid/accessibility` | Reads `accTitle` and `accDescr` out of a diagram source, and blanks the directive lines in place |
+| `@ekdotico/domico/svg` | `annotateSvg` — writes `<title>` and `<desc>` into a detached SVG so a downloaded file names itself |
 | `@ekdotico/domico/expression` | The vocabulary and the prohibited terms, typed |
 | `@ekdotico/domico/expression/guidelines.md` | The Expression Guidelines, canonical copy |
 
@@ -529,12 +531,19 @@ invoking a script file by path depends on this package's internal layout, which
 then cannot change without breaking every pipeline that was never told it was
 coupled to it.
 
-Three of the seven run only here, and say so rather than failing on a missing
+Four of the eleven run only here, and say so rather than failing on a missing
 import: `generated` rebuilds the tokens, `expression` validates the authoring
-schemas, and `exports` packs this package. Each needs a development dependency
-that is never published. `icons` compares against `lucide-static`, which is also
-a development dependency, so it reports that it cannot verify rather than
-passing vacuously.
+schemas, `exports` packs this package, and `svg` builds a DOM with jsdom. Each
+needs a development dependency that is never published. `icons` compares against
+`lucide-static`, which is also a development dependency, so it reports that it
+cannot verify rather than passing vacuously.
+
+The three that audit the calling repository rather than this one are
+`discipline`, `decay` and `a11y`, so each takes a directory:
+
+```bash
+pnpm exec ekdotico-check a11y .
+```
 
 
 Everything under `tokens/generated/` and both generated regions of

@@ -2,9 +2,10 @@
 /**
  * ekdotico-check — run the package's drift gates from a consuming repository.
  *
- *   ekdotico-check                 # every guard a consumer can run
+ *   ekdotico-check                 # every guard a consumer can run, except decay
  *   ekdotico-check contrast        # one of them
  *   ekdotico-check contrast styles
+ *   ekdotico-check decay           # the monthly audit, run on its own clock
  *   ekdotico-check --list
  *
  * The guards existed only inside this repository: `scripts/` was excluded from
@@ -18,10 +19,13 @@
  * without breaking three CI pipelines that were never told they were coupled to
  * it.
  *
- * Three guards regenerate or validate the authoring inputs and need this
- * repository's devDependencies, so they are refused with the reason rather than
- * offered and then failing on a missing import. A guard that cannot run is more
- * useful as a clear refusal than as a stack trace.
+ * Some guards regenerate or validate the authoring inputs, or compare against a
+ * devDependency only this repository installs, so they are refused with the
+ * reason rather than offered and then failing on a missing import. A guard that
+ * cannot run is more useful as a clear refusal than as a stack trace. They carry
+ * `developmentOnly`, and the no-argument set is derived so that they cannot be
+ * picked up by it — see DEFAULT_GUARDS. Counting them here would be a fact with
+ * nothing keeping it true; `--list` marks each one.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -67,6 +71,13 @@ const GUARDS: Record<string, Guard> = {
       'button carries a name',
     targetsConsumer: true,
   },
+  copy: {
+    script: 'check-copy',
+    what:
+      'the mechanical subset of the Expression Guidelines, over the copy this ' +
+      'repository ships (skipped where there is no .ekdotico-lint.json)',
+    targetsConsumer: true,
+  },
   decay: {
     script: 'check-decay',
     what:
@@ -94,7 +105,19 @@ const GUARDS: Record<string, Guard> = {
   },
   icons: {
     script: 'check-icons',
-    what: 'every vendored icon matches its Lucide original (needs lucide-static)',
+    what: 'every vendored icon matches its Lucide original',
+    /**
+     * Declared rather than merely documented in `what`. The guard reads
+     * node_modules/lucide-static/icons inside THIS package, and exits 2 when it
+     * is absent — which it is in every consumer, because lucide-static is a
+     * devDependency here and consumers are told not to install Lucide at all.
+     *
+     * It mattered once the default guard set stopped being a hand-written list:
+     * a guard that cannot run outside this repository, and does not say so, is
+     * a red pipeline in three applications the moment it is picked up
+     * automatically.
+     */
+    developmentOnly: 'it compares against lucide-static, which only this repository installs',
   },
   svg: {
     script: 'check-svg',
@@ -118,8 +141,31 @@ const GUARDS: Record<string, Guard> = {
   },
 };
 
-/** What `ekdotico-check` with no arguments runs. */
-const DEFAULT_GUARDS = ['contrast', 'styles', 'appearance'] as const;
+/**
+ * What `ekdotico-check` with no arguments runs: every guard a consumer can run.
+ *
+ * Derived from GUARDS rather than listed, and that is the whole point of it. A
+ * hand-kept list here is a second place to remember, and it is the one that gets
+ * forgotten: the previous literal named contrast, styles and appearance, so a
+ * consumer that trusted the no-argument form — which this file's own docstring
+ * told it ran everything — got neither `discipline` nor `a11y`, the two guards
+ * written specifically for consumers. Deriving it means a guard added to this
+ * package arms itself in all three applications at their next pin bump, with no
+ * change to any of their workflows.
+ *
+ * Two exclusions, both structural rather than by name:
+ *
+ *   developmentOnly   needs this repository's devDependencies. Refused with the
+ *                     reason rather than run, so it cannot be picked up here.
+ *   decay             runs on a different clock. It reads instruction documents,
+ *                     which do not change on most commits, so it belongs to the
+ *                     monthly audit workflow rather than to every pull request.
+ *                     Running it per-change would make it noise, and noise is
+ *                     how a gate stops being read.
+ */
+const DEFAULT_GUARDS: string[] = Object.entries(GUARDS)
+  .filter(([name, guard]) => !guard.developmentOnly && name !== 'decay')
+  .map(([name]) => name);
 
 function list(): void {
   console.log('ekdotico-check — drift gates from @ekdotico/domico\n');

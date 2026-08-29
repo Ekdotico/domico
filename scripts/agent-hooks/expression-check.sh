@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 # PostToolUse hook — Expression Guidelines check on introduced content.
 #
-# MIRRORED FILE. Identical copies live in the workspace root and in each of
-# deree, docs, domico and internal/praktico, because those are four separate
-# git remotes and none of them can read a file from a sibling checkout. Change
-# one copy and change all five in the same session, along with the entry in
-# each .claude/settings.json that registers it. A hook that is right in one
-# repository and stale in four teaches four agents the wrong thing.
+# The source of this hook is scripts/agent-hooks/expression-check.sh in
+# @ekdotico/domico. From there scripts/install-agent-hooks.mjs installs it into
+# each consuming repository at .claude/hooks/, from their postinstall. The
+# installed copy is a build output: it is not committed, it is rewritten on every
+# install, and a hand edit to it survives only until the next one. Change the
+# hook in the package, release, and let the pin bump carry it — the same path a
+# token or a guard takes.
+#
+# It ships with the guidelines it enforces, which is the point of putting it in
+# this package rather than copying it into four repositories. A hook distributed
+# on its own can enforce 0.19 rules against a 0.17 install, and a rule that is
+# not the rule the package states is Rule 15 wearing a shell script.
 #
 # After a Write / Edit / MultiEdit, this runs ekdotico-lint in whichever
 # application owns the file — the nearest ancestor holding a .ekdotico-lint.json
@@ -15,31 +21,31 @@
 # It runs the linter with NO path argument, which is the whole point. A path on
 # the command line REPLACES the "files" globs in the config, so linting the
 # edited file directly would check files the repository deliberately left out of
-# scope: this hook did exactly that on its first run and reported fifteen
-# blocking findings in a CLAUDE.md, a document whose subject matter is the
-# prohibited terms it names. The configured scan is the scoped one; findings for
-# the edited file are then filtered out of its report.
+# scope: an earlier revision did exactly that and reported fifteen blocking
+# findings in a CLAUDE.md, a document whose subject matter is the prohibited
+# terms it names. The configured scan is the scoped one; findings for the edited
+# file are then filtered out of its report.
 #
 # Findings in OTHER files are not reported. They are not what this edit did, and
 # a hook that repeats the repository's whole backlog after every keystroke is a
 # hook people turn off. `pnpm lint:copy` and CI own the repository-wide verdict.
 #
-# Blocking is the repository's decision, not this hook's: the severity is
-# compared against "failOn" in its own .ekdotico-lint.json. At or above it, the
-# report goes to stderr and the hook exits 2, which is the only channel a
+# Blocking is the consuming repository's decision, not this hook's: the severity
+# is compared against "failOn" in its own .ekdotico-lint.json. At or above it,
+# the report goes to stderr and the hook exits 2, which is the only channel a
 # PostToolUse hook has back into the model's context. Below it, the report goes
 # to stdout and the transcript, and work continues.
 #
 # The linter checks the mechanical subset only — register classification,
 # evaluative inference, deficit framing, anthropomorphism and factual currency
-# stay with review. See node_modules/@ekdotico/domico/expression/guidelines.md.
+# stay with review. See expression/guidelines.md in this package.
 
 set -uo pipefail
 
 input=$(cat)
 
-# Portable extraction, matching the design-system hooks in docs/ and
-# internal/praktico/: no jq dependency for something this small.
+# Portable extraction, matching the design-system hooks the applications carry:
+# no jq dependency for something this small.
 tool_name=$(printf '%s' "$input" \
   | sed -n 's/.*"tool_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
   | head -1)
@@ -71,7 +77,8 @@ if [ -z "$root" ]; then
   exit 0
 fi
 
-# domico builds the linter it publishes, so it has no .bin entry for it.
+# This package builds the linter it publishes, so its own checkout has no .bin
+# entry for it; consumers do.
 if [ -x "$root/node_modules/.bin/ekdotico-lint" ]; then
   set -- "$root/node_modules/.bin/ekdotico-lint"
 elif [ -f "$root/dist/src/lint/cli.js" ]; then

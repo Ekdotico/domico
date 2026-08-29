@@ -11,3 +11,10 @@ dist/
 # with `pnpm build:ruleset`; `pnpm check:ruleset` falls back to the template when
 # it is absent, which is how the gate runs in CI.
 ruleset/ruleset.html
+
+# Agent hooks, installed from scripts/agent-hooks/ by scripts/install-agent-hooks.mjs
+# — here through `prepare`, in the applications through their postinstall. A build
+# output like the generated tokens, and committed for the same reason they are not:
+# a tracked copy is a hand-maintained twin, which is the drift this installer exists
+# to abolish. Change the hook in scripts/agent-hooks/ and release.
+/.claude/hooks/*

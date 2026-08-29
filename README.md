@@ -521,8 +521,9 @@ application could make any of them a blocking check. `ekdotico-check` exposes
 them:
 
 ```bash
-pnpm exec ekdotico-check              # contrast, styles, and appearance
+pnpm exec ekdotico-check              # every guard a consumer can run, except decay
 pnpm exec ekdotico-check contrast
+pnpm exec ekdotico-check decay        # the monthly audit, on its own clock
 pnpm exec ekdotico-check --list
 ```
 
@@ -531,19 +532,43 @@ invoking a script file by path depends on this package's internal layout, which
 then cannot change without breaking every pipeline that was never told it was
 coupled to it.
 
-Four of the eleven run only here, and say so rather than failing on a missing
-import: `generated` rebuilds the tokens, `expression` validates the authoring
-schemas, `exports` packs this package, and `svg` builds a DOM with jsdom. Each
-needs a development dependency that is never published. `icons` compares against
-`lucide-static`, which is also a development dependency, so it reports that it
-cannot verify rather than passing vacuously.
+**The no-argument form is derived from the guard table, not listed.** It named
+`contrast`, `styles` and `appearance` while this section claimed it ran
+everything a consumer could, so the shortest invocation was also the one that
+checked the least — neither `discipline` nor `a11y`, the two guards written for
+consumers, was in it. Deriving it is what makes a guard added here arm itself in
+every application at its next pin bump, rather than waiting for a workflow edit
+in each that nobody remembers is owed. Run `--list` for the set, which prints it
+from the same table rather than restating it.
 
-The three that audit the calling repository rather than this one are
-`discipline`, `decay` and `a11y`, so each takes a directory:
+`decay` is the one guard a consumer can run that the no-argument form leaves
+out. It reads instruction documents, which do not change on most commits, so it
+belongs to a monthly audit workflow; running it per-change makes it noise, and
+noise is how a gate stops being read.
+
+Five guards run only here, and say so rather than failing on a missing import:
+`generated` rebuilds the tokens, `expression` validates the authoring schemas,
+`exports` packs this package, `svg` builds a DOM with jsdom, and `icons`
+compares against `lucide-static`. Each needs a development dependency that is
+never published. `icons` was the odd one out until the default set stopped being
+a hand-written list — it noted the dependency in its description and nowhere
+else, which was survivable while nothing picked it up automatically and would
+have been a red pipeline in three applications the moment something did.
+
+The guards that audit the calling repository rather than this one are
+`discipline`, `a11y`, `copy`, `styles` and `decay`, so each takes a directory —
+though every one of them defaults to the working directory, which is the form
+with nothing to get wrong:
 
 ```bash
 pnpm exec ekdotico-check a11y .
 ```
+
+`copy` wraps the `ekdotico-lint` binary, so the copy check reaches a consumer
+from the same place as every other gate. Where a repository ships no
+`.ekdotico-lint.json` it says on stdout that it checked nothing and exits 0: a
+skip nobody can see in the log is the fails-green shape this CLI refuses
+elsewhere.
 
 
 Everything under `tokens/generated/` and both generated regions of

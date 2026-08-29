@@ -191,13 +191,20 @@ Two obligations follow, and they are yours:
 The package ships its own guards and they run from a consuming repository:
 
 ```bash
+pnpm exec ekdotico-check              # every guard a consumer can run, except decay
 pnpm exec ekdotico-check discipline   # literals, var() fallbacks, Greek in the serif, local reimplementation
-pnpm exec ekdotico-check --list       # every guard a consumer can run
+pnpm exec ekdotico-check --list       # the full set, and which one the bare command runs
 ```
 
-`discipline` audits the working directory with no argument. Run it before you
-report a styling change as complete. A passing guard is not proof of good
-design, but a failing one is proof of a defect, and it is cheaper than a review.
+Every guard audits the working directory with no argument. Run the bare command
+before you report a styling or copy change as complete: it is derived from the
+guard table, so it covers whatever this version ships rather than whatever a
+document once listed. A passing guard is not proof of good design, but a failing
+one is proof of a defect, and it is cheaper than a review.
+
+`decay` is the exception and takes its own invocation. It reads instruction
+documents, which do not change on most commits, so it belongs to a scheduled
+audit rather than to every change.
 
 Where a rule here says a value was measured, it was measured. Do the same:
 read contrast off resolved colours in all eight palettes rather than reasoning

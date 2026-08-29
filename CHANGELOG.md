@@ -1,5 +1,25 @@
 # @ekdotico/domico
 
+## 0.18.0
+
+### Minor Changes
+
+- 797effb: Ship the Expression Guidelines PostToolUse hook with the package, and install it into consumers.
+
+  `scripts/agent-hooks/expression-check.sh` runs `ekdotico-lint` over the file an agent has just written, in whichever application owns it, and reports that file's findings against the `failOn` threshold in its own `.ekdotico-lint.json`. `scripts/install-agent-hooks.mjs` copies it into `<consumer>/.claude/hooks/` from the consumer's postinstall; the installed file is a build output, gitignored and rewritten on every install, so a hook is changed here and carried by the pin bump.
+
+  It lived as four hand-maintained copies for a day, which is three too many and the same shape as the token catalogue that drifted 388 lines from its twin. A hook also has to agree with the version of the guidelines installed beside it: distributed separately it can enforce this release's rules against last release's package, which is Rule 15 with an exit code.
+
+- 797effb: `ekdotico-check` with no arguments now runs every guard a consumer can run, and the copy linter is one of them.
+
+  The no-argument set was the literal `contrast, styles, appearance`, while this file's own docstring said it ran everything a consumer could. Both `discipline` and `a11y` — the two guards written specifically for consumers — were outside it, so the shortest invocation was also the one that checked the least. It is now derived from the guard table, which means a guard added here arms itself in every application at its next pin bump rather than waiting for three workflow edits that nobody remembers are owed.
+
+  `copy` is a new guard, wrapping the `ekdotico-lint` binary through `scripts/check-copy.mjs`. The wrapper exists because the two take their target differently: every guard reads an application directory from argv, and the linter is driven by `process.cwd()` and reads a positional argument as a glob, so handing it a directory would have linted one path instead of the configured set. Where a repository ships no `.ekdotico-lint.json` the guard says on stdout that it checked nothing and exits 0 — a skip nobody can see in the log is the fails-green shape this CLI already refuses elsewhere.
+
+  `icons` is now marked `developmentOnly`. It compares against `lucide-static`, a devDependency only this repository installs, and exits 2 without it. That was survivable while the default set was a hand-written list and stopped mattering the moment the list was derived: a guard that cannot run outside this repository, and does not declare it, becomes a red pipeline in three applications as soon as it is picked up automatically.
+
+  Two exclusions remain from the no-argument set. `developmentOnly` guards, structurally. And `decay`, because it reads instruction documents, which do not change on most commits — it belongs to the monthly audit workflow, and running it per-change would make it noise.
+
 ## 0.17.0
 
 ### Minor Changes

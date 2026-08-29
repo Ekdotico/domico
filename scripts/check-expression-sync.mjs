@@ -91,6 +91,30 @@ if (headerVersion !== vocabulary.version) {
   );
 }
 
+/**
+ * The header is not the only place the document states its own version. The
+ * closing line does too, and it sat at v0.2 through the whole of 0.3 — the
+ * canonical copy contradicting itself, in the one file whose entire purpose is
+ * to be the copy that cannot. The check above could not see it, because it read
+ * the header and stopped, so the footer was outside the one guard built to
+ * prevent exactly this. A version stated twice is checked twice.
+ */
+const footerVersion = /^\*End of Expression Guidelines v([\d.]+)\*/m.exec(onDisk)?.[1];
+
+if (footerVersion === undefined) {
+  failures.push(
+    'guidelines.md has no closing "*End of Expression Guidelines vX.Y*" line.\n' +
+      '    It is the second place the document states its own version, and removing it\n' +
+      '    removes the assertion rather than satisfying it.',
+  );
+} else if (footerVersion !== headerVersion) {
+  failures.push(
+    `guidelines.md opens at version ${headerVersion} and closes at version ${footerVersion}.\n` +
+      '    One document, two version numbers. A reader who scrolls to the end is told\n' +
+      '    something the header contradicts.',
+  );
+}
+
 if (failures.length) {
   console.error('check:expression failed:\n');
   for (const f of failures) console.error(`  - ${f}\n`);

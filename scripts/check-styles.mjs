@@ -27,12 +27,77 @@
  * has to validate its own.
  */
 
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const DIRS = [join(ROOT, 'dist', 'styles'), join(ROOT, 'tokens', 'generated')];
+
+/**
+ * With a directory argument, audit that repository's own stylesheets instead of
+ * this package's.
+ *
+ * Rule 17 was added to this guard at 0.15.0 and the package cleaned itself in
+ * the same release — and every consumer went on shipping the declaration,
+ * because this script read `dist/styles` and `tokens/generated` whatever
+ * directory it was invoked from. A consumer running `ekdotico-check styles`
+ * got a pass that said nothing about its own CSS. Thirty-five declarations
+ * across two applications survived that way, rendering "PRE-LAUNCH",
+ * "ACCESS CODE" and "THE PLATFORM" from correctly authored strings.
+ *
+ * That is the same gap rule 17 describes one level up: the copy linter reads
+ * authored strings and never opens a stylesheet, the style guard read
+ * stylesheets and only ever its own. Nothing joined the two across the
+ * package boundary either.
+ *
+ * The parse checks stay package-only. A consumer's stylesheet is compiled by
+ * its own bundler, which reports a syntax error far better than this does; what
+ * a consumer needs from here are the house rules its bundler has no opinion
+ * about.
+ */
+/**
+ * `resolve`, not `join`. The bin hands each consumer-targeting guard an already
+ * absolute path, while a developer running the script by hand passes `.` — and
+ * joining an absolute path onto the working directory produces the working
+ * directory twice.
+ */
+const TARGET = process.argv.slice(2).find((a) => !a.startsWith('-'));
+const CONSUMER = TARGET ? resolve(process.cwd(), TARGET) : null;
+
+/**
+ * `worktrees` earns its place beside the build directories: a stale checkout
+ * somebody left under `.claude/` carries its own copy of every stylesheet, and
+ * findings from it are not facts about this working tree. praktico's
+ * `.prettierignore` and eslint config exclude the same path for the same
+ * reason.
+ */
+const SKIP = new Set([
+  'node_modules',
+  '.next',
+  '.open-next',
+  '.git',
+  'dist',
+  '.vercel',
+  'coverage',
+  'worktrees',
+]);
+
+/** Every .css and .module.css under a consuming repository, build output aside. */
+function consumerStylesheets(dir, out = []) {
+  for (const entry of readdirSync(dir)) {
+    if (SKIP.has(entry)) continue;
+    const path = join(dir, entry);
+    let s;
+    try {
+      s = statSync(path);
+    } catch {
+      continue;
+    }
+    if (s.isDirectory()) consumerStylesheets(path, out);
+    else if (entry.endsWith('.css')) out.push(path);
+  }
+  return out;
+}
 
 const failures = [];
 let checked = 0;
@@ -110,25 +175,35 @@ function braceBalance(css) {
   return { depth, min };
 }
 
-for (const dir of DIRS) {
-  if (!existsSync(dir)) continue;
-  for (const name of readdirSync(dir).filter((f) => f.endsWith('.css'))) {
-    const path = join(dir, name);
+const SHEETS = CONSUMER
+  ? consumerStylesheets(CONSUMER).map((path) => ({ path, name: relative(CONSUMER, path), parse: false }))
+  : [join(ROOT, 'dist', 'styles'), join(ROOT, 'tokens', 'generated')]
+      .filter((dir) => existsSync(dir))
+      .flatMap((dir) =>
+        readdirSync(dir)
+          .filter((f) => f.endsWith('.css'))
+          .map((name) => ({ path: join(dir, name), name, parse: true })),
+      );
+
+{
+  for (const { path, name, parse } of SHEETS) {
     const css = readFileSync(path, 'utf8');
     checked++;
 
-    const { found, unterminated } = strayClosers(css);
-    if (found.length) {
-      failures.push(
-        `${name}: comment closed while not inside a comment, at line${found.length === 1 ? '' : 's'} ${found.join(', ')}. ` +
-          'A banner lost its opening delimiter.',
-      );
-    }
-    if (unterminated) failures.push(`${name}: a comment is never closed.`);
+    if (parse) {
+      const { found, unterminated } = strayClosers(css);
+      if (found.length) {
+        failures.push(
+          `${name}: comment closed while not inside a comment, at line${found.length === 1 ? '' : 's'} ${found.join(', ')}. ` +
+            'A banner lost its opening delimiter.',
+        );
+      }
+      if (unterminated) failures.push(`${name}: a comment is never closed.`);
 
-    const { depth, min } = braceBalance(css);
-    if (depth !== 0) failures.push(`${name}: ${depth > 0 ? depth + ' unclosed' : -depth + ' extra closing'} brace(s).`);
-    if (min < 0) failures.push(`${name}: a closing brace appears before its opener.`);
+      const { depth, min } = braceBalance(css);
+      if (depth !== 0) failures.push(`${name}: ${depth > 0 ? depth + ' unclosed' : -depth + ' extra closing'} brace(s).`);
+      if (min < 0) failures.push(`${name}: a closing brace appears before its opener.`);
+    }
 
     // Two house rules, asserted here rather than merely written down. The ruleset
     // named `check:styles` as the guard for both and this script did not check
@@ -199,8 +274,28 @@ for (const dir of DIRS) {
     // hairline in the neutral rule colour. So a thick inline border is a finding
     // only when it is painted in something other than the rule scale.
     const NEUTRAL = /var\(\s*--rule(?:-strong|-soft)?\s*\)|transparent|currentColor/;
+
+    /**
+     * Rule 13's one written exception, with its ceiling named here so it is not
+     * an unwritten one: "A bare `blockquote` rule with no card surface is
+     * typographic convention rather than decoration and is permitted."
+     *
+     * The ceiling is *bare*. A blockquote that has grown a background, a
+     * radius, or a shadow is a card, and a card signalling tone with a coloured
+     * edge is the banned pattern whatever the selector is called. So the
+     * exemption is withdrawn the moment any of those three appears in the same
+     * rule — which is the line between a quotation mark set in the margin and a
+     * tinted callout wearing a blockquote's name.
+     */
+    const isBareBlockquote = (rule) =>
+      /blockquote/i.test(rule) && !/(?:^|[\s;{])(?:background|box-shadow|border-radius)\s*:/.test(rule);
+
     for (const m of decl.matchAll(/border-(?:inline-start|inline-end|left|right):\s*(?:[2-9]|\d\d)px[^;}]*/g)) {
       if (NEUTRAL.test(m[0])) continue;
+      const ruleStart = decl.lastIndexOf('}', m.index) + 1;
+      let ruleEnd = decl.indexOf('}', m.index);
+      if (ruleEnd === -1) ruleEnd = decl.length;
+      if (isBareBlockquote(decl.slice(ruleStart, ruleEnd))) continue;
       const line = decl.slice(0, m.index).split('\n').length;
       failures.push(
         `${name}: a coloured inline border above 1px at line ${line} — "${m[0].trim()}". ` +
@@ -214,13 +309,18 @@ for (const dir of DIRS) {
   }
 }
 
+const WHOSE = CONSUMER ? `${relative(process.cwd(), CONSUMER) || '.'}` : 'the shipped stylesheets';
+
 if (failures.length) {
-  console.error('check:styles — the shipped stylesheets carry findings:\n');
+  console.error(`check:styles — ${WHOSE} carries findings:\n`);
   for (const f of failures) console.error(`  - ${f}`);
   process.exit(1);
 }
 
 console.log(
-  `check:styles — ${checked} shipped stylesheets parse, carry no 0.01ms motion ceiling, ` +
-    'draw no coloured edge stripe, and apply no case transform',
+  CONSUMER
+    ? `check:styles — ${checked} stylesheets in ${WHOSE} carry no 0.01ms motion ceiling, ` +
+        'draw no coloured edge stripe, and apply no case transform'
+    : `check:styles — ${checked} shipped stylesheets parse, carry no 0.01ms motion ceiling, ` +
+        'draw no coloured edge stripe, and apply no case transform',
 );

@@ -8,22 +8,27 @@
 # each .claude/settings.json that registers it. A hook that is right in one
 # repository and stale in four teaches four agents the wrong thing.
 #
-# Runs ekdotico-lint over the single file a Write / Edit / MultiEdit just
-# touched, in whichever application owns it. The application is found by
-# walking up from the file until a .ekdotico-lint.json appears, so one script
-# serves deree, docs, domico and internal/praktico, and each of them keeps its
-# own registers, overrides and failOn threshold. A file in a directory with no
-# such config (mvp, Assets, docs of the wrong kind) is not this linter's
-# business and the hook exits silently.
+# After a Write / Edit / MultiEdit, this runs ekdotico-lint in whichever
+# application owns the file — the nearest ancestor holding a .ekdotico-lint.json
+# — and reports the findings for that file alone.
 #
-# Blocking behaviour is the repository's, not this hook's: the linter's exit
-# status already encodes the configured failOn threshold, and exit 2 from a
-# PostToolUse hook feeds stderr back to the model. Findings below the
-# threshold are reported the same way but the hook exits 0, so they inform the
-# next edit without stopping the turn.
+# It runs the linter with NO path argument, which is the whole point. A path on
+# the command line REPLACES the "files" globs in the config, so linting the
+# edited file directly would check files the repository deliberately left out of
+# scope: this hook did exactly that on its first run and reported fifteen
+# blocking findings in a CLAUDE.md, a document whose subject matter is the
+# prohibited terms it names. The configured scan is the scoped one; findings for
+# the edited file are then filtered out of its report.
 #
-# Deliberately not JSON: the report is prose meant for the model, and stderr
-# carries it verbatim without an escaping step that has to be right every time.
+# Findings in OTHER files are not reported. They are not what this edit did, and
+# a hook that repeats the repository's whole backlog after every keystroke is a
+# hook people turn off. `pnpm lint:copy` and CI own the repository-wide verdict.
+#
+# Blocking is the repository's decision, not this hook's: the severity is
+# compared against "failOn" in its own .ekdotico-lint.json. At or above it, the
+# report goes to stderr and the hook exits 2, which is the only channel a
+# PostToolUse hook has back into the model's context. Below it, the report goes
+# to stdout and the transcript, and work continues.
 #
 # The linter checks the mechanical subset only — register classification,
 # evaluative inference, deficit framing, anthropomorphism and factual currency
@@ -78,28 +83,52 @@ fi
 
 rel=${file_path#"$root"/}
 
-output=$(cd "$root" && "$@" "$rel" 2>/dev/null)
-status=$?
+report=$(cd "$root" && "$@" 2>/dev/null)
 
-# Exit 2 is the linter's "nothing to check here": the path is outside the
-# config's files globs, or listed in ignore as carrying no user-facing copy.
-if [ "$status" -eq 2 ]; then
+# A finding is a head line, "  path:line:column  severity  [rule]", followed by
+# indented detail lines. Keep the ones whose head names the edited file.
+mine=$(printf '%s\n' "$report" | awk -v prefix="  $rel:" '
+  substr($0, 1, length(prefix)) == prefix { keep = 1; print; next }
+  keep == 1 && substr($0, 1, 4) == "    " { print; next }
+  { keep = 0 }
+')
+
+if [ -z "$mine" ]; then
   exit 0
 fi
 
-if [ "$status" -eq 0 ] && printf '%s' "$output" | grep -q '0 blocking, 0 substantive, 0 minor'; then
-  exit 0
-fi
+# The threshold this repository set for itself. The linter defaults to
+# substantive when the key is absent, and so does this.
+fail_on=$(sed -n 's/.*"failOn"[[:space:]]*:[[:space:]]*"\([a-z]*\)".*/\1/p' \
+  "$root/.ekdotico-lint.json" | head -1)
+fail_on=${fail_on:-substantive}
 
-# Non-zero means the findings cross the failOn threshold this repository set.
-# Exit 2 hands the report to the model on stderr, which is the only channel a
-# PostToolUse hook has into its context. Findings under the threshold go to
-# stdout and the transcript: the repository has already said they do not stop
-# work, and this hook does not overrule that.
-if [ "$status" -ne 0 ]; then
-  printf 'Expression Guidelines check — %s\n%s\n' "$rel" "$output" >&2
+rank() {
+  case "$1" in
+    blocking) echo 3 ;;
+    substantive) echo 2 ;;
+    minor) echo 1 ;;
+    *) echo 0 ;;
+  esac
+}
+
+threshold=$(rank "$fail_on")
+worst=0
+while read -r severity; do
+  value=$(rank "$severity")
+  if [ "$value" -gt "$worst" ]; then
+    worst=$value
+  fi
+done <<EOF
+$(printf '%s\n' "$mine" | awk -v prefix="  $rel:" \
+  'substr($0, 1, length(prefix)) == prefix { print $2 }')
+EOF
+
+if [ "$worst" -ge "$threshold" ] && [ "$threshold" -gt 0 ]; then
+  printf 'Expression Guidelines — %s\n\n%s\n\nAt or above this repository'\''s failOn (%s). Fix before moving on, or record an override in .ekdotico-lint.json with a reason.\n' \
+    "$rel" "$mine" "$fail_on" >&2
   exit 2
 fi
 
-printf 'Expression Guidelines check — %s (below the failOn threshold)\n%s\n' "$rel" "$output"
+printf 'Expression Guidelines — %s (below failOn: %s)\n\n%s\n' "$rel" "$fail_on" "$mine"
 exit 0

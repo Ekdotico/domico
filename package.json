@@ -132,6 +132,9 @@
     "check:ruleset": "node ruleset/verify.mjs",
     "build:ruleset": "node ruleset/build.mjs",
     "lint:copy": "node dist/src/lint/cli.js",
+    "hooks:install": "node scripts/install-agent-hooks.mjs --target .",
+    "hooks:check": "node scripts/install-agent-hooks.mjs --check --target .",
+    "prepare": "node scripts/install-agent-hooks.mjs --target .",
     "lint:fixture": "node scripts/check-lint-fixture.mjs",
     "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:styles && pnpm check:discipline && pnpm check:a11y && pnpm check:svg && pnpm check:ruleset && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
     "release": "changeset publish"

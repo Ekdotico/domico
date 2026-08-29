@@ -2,14 +2,26 @@
 
 **Prepared:** 2026-08-09 · **Target:** `docs` (`ekdotico-docs`) · **Package:** `@ekdotico/domico@0.1.0`
 
+> **This plan was executed. It is a record, not instructions.**
+>
+> Tracks 1 to 3 completed on 2026-08-09, as their own step notes record. `docs`
+> has consumed the package ever since and now pins a version many minors beyond
+> the `0.1.0` named above. Do not re-run any step: the stylesheet ranges, source
+> files, and asset directories named below were deleted at the time, so the line
+> numbers no longer resolve and an agent following them would be editing by
+> coordinates into a file that has moved on.
+>
+> The header line is left at `0.1.0` deliberately. It is what the plan was
+> written against, and correcting it would turn a dated record into a document
+> that looks current.
+
 Four tracks. They are independent and can be sequenced separately, which is the
 point: the visual migration is mostly mechanical and should not wait on the
 currency decisions, and the currency decisions should not be rushed to unblock
 a dependency bump.
 
-Nothing in this plan has been executed. Each step states whether it is
-mechanical or needs judgement, so the risky ones get reviewed rather than
-assumed safe.
+Each step states whether it is mechanical or needs judgement, so the risky ones
+got reviewed rather than assumed safe.
 
 ---
 

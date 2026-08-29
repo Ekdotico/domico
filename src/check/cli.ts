@@ -77,8 +77,16 @@ const GUARDS: Record<string, Guard> = {
   styles: {
     script: 'check-styles',
     what:
-      'every shipped stylesheet parses, carries no 0.01ms motion ceiling, and ' +
-      'draws no coloured edge stripe',
+      'no 0.01ms motion ceiling, no coloured edge stripe, and no case transform, ' +
+      'in this repository’s own stylesheets',
+    /**
+     * Consumer-targeting since the Rule 17 sweep. Before that this guard read
+     * the package's `dist/styles` whatever directory it was invoked from, so a
+     * consumer running it got a pass about somebody else's CSS — which is how
+     * thirty-five `text-transform` declarations survived in two applications
+     * across the release that removed the same declaration from the package.
+     */
+    targetsConsumer: true,
   },
   appearance: {
     script: 'check-appearance',

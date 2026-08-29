@@ -762,6 +762,6 @@ The Expression Guidelines version for the primary (graduate/advanced undergradua
 
 ---
 
-*End of Expression Guidelines v0.2*
+*End of Expression Guidelines v0.3*
 
 *Next version will include: completed controlled vocabulary additions from open-source contributor submissions (§7.5 process), completed AI output register specification (§6.2 — post-MVP), and guided depth copy rules for opt-in guidance mode (§6.3 — post-SRS amendment).*

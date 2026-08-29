@@ -346,12 +346,20 @@ surface is typographic convention rather than decoration and is permitted — bu
 if that exception is house style, it belongs in writing with its ceiling named.
 An unwritten exception is how a ban erodes.
 
-*Enforced by* `check:styles`, and the adjective is the test: it fails on an inline
+*Enforced by* `check:styles`, in this package and — given a directory — in a
+consuming repository, and the adjective is the test: it fails on an inline
 border above 1px unless the colour comes from the rule scale. A thick border in
 `--rule` is an outline, which the table component draws cell by cell because a
 table cannot take a border with rounded corners cleanly; a thick border in an
 accent or a state tint is the stripe. `check:ruleset` holds the ruleset document
 itself to the stricter form, failing on any `border-inline-start` above 1px.
+
+The blockquote exception above is now the guard's exception too, with its
+ceiling stated where the code can hold it: a rule whose selector names
+`blockquote` and which declares no `background`, `box-shadow`, or
+`border-radius` is bare, and is permitted. Any of those three makes it a card,
+and a card signalling tone with a coloured edge is the banned pattern whatever
+the selector is called.
 
 ### Rule 14 — Contrast is owed by all eight palettes, not the default one
 
@@ -456,9 +464,20 @@ day `--font-sans` carries the feature, and it says so where it is defined.
 Reaching for it in the meantime trades a copy defect for a typographic one.
 
 *Enforced by* `check:styles`, which fails on the property in any shipped
-stylesheet, and by `check:ruleset`, which holds this document's own stylesheet to
-the same prohibition. Both assertions were mutation-tested by reintroducing the
-declaration and confirming the failure.
+stylesheet **and, given a directory, in a consuming repository's own** —
+`pnpm exec ekdotico-check styles .` — and by `check:ruleset`, which holds this
+document's own stylesheet to the same prohibition. All three assertions were
+mutation-tested by reintroducing the declaration and confirming the failure.
+
+The consumer half was added after the package cleaned itself here and every
+consumer went on shipping the declaration. The guard read `dist/styles`
+whatever directory it was invoked from, so an application running it got a pass
+about somebody else's CSS: thirty-five declarations survived that way across
+two applications, rendering "PRE-LAUNCH", "ACCESS CODE" and "THE PLATFORM" from
+strings that were authored correctly. The gap this rule describes — a copy
+linter that never opens a stylesheet, a style guard with no string to compare
+against — had a second instance one level up, across the package boundary, and
+closing the first did not close the second.
 
 ---
 

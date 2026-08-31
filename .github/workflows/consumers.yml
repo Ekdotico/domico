@@ -93,6 +93,14 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          # setup-node v5 turns the package-manager cache on by default, detects
+          # pnpm from the lockfile, and runs `pnpm store path` to find the cache
+          # directory. This job installs no pnpm on purpose, so that lookup fails
+          # the step before the script is ever reached. v4 only cached when asked
+          # to, which is why the move to v5 left this job broken and silent: the
+          # workflow had no working trigger at the time, so nothing ran it until
+          # the publish dispatch landed.
+          package-manager-cache: false
 
       # No install. The script has no dependencies and uses the global fetch
       # Node 22 ships, so a lockfile install here would only add a minute and a

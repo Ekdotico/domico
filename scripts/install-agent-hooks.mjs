@@ -124,7 +124,14 @@ for (const name of hooks) {
 }
 
 if (written > 0) {
-  console.log(
+  // The diagnostic channel, not stdout: this script is the `prepare` lifecycle,
+  // and `npm pack --json` runs it before writing the tarball manifest to stdout.
+  // A status line printed there lands inside that JSON, and check-exports.mjs
+  // parses it — on a fresh clone, where the hook is genuinely absent and so
+  // genuinely written, the check died on a syntax error and then passed on the
+  // second run, because by then there was nothing to say. Progress belongs on
+  // stderr regardless; a package manager shows both.
+  console.error(
     `install-agent-hooks: installed ${written} hook${written === 1 ? '' : 's'} into .claude/hooks/ from @ekdotico/domico.`,
   );
 }

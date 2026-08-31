@@ -7,6 +7,12 @@
  *
  * Wildcard targets ("./assets/*") are satisfied by at least one shipped file
  * matching the prefix; treating them as literal paths reports a false miss.
+ *
+ * The manifest arrives on stdout, and `npm pack` runs the `prepare` lifecycle
+ * before printing it — so this parse shares a channel with every script that
+ * runs on the way to a tarball, and one `console.log` in any of them is a
+ * syntax error here. Lifecycle scripts report on stderr; that is the reason,
+ * not a preference.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';

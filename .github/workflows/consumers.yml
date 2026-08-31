@@ -98,21 +98,44 @@ jobs:
       # Node 22 ships, so a lockfile install here would only add a minute and a
       # registry that can be down.
       - name: Read every consumer's pin
+        id: pins
         env:
           EKDOTICO_SUITE_TOKEN: ${{ secrets.EKDOTICO_SUITE_TOKEN }}
         run: |
+          # `pipefail`, because the pipe into `tee` is the last command in this
+          # pipeline and its exit status is the step's. Without it the script's
+          # `exit 1` on a missing token was discarded, the step went green with
+          # no report written, and the absent file was then read below as "every
+          # consumer is current" — a token fault reported as a clean bill of
+          # health, which is the one outcome check-consumers.mjs exits to avoid.
+          set -euo pipefail
+
           node scripts/check-consumers.mjs \
             --out "$RUNNER_TEMP/consumers.md" \
             ${{ inputs.version && format('--version {0}', inputs.version) || '' }} \
             | tee "$RUNNER_TEMP/consumers.log"
 
-      # The script writes nothing when every consumer is current, so the file's
-      # existence is the whole signal and there is no exit code to interpret. It
-      # exits 0 either way on purpose: a stale consumer is the normal state for
-      # the hours after a release, and a workflow that goes red on the normal
-      # state is one people learn to ignore.
+          # `hashFiles` cannot answer this question. It resolves paths only
+          # inside GITHUB_WORKSPACE, and the report is written to RUNNER_TEMP,
+          # so it returned the empty string whether or not the file existed —
+          # which skipped the open step and ran the close step on every run
+          # since this workflow was written. `test -s` is what the script's own
+          # docstring specifies, and it reads the file where it actually is.
+          if test -s "$RUNNER_TEMP/consumers.md"; then
+            echo 'behind=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'behind=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      # The script writes nothing when every consumer is current, so the report's
+      # existence is the whole signal, carried here as a step output. It exits 0
+      # either way on purpose: a stale consumer is the normal state for the hours
+      # after a release, and a workflow that goes red on the normal state is one
+      # people learn to ignore. A fault of its own — no token, the API refusing —
+      # is a non-zero exit, and now fails the step above rather than arriving here
+      # dressed as good news.
       - name: Open or update the tracking issue
-        if: hashFiles(format('{0}/consumers.md', runner.temp)) != ''
+        if: steps.pins.outputs.behind == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -135,7 +158,7 @@ jobs:
       # Closing it is as important as opening it. An issue that stays open after
       # the work is done teaches people that the issue does not mean anything.
       - name: Close the tracking issue once every consumer is current
-        if: hashFiles(format('{0}/consumers.md', runner.temp)) == ''
+        if: steps.pins.outputs.behind == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

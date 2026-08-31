@@ -27,7 +27,12 @@
  * acts on its existence. Nothing is written when every consumer is current, so
  * `[ -s "$file" ]` is the whole of the caller's logic.
  *
- * Exits 1 only on a fault of its own — no token, or the API refusing.
+ * Exits 1 only on a fault of its own — no token, the API refusing, or a token
+ * that cannot see what it was asked about. That last one is the reason for the
+ * three guards below: an organisation it cannot list, an organisation that
+ * lists no repositories, and repositories whose package.json it cannot read all
+ * produce "0 consumer(s), 0 needing attention" and exit 0 if they are allowed
+ * to, which the caller then reads as every consumer being current.
  *
  * Needs a token that can read the organisation's repositories. GITHUB_TOKEN
  * inside a workflow is scoped to the repository it runs in and cannot see the
@@ -97,10 +102,46 @@ async function repositories() {
   const all = [];
   for (let page = 1; ; page += 1) {
     const batch = await api(`/orgs/${ORG}/repos?per_page=100&type=all&page=${page}`);
+
+    // api() maps 404 to null because a repository without a package.json is an
+    // answer rather than a failure. That rule does not hold on this endpoint.
+    // GitHub answers 404, not 403, for an organisation the credential is not
+    // allowed to know exists, so a token owned by a personal account, or one
+    // still awaiting organisation approval, lands here — and reading that as an
+    // empty list walks zero repositories and prints a clean bill of health,
+    // which is the one outcome this script exits to avoid. The first page is
+    // therefore not allowed to be null.
+    if (page === 1 && batch === null) {
+      throw new Error(
+        `GET /orgs/${ORG}/repos → 404.\n\n` +
+          `The token cannot see the ${ORG} organisation. GitHub answers 404 rather\n` +
+          'than 403 here, so this is the shape of a token owned by the wrong account,\n' +
+          'or one still awaiting organisation approval — not an empty organisation.',
+      );
+    }
+
     if (!batch || batch.length === 0) break;
     all.push(...batch);
     if (batch.length < 100) break;
   }
+
+  // 404 is not the only door, and on this organisation it is not the usual one.
+  // Ekdotico is publicly visible while every repository in it is private, so a
+  // credential with no access to those repositories is answered 200 with an
+  // empty array — measured against the live endpoint, not assumed. An expired
+  // token is the safe case: that is 401, and api() already throws on it. The
+  // rest arrive here as zero repositories, and zero repositories in an
+  // organisation that has several is a credential, not a fact.
+  if (all.length === 0) {
+    throw new Error(
+      `${ORG} lists no repositories.\n\n` +
+        'A publicly visible organisation answers 200 with an empty array to a\n' +
+        'credential that cannot see its private repositories, so this is the shape\n' +
+        "of a token without repository access rather than an empty organisation.\n" +
+        "Check the token's access before believing a report of no consumers.",
+    );
+  }
+
   // An archived repository is a record, not a consumer. Bumping a pin in one is
   // not work anybody wants listed every month.
   return all.filter((r) => !r.archived).sort((a, b) => a.name.localeCompare(b.name));
@@ -159,10 +200,12 @@ console.log(`${NAME}@${CURRENT} — checking ${repos.length} repositories in ${O
 
 const stale = [];
 let consumers = 0;
+let readable = 0;
 
 for (const repo of repos) {
   const pkg = await manifest(repo.name);
   if (!pkg) continue;
+  readable += 1;
   const found = findings(pkg);
   const depends = FIELDS.some((f) => pkg?.[f]?.[NAME]);
   if (!depends) continue;
@@ -179,7 +222,27 @@ for (const repo of repos) {
   }
 }
 
-console.log(`\n${consumers} consumer(s), ${stale.length} needing attention.`);
+// The last way a credential fault can still read as good news. Contents (read)
+// is a separate permission from listing the organisation, and without it every
+// manifest() 404s — which api() maps to null, indistinguishable from a
+// repository that genuinely has no package.json. Every repository in this
+// organisation is a Node project, so none of them being readable is a
+// permission rather than a fact about the repositories.
+if (readable === 0) {
+  throw new Error(
+    `Listed ${repos.length} repositories in ${ORG} and read package.json in none.\n\n` +
+      'That is the shape of a token without Contents (read), not an organisation of\n' +
+      'repositories that have no manifest. Check the permission before believing a\n' +
+      'report of no consumers.',
+  );
+}
+
+// Three counts rather than one, because "no consumers" is only believable
+// alongside the number of manifests actually read.
+console.log(
+  `\n${repos.length} repositories, ${readable} with a package.json, ${consumers} depending on ${NAME}.`,
+);
+console.log(`${stale.length} needing attention.`);
 
 if (stale.length === 0 || !OUT) {
   if (stale.length > 0 && !OUT) console.log('No --out given, so no report was written.');

@@ -88,9 +88,9 @@ jobs:
       # the version that was just published — changesets commits the bump before
       # it publishes — and it is also the right answer for the scheduled run,
       # which has no tag of its own.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
 

@@ -21,7 +21,9 @@
         "vocabulary/planning-canvas",
         "vocabulary/session",
         "vocabulary/provenance-record",
-        "vocabulary/branch"
+        "vocabulary/branch",
+        "vocabulary/auto-add",
+        "vocabulary/research-workspace-assistant"
       ],
       "reason": "A controlled-vocabulary document names terms as terms. The distinction between canonical and non-canonical forms is its subject matter, so it necessarily contains both."
     },

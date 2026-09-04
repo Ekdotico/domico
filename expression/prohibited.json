@@ -1,6 +1,6 @@
 {
   "$schema": "./prohibited.schema.json",
-  "version": "0.3",
+  "version": "0.4",
   "description": "Prohibited terms and patterns. Every entry carries the reason it is prohibited and what to use instead: a linter that reports a violation without a replacement is an incomplete error message, which is itself a System Feedback register violation. Register scope is modelled explicitly so a rule that applies only to the provenance/institutional register is never fired against marketing copy.",
   "registers": [
     "functional",

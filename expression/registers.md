@@ -1,7 +1,7 @@
 # Ekdotico registers — reference for the failsafe agent
 
 **Generated from `expression/guidelines.md` §5. Do not edit.**
-**Version 0.3. Regenerate with `pnpm build:expression`.**
+**Version 0.4. Regenerate with `pnpm build:expression`.**
 
 This file exists so the failsafe agent and human reviewers work from the same
 text as the governing document, without loading the whole of it. It is

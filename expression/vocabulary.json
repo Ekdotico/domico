@@ -1,6 +1,6 @@
 {
   "$schema": "./vocabulary.schema.json",
-  "version": "0.3",
+  "version": "0.4",
   "description": "Controlled vocabulary. Every concept in Ekdotico has exactly one canonical term. This file is the single source for the mechanical vocabulary rules: the prose tables in guidelines.md are generated from it, and the linter reads it directly. Adding a term means editing this file and nothing else.",
   "notes": {
     "ambiguousVariants": "Variants under `ambiguousVariants` are also ordinary English or legitimate domain terms. The linter reports them as substantive and marks them for human confirmation rather than blocking, because a match is necessary but not sufficient. A \"faculty dashboard\" and an MLA \"Works Cited\" list are both correct usages.",
@@ -16,12 +16,13 @@
       "variants": [
         "doc"
       ],
-      "rationale": "Format-agnostic; applies equally to thesis, journal article, research paper, and conference paper. \"Paper\" implies a specific physical format. \"Manuscript\" implies an unpublished state. \"Work\" is too general for functional contexts. \"Manuscript\" is also standard academic usage for a paper under submission, so it is confirmable rather than blocking.",
+      "rationale": "Format-agnostic; applies equally to thesis, journal article, research paper, and conference paper. \"Paper\" implies a specific physical format. \"Manuscript\" implies an unpublished state. \"Work\" is too general for functional contexts. \"Manuscript\" is also standard academic usage for a paper under submission, so it is confirmable rather than blocking. \"Project\" names the same thing from the other side: FR-AU uses it for the unit an institution gains read access to — a document together with its source library, planning canvas, research journal, and task list — while every other module calls that unit the document, and the data model has no Project entity. Document is canonical for the concept; FR-AU's wording is a known residue and its amendment is a separate specification change, so \"project\" is confirmable rather than blocking.",
       "since": "0.2",
       "ambiguousVariants": [
         "paper",
         "the work",
-        "manuscript"
+        "manuscript",
+        "project"
       ]
     },
     {
@@ -130,7 +131,7 @@
         "work session",
         "writing period"
       ],
-      "rationale": "Shortest, most functional term. A session begins when a user opens a document in an active browser tab with keyboard or mouse focus, and ends when the tab is closed, navigated away from, or has had no qualifying interaction events within the inactivity threshold specified in the SRS. \"Writing session\" is acceptable in instructional prose on first use; \"session\" is the canonical term for functional and provenance contexts.",
+      "rationale": "Shortest, most functional term. A session begins when an authenticated user opens or activates a document and performs a qualifying interaction; opening or activating a document without one begins nothing, and no provenance data is recorded for activity consisting solely of non-qualifying events. It ends when the document tab is closed or navigated away from, when the collaboration connection is lost and is not re-established within the grace period, or after a continuous absence of qualifying interactions exceeding the inactivity threshold. The grace period and the threshold are specified in the SRS (FR-PR-02, FR-PR-03), which governs; naming the values here would put two documents in a position to disagree about them. \"Writing session\" is acceptable in instructional prose on first use; \"session\" is the canonical term for functional and provenance contexts.",
       "since": "0.2",
       "ambiguousVariants": [
         "sitting"
@@ -226,6 +227,19 @@
       "since": "0.2"
     },
     {
+      "id": "research-workspace-assistant",
+      "concept": "The AI query-assistance surface inside the research workspace",
+      "canonical": "Research workspace assistant",
+      "shorthand": null,
+      "variants": [],
+      "rationale": "The fifth AI surface, and the last one to be named. It carried three labels — \"research workspace assistant\" in FR-AU-40, \"AI-powered query assistance\" in FR-RW-22, and \"research assistant\" on the deferred-registers page — while the vocabulary held no entry for it at all, which is how a concept ends up with one name per module. FR-AU-40 enumerates the five surfaces an institutional AI policy governs, so its label is the one the policy screen will carry and the one adopted here. The surface reads the document and suggests search queries; it does not conduct the search, which the research workspace does, and the two are separate entries rather than one. \"Research assistant\" is a person in an academic setting and is confirmable rather than blocking; \"query assistance\" remains correct as a description of what the surface does, and is a breach only when used as its name.",
+      "since": "0.4",
+      "ambiguousVariants": [
+        "research assistant",
+        "query assistance"
+      ]
+    },
+    {
       "id": "pdf-reader",
       "concept": "The PDF reading and annotation surface",
       "canonical": "PDF reader",
@@ -283,6 +297,19 @@
       "since": "0.2",
       "ambiguousVariants": [
         "task panel"
+      ]
+    },
+    {
+      "id": "auto-add",
+      "concept": "The highest-confidence tier in task extraction, which creates a task without a confirmation step",
+      "canonical": "Auto-add",
+      "shorthand": null,
+      "variants": [],
+      "rationale": "The tier was called auto-complete while the task it creates is assigned status \"open\", so the name described the opposite of the behaviour and four pages disagreed about what the tier does. Renamed by the September 2026 documentation audit: the tier is named for what it does, which is add the task. \"Auto-complete\" is confirmable rather than blocking because it is also correct English for a different mechanism in the same module — FR-TK-10 reassesses existing tasks and genuinely marks them complete, and \"auto-completed tasks\" there is right. The tier name and the completion action are two concepts that happen to share a word; only the first is this entry.",
+      "since": "0.4",
+      "ambiguousVariants": [
+        "auto-complete",
+        "auto-completion"
       ]
     },
     {

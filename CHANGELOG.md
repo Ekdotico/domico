@@ -1,5 +1,83 @@
 # @ekdotico/domico
 
+## 0.19.0
+
+### Minor Changes
+
+- 11fb2e1: Expression Guidelines 0.4. Three concepts that the specification and the
+  documentation site named inconsistently now have canonical terms, and the
+  Session rationale follows the requirement that governs it.
+
+  **Research workspace assistant** — the fifth AI surface. It carried three
+  labels: "research workspace assistant" in FR-AU-40, "AI-powered query
+  assistance" in FR-RW-22, and "research assistant" in this document's own §6.2.
+  The vocabulary held no entry for it, which is how a concept ends up with one
+  name per module. FR-AU-40 enumerates the five surfaces an institutional AI
+  policy governs, so its label is the one a policy screen will carry, and it is
+  the one adopted. §6.2 is corrected in the same change.
+
+  **Auto-add** — the highest-confidence tier in task extraction. The tier was
+  called auto-complete while the task it creates is assigned status "open", so
+  the name described the opposite of the behaviour, and four pages disagreed
+  about what the tier does. Renamed by the September 2026 documentation audit;
+  this records the name.
+
+  **Document over project.** FR-AU calls the unit an institution gains read
+  access to a project; every other module calls it the document, and the data
+  model has no Project entity. Document is canonical for the concept. FR-AU's
+  wording is a known residue whose amendment is a specification change rather
+  than a vocabulary one, so this entry records the decision rather than
+  pre-empting it.
+
+  All three non-canonical forms are `ambiguousVariants` — substantive, asking for
+  human confirmation — rather than blocking. Each is also correct in a
+  neighbouring sense: a research assistant is a person, a project is an ordinary
+  English word, and FR-TK-10 genuinely auto-completes tasks it reassesses, so
+  "auto-completed tasks" is right there and wrong as a tier name. A rule that
+  cannot tell the senses apart reports the correct use as often as the wrong one,
+  and the `copy` precedent on the branch entry is the same judgement.
+
+  **Session** — the rationale said a session begins when a document is opened in
+  a tab with focus. FR-PR-02 requires a qualifying interaction and records
+  nothing without one; FR-PR-03 adds a 60-second reconnection grace the rationale
+  omitted. The rationale now follows the requirement and cites it instead of
+  restating its values, so the two documents cannot drift into disagreeing about
+  a threshold.
+
+  Consumers should expect new substantive findings from `lint:copy` where these
+  forms appear. That is the point of the release: the queue was previously
+  invisible.
+
+### Patch Changes
+
+- d1d66de: Two corrections to the Expression Guidelines, both about a claim the cited
+  source does not carry.
+
+  **The `special needs` prohibition attributed its reason too widely.** The rule
+  said the term is "perceived as patronising by autistic and disabled
+  communities (Bottema-Beutel et al., 2021)". The paper is _Avoiding ableist
+  language: Suggestions for autism researchers_, and its full text says "many
+  autistic people find terms such as 'special interests' and 'special needs'
+  patronizing". It reports on autistic people; it does not speak for disabled
+  communities generally. The reason now reads "perceived as patronising by many
+  autistic people", which is what the citation supports. The prohibition itself
+  is unchanged: the term stays blocking in every register, with the same
+  replacement.
+
+  **P6's grounding named a work that cannot be resolved.** The principle cited
+  "Frontiers in Education (2023); Eaton (2025)". No Frontiers in Education
+  article matching the claim was located during the September 2026 documentation
+  audit — the citation carried no author, title, or DOI, and searching the
+  journal produced no candidate. The grounding is now "Eaton (2025)" alone, which
+  is verifiable and sufficient for the principle. The documentation site removed
+  the same citation from its copy of P6; this brings the canonical copy into
+  agreement.
+
+  The change is to `expression/prohibited.json` and the hand-written prose of
+  `expression/guidelines.md`. Section 8's table is a generated region, so
+  `pnpm build:expression` regenerated it from the data; prose and data still
+  agree and the build-time check passes.
+
 ## 0.18.1
 
 ### Patch Changes

@@ -31,7 +31,7 @@
       "match": { "kind": "phrase", "patterns": ["special needs"] },
       "registers": "all",
       "severity": "blocking",
-      "reason": "Deficit framing, and perceived as patronising by autistic and disabled communities (Bottema-Beutel et al., 2021).",
+      "reason": "Deficit framing, and perceived as patronising by many autistic people (Bottema-Beutel et al., 2021).",
       "replacement": "Describe the specific relevant need."
     },
     {

@@ -115,7 +115,7 @@ Ekdotico does not imply a correct way to write. Writing in many short sessions i
 Ekdotico is designed with the working patterns of neurodivergent writers as foundational constraints, not as exceptions to accommodate. This principle is invisible to users. It is the standard by which every copy decision is evaluated internally. The word "assistive" does not appear in the product.
 
 ### P6 — Process describes; the person does not appear
-*Grounding: Frontiers in Education (2023); Eaton (2025)*
+*Grounding: Eaton (2025)*
 
 The product records and presents writing process data. It does not characterise the writer. "14 sessions across 23 days" describes the document's history. "You've been consistent" describes the person. The second formulation is prohibited across all registers, including the marketing register.
 
@@ -652,7 +652,7 @@ A blocking violation contradicts a locked decision. It is never shipped without 
 |---|---|---|---|
 | "humanize" · "humanise" · "humanized" · "humanised" · "humanizing" · "humanising" | All registers | Founder decision. Implies AI-generated content is the default state of the text. | Prose Refine, or /refine for the slash command form. |
 | "Ekdotiko" · "Ekdotiko's" · "ekdotiko" | All registers | Superseded spelling of the product name. | Ekdotico |
-| "special needs" | All registers | Deficit framing, and perceived as patronising by autistic and disabled communities (Bottema-Beutel et al., 2021). | Describe the specific relevant need. |
+| "special needs" | All registers | Deficit framing, and perceived as patronising by many autistic people (Bottema-Beutel et al., 2021). | Describe the specific relevant need. |
 | "Are you sure?" | All registers | Provides no information about consequences. Violates System Feedback rule 6. | A warning that describes the specific, factual consequence, using the confirmation dialog formula. |
 | "Oops" · "Uh oh" · "Hmm" · "Whoops" | System Feedback | Trivialises errors and is inconsistent with a measured, precise tone. | A plain-language description of what happened. |
 | "assistive" | All registers | The assistive-by-design principle (P5) is internal only and is never named in the product. | Describe the specific feature or capability. |

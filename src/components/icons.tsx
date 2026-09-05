@@ -234,3 +234,25 @@ export function ArrowUpRightIcon(props: IconProps) {
     </Icon>
   );
 }
+
+/**
+ * Named for `circle-question-mark`, not the shorter `help-circle`.
+ *
+ * Lucide ships all three of `help-circle`, `circle-help` and
+ * `circle-question-mark` with identical geometry, but only the last is in
+ * `tags.json` — the other two are back-compatibility aliases kept from earlier
+ * renames. Every other icon in this set is named for a current Lucide name, so
+ * `HelpCircleIcon` would be the first to rest on an alias, and `check:icons`
+ * resolves the file from the component name: the day lucide-static drops the
+ * alias, the guard fails on an icon nobody touched. The longer name is the one
+ * that keeps working.
+ */
+export function CircleQuestionMarkIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <path d="M12 17h.01" />
+    </Icon>
+  );
+}

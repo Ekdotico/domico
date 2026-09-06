@@ -43,8 +43,17 @@
      browser to compute overflow-y: auto too, making .tbl-wrap an implicit
      Y-scroll container that breaks position: sticky on descendant <th>
      (sticky would resolve to .tbl-wrap's top, not the page, creating an
-     offset-at-rest gap). At desktop the content column is 760px and the
-     table's min-width (480px) fits comfortably — overflow is unneeded. */
+     offset-at-rest gap).
+
+     What makes that safe is not the table's min-width — 480px against a 760px
+     column was never the binding constraint, and reading it as one is why a
+     table was able to overflow into the page's index rail for as long as it
+     did. The binding constraint is the sum of the columns' min-content widths,
+     which auto-layout will not go below whatever `width: 100%` asks for. That
+     sum stays inside the column because `tbody td` sets `overflow-wrap:
+     anywhere` below; without it a single unbreakable token is enough to push
+     the table out, with nothing here to clip or scroll it. The two rules are a
+     pair: this one may drop overflow only for as long as that one holds. */
   margin: 14px 0 24px;
   border-radius: var(--radius-lg);
   /* Outline is no longer drawn by the wrap. Each header th carries its
@@ -97,7 +106,26 @@
   font-size: var(--fs-xs);
   color: var(--fg-2);
   line-height: 1.45;
-  overflow-wrap: normal;
+  /* `anywhere`, not `normal`, and the distinction is load-bearing rather than
+     cosmetic. A cell holding a long unbreakable token — a regex, a route path,
+     a DOI — contributes that token's full width to the column's min-content
+     size, and `table-layout: auto` may not render a table narrower than the sum
+     of those. `width: 100%` on the table is a preferred width, not a cap, so it
+     loses: one 70-character regex measured a 679px min-content cell inside a
+     648px column and pushed the table 186px past it, over the page's index rail.
+     The same cell under `anywhere` measures 11px.
+
+     `break-word` is the wrong tool here. It wraps the token visually but does
+     not contribute its break opportunities to intrinsic sizing, so the column
+     stays wide and the table still overflows. Only `anywhere` reaches the
+     number the layout algorithm actually reads.
+
+     This does not break ordinary prose: a break is taken only when the word
+     would otherwise overflow, so short cells are untouched. Freed of the false
+     constraint, auto-layout distributes the surplus by max-content — which is
+     content volume — and the prose columns widen on their own. `word-break`
+     stays `normal` to defend against a consumer setting `break-all` upstream. */
+  overflow-wrap: anywhere;
   word-break: normal;
 }
 /* Side outline continues down the body so the card stays closed. */

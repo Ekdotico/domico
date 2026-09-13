@@ -67,8 +67,9 @@ const GUARDS: Record<string, Guard> = {
     what:
       'every Mermaid diagram carries accTitle and accDescr, no non-operable role takes ' +
       'focus, aria-modal keeps its Tab cycle and inert background, every aria reference ' +
-      'resolves, every removed outline returns on :focus-visible, and every icon-only ' +
-      'button carries a name',
+      'resolves, every removed outline returns on :focus-visible, every icon-only ' +
+      'button carries a name, and every generic element in the Tab order carries a ' +
+      'role and a name',
     targetsConsumer: true,
   },
   copy: {

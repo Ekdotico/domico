@@ -176,14 +176,24 @@ weight. Text that must be quieter than `--fg-3` is text that should be shorter.
 
 ## Rule
 
-| Token           | Role                                                       |
-| --------------- | ---------------------------------------------------------- |
-| `--rule-strong` | A prominent divider: a masthead, a section boundary.       |
-| `--rule`        | A component border.                                        |
-| `--rule-soft`   | An internal separator: rows in a list, cells in a table.   |
+| Token            | Role                                                       |
+| ---------------- | ---------------------------------------------------------- |
+| `--rule-control` | The boundary of a control: a text field, a quiet button.   |
+| `--rule-strong`  | A prominent divider: a masthead, a section boundary.       |
+| `--rule`         | A component border.                                        |
+| `--rule-soft`    | An internal separator: rows in a list, cells in a table.   |
 
 Always `1px`. The house treatment is a hairline, and a rule at 2px reads as a
 frame, which is a different visual claim.
+
+`--rule-control` is the one rule that is not a hairline in contrast, only in
+width. A divider may sit at 1.6:1; the visible edge of a text field or a button
+may not (WCAG 2.2 SC 1.4.11 asks 3:1), and the three hairlines measure 1.6:1
+to 1.9:1 on every canvas. Each palette sets it at the lightness that first
+clears 3.3:1 against its worst surface — the darkest light surface, the
+lightest dark one — so it holds on the canvas, a card, a sunken field, and a
+raised sheet alike. Use it for a boundary that identifies a control and for
+nothing else; a divider drawn with it reads as a frame.
 
 **When not to.** Do not use a rule token as a text or icon colour; it is
 calibrated for a 1px line against its own canvas and nothing else. Do not

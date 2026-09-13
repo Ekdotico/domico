@@ -129,11 +129,15 @@ export function LogoMark({
 /**
  * Mark plus wordmark. The tile contrasts with whatever canvas it lands on,
  * which is a question for the stylesheet rather than for this component.
+ *
+ * The mark is decorative here: the wordmark beside it already says
+ * "Ekdotico", and a named mark made a screen reader announce the brand twice
+ * ("Ekdotico mark, image, Ekdotico") on every page header.
  */
 export function Logo({ size = 22 }: { size?: number }) {
   return (
     <div className="logo">
-      <LogoMark size={size} className="logo-mark logo-mark--tile" variant="solid" />
+      <LogoMark size={size} className="logo-mark logo-mark--tile" variant="solid" title="" />
       <span className="logo-wordmark">Ekdotico</span>
     </div>
   );

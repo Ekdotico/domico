@@ -43,6 +43,10 @@
     "$value": "oklch(75.939% 0.0241 84.59)",
     "$type": "color"
   },
+  "rule-control": {
+    "$value": "oklch(58.588% 0.0334 87.3)",
+    "$type": "color"
+  },
   "rule-strong": {
     "$value": "oklch(80.668% 0.0334 87.3)",
     "$type": "color"

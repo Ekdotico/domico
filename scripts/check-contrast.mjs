@@ -31,6 +31,24 @@ const PAIRS = [
   ['fg-4', 'bg-canvas', 4.5],
   ['fg-1', 'bg-surface', 4.5],
   ['fg-3', 'bg-surface', 4.5],
+  // Surfaces the consumers actually draw text on, found by the September 2026
+  // accessibility review and previously unlisted: a typed value in an inset
+  // field, the in-flight submit button, an error message inside a card, and a
+  // hovered primary action. All four pass today; listed so they stay checked.
+  ['fg-1', 'bg-inset', 4.5],
+  ['fg-1', 'accent-soft', 4.5],
+  ['danger', 'bg-surface', 4.5],
+  ['accent-ink', 'accent-hover', 4.5],
+  // --rule-control is the boundary of a control — a text field, a quiet
+  // button — and WCAG 2.2 SC 1.4.11 asks 3:1 of a visible boundary, against
+  // every surface a control sits on. The three hairlines are unlisted on
+  // purpose: a divider claims no threshold, and measured they sit at 1.6:1 to
+  // 1.9:1, which is why a control drawn with one was invisible as a control.
+  ['rule-control', 'bg-canvas', 3],
+  ['rule-control', 'bg-surface', 3],
+  ['rule-control', 'bg-surface-2', 3],
+  ['rule-control', 'bg-inset', 3],
+  ['rule-control', 'bg-raised', 3],
   ['accent', 'bg-canvas', 4.5],
   ['accent-ink', 'accent', 4.5],
   ['gilt', 'bg-canvas', 4.5],

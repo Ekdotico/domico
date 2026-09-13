@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Accessibility guard for @ekdotico/domico consumers.
 //
-// Six checks, over the failure classes this estate has actually shipped. They
-// walk the same files, so they are one script rather than six:
+// Seven checks, over the failure classes this estate has actually shipped. They
+// walk the same files, so they are one script rather than seven:
 //
 //   diagramalt      a Mermaid fence with no text alternative, or a placeholder one
 //   focusrole       one element carrying both a non-operable role and tabIndex
@@ -10,6 +10,7 @@
 //   danglingid      aria-labelledby / aria-describedby naming an id that is not there
 //   focusring       outline removed with nothing restoring a focus indicator
 //   unnamedcontrol  a button whose only content is an icon, with no accessible name
+//   unnamedfocus    a generic element put in the Tab order with no role or no name
 //
 // Exit 1 on any violation. Rule 18 of the visual ruleset is the rule this
 // enforces; `ekdotico-check a11y` is how a consumer runs it.
@@ -339,6 +340,50 @@ function checkUnnamedControl(file, src) {
   }
 }
 
+// ---------------------------------------------------------- unnamed tab stops
+// A generic element given a tab stop. `tabIndex={0}` on a <div> is how a
+// scrollable table wrapper is reached from the keyboard, and that part is
+// right; but a tab stop is a user interface component, and one owes a role and
+// a name (WCAG 4.1.2). Without them a screen reader lands on the element and
+// says nothing. Five table wrappers across two applications shipped this way.
+//
+// Only a literal, non-negative tabIndex counts. -1 is a programmatic focus
+// target — a main region focused after a route change — which is never in the
+// Tab order; and an expression (`tabIndex={selected ? 0 : -1}`) is a roving
+// tab stop whose element already carries a widget role.
+//
+// COVERAGE BOUNDARY: a spread ({...props}) may carry the role and the name, so
+// a tag containing one is not read. A role that takes its name from its own
+// content — button, link, tab, option — needs no aria-label and is not asked
+// for one; every other role is, since group, region and dialog name nothing on
+// their own.
+const GENERIC_TAGS = new Set(['div', 'span', 'section', 'article']);
+const NAMED_FROM_CONTENT = new Set([
+  'button', 'link', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option',
+  'checkbox', 'radio', 'switch', 'treeitem', 'row', 'cell', 'gridcell', 'columnheader',
+  'rowheader', 'heading', 'tooltip',
+]);
+
+function checkUnnamedFocus(file, src) {
+  for (const tag of jsxOpenTags(src)) {
+    if (!GENERIC_TAGS.has(tag.name)) continue;
+    const ti = /\btabIndex\s*=\s*(?:\{\s*(-?\d+)\s*\}|["'](-?\d+)["'])/.exec(tag.attrs);
+    if (!ti) continue;
+    const value = ti[1] ?? ti[2];
+    if (Number(value) < 0) continue;
+    if (/\{\s*\.\.\./.test(tag.attrs)) continue;
+    const role = /\brole\s*=\s*["']([\w-]+)["']/.exec(tag.attrs);
+    if (!role) {
+      add('unnamedfocus', file, lineOf(src, tag.start), `<${tag.name} … tabIndex={${value}} …>`, NOTE.unnamedfocus.noRole);
+      continue;
+    }
+    if (NAMED_FROM_CONTENT.has(role[1])) continue;
+    if (/\baria-label(ledby)?\s*=/.test(tag.attrs)) continue;
+    add('unnamedfocus', file, lineOf(src, tag.start), `<${tag.name} … role="${role[1]}" tabIndex={${value}} …>`,
+      NOTE.unnamedfocus.noName(role[1]));
+  }
+}
+
 // ------------------------------------------------------------------- notes
 // Filled from the Expression Guidelines' system feedback register: state what
 // holds and what to do, describe the process rather than any person, and never
@@ -360,6 +405,10 @@ const NOTE = {
     inline: 'outline removed inline — add a :focus-visible rule with outline: 2px solid var(--accent)',
   },
   unnamedcontrol: 'a screen reader announces "button" alone — add aria-label matching the tooltip',
+  unnamedfocus: {
+    noRole: 'a tab stop with no role announces nothing — add role="group" and aria-label, or drop tabIndex',
+    noName: (role) => `role="${role}" names nothing on its own — add aria-label, or drop tabIndex`,
+  },
 };
 
 // -------------------------------------------------------------- self-check
@@ -460,6 +509,23 @@ function selfCheck() {
   assert.equal(caught(() => checkUnnamedControl('t', '<button onClick={f}><svg><path d="M0"/></svg></button>')), 1);
   assert.equal(caught(() => checkUnnamedControl('t', '<button aria-label="Close"><svg><path d="M0"/></svg></button>')), 0);
 
+  // The table wrapper as it shipped, and as corrected.
+  assert.equal(caught(() => checkUnnamedFocus('t', '<div className="tbl-wrap" tabIndex={0}><table /></div>')), 1);
+  assert.equal(
+    caught(() => checkUnnamedFocus('t', '<div className="tbl-wrap" tabIndex={0} role="group" aria-label="Table" />')),
+    0,
+  );
+  // A role that names nothing from content still owes a name.
+  assert.equal(caught(() => checkUnnamedFocus('t', '<div role="group" tabIndex={0} />')), 1);
+  // Left alone: a programmatic target, a roving stop, a spread that may name
+  // it, a role named from content, and a labelled widget.
+  assert.equal(caught(() => checkUnnamedFocus('t', '<div tabIndex={-1} />')), 0);
+  assert.equal(caught(() => checkUnnamedFocus('t', '<div tabIndex={selected ? 0 : -1} />')), 0);
+  assert.equal(caught(() => checkUnnamedFocus('t', '<div tabIndex={0} {...rest} />')), 0);
+  assert.equal(caught(() => checkUnnamedFocus('t', '<div role="button" tabIndex={0}>Save</div>')), 0);
+  assert.equal(caught(() => checkUnnamedFocus('t', '<div role="tabpanel" tabIndex={0} aria-labelledby="t1" />')), 0);
+  assert.equal(caught(() => checkUnnamedFocus('t', '<button tabIndex={0} />')), 0);
+
   // The focus-ring exemption. `:focus:not(:focus-visible) { outline: none }` is
   // the correct idiom and must not be reported; a bare removal with nothing
   // restoring it must be.
@@ -523,10 +589,11 @@ for (const file of files) {
   checkDanglingId(file, src);
   checkFocusRingJsx(file, src, styled);
   checkUnnamedControl(file, src);
+  checkUnnamedFocus(file, src);
 }
 
 // ------------------------------------------------------------------ report
-const ORDER = ['diagramalt', 'focusrole', 'modaltrap', 'danglingid', 'focusring', 'unnamedcontrol'];
+const ORDER = ['diagramalt', 'focusrole', 'modaltrap', 'danglingid', 'focusring', 'unnamedcontrol', 'unnamedfocus'];
 const LABEL = {
   diagramalt: 'Mermaid diagram with no text alternative (WCAG 2.2 §1.1.1)',
   focusrole: 'Non-operable role holding tabIndex (WCAG 2.2 §4.1.2)',
@@ -534,6 +601,7 @@ const LABEL = {
   danglingid: 'aria reference resolving to no element (WCAG 2.2 §4.1.2)',
   focusring: 'outline removed with no :focus-visible ring (WCAG 2.2 §2.4.7)',
   unnamedcontrol: 'Icon-only button with no accessible name (WCAG 2.2 §4.1.2)',
+  unnamedfocus: 'Generic element in the Tab order with no role or name (WCAG 2.2 §4.1.2)',
 };
 
 // modaltrap warns rather than fails, following the discipline guard's handling

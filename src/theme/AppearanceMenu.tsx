@@ -35,7 +35,7 @@
  * correct before any JavaScript runs.
  */
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type FocusEvent } from 'react';
 import { PaletteIcon } from '../components/icons.js';
 import { ModeSwitcher } from './ModeSwitcher.js';
 import { ThemeSwitcher } from './ThemeSwitcher.js';
@@ -107,11 +107,23 @@ export function AppearanceMenu({
     };
   }, [open, closeAndReturnFocus]);
 
+  // Tab out closes. A non-modal popover that stays open after focus has left
+  // it sits over whatever the reader tabs to next (WCAG 2.4.11), and a
+  // keyboard reader has no pointer to dismiss it with. `relatedTarget` is null
+  // when focus goes to the body — a click on the panel's own label, a window
+  // blur — and neither of those is the reader leaving, so null is ignored.
+  const onBlur = (event: FocusEvent<HTMLDivElement>) => {
+    const next = event.relatedTarget;
+    if (!(next instanceof Node) || wrapper.current?.contains(next)) return;
+    setOpen(false);
+  };
+
   return (
     <div
       className={className ? `appearance-menu ${className}` : 'appearance-menu'}
       data-open={open ? 'true' : 'false'}
       ref={wrapper}
+      onBlur={onBlur}
     >
       <button
         ref={trigger}

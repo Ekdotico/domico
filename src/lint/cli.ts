@@ -26,7 +26,7 @@
  * it reports how many rules it skipped for want of one.
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 // Node 22 or newer: fs/promises.glob does not exist before it, and this
 // binary is what the consuming repositories run. That is what sets the
 // `engines.node` floor in package.json — lower it and the CLI fails at
@@ -97,9 +97,22 @@ const args = parseArgs(process.argv.slice(2));
 const cwd = process.cwd();
 
 const configPath = resolve(cwd, '.ekdotico-lint.json');
-const config: Config = existsSync(configPath)
-  ? JSON.parse(readFileSync(configPath, 'utf8'))
-  : {};
+let config: Config = {};
+if (existsSync(configPath)) {
+  try {
+    config = JSON.parse(readFileSync(configPath, 'utf8'));
+  } catch (error) {
+    // Exit 2, as for the other ways of not running at all. A thrown parse
+    // error exits 1, which is also what findings exit with, and the agent hook
+    // reads 1 as "ran and found something" — so a broken config passed as
+    // clean. Now it reads as what it is.
+    console.error(
+      `Could not parse .ekdotico-lint.json: ${(error as Error).message}\n` +
+        'Fix the file, or remove it to run on the command-line globs alone.',
+    );
+    process.exit(2);
+  }
+}
 
 const patterns = args.patterns.length > 0 ? args.patterns : (config.files ?? []);
 if (patterns.length === 0) {
@@ -134,13 +147,30 @@ if (files.length === 0) {
   process.exit(2);
 }
 
-const results: LintResult[] = files.sort().map((file) => {
-  const path = relative(cwd, resolve(cwd, file));
-  return lintText(readFileSync(resolve(cwd, file), 'utf8'), path, {
-    register: registerFor(path),
-    overrides: config.overrides ?? [],
-  });
-});
+// No copy surface is a mebibyte. A file that size is a bundle, a fixture, or
+// generated output, and scanning it is what pushes the agent hook past its
+// timeout, after which the edit passes unchecked. Skipped, and said so.
+const MAX_BYTES = 1024 * 1024;
+
+const results: LintResult[] = [];
+for (const file of files.sort()) {
+  const absolute = resolve(cwd, file);
+  const path = relative(cwd, absolute);
+  const { size } = statSync(absolute);
+  if (size > MAX_BYTES) {
+    console.error(
+      `Skipped ${path}: ${size} bytes is over the 1 MiB limit for a copy scan. ` +
+        'Add it to "ignore" in .ekdotico-lint.json if it holds no copy.',
+    );
+    continue;
+  }
+  results.push(
+    lintText(readFileSync(absolute, 'utf8'), path, {
+      register: registerFor(path),
+      overrides: config.overrides ?? [],
+    }),
+  );
+}
 
 console.log(args.format === 'json' ? formatJson(results) : formatText(results, failOn));
 

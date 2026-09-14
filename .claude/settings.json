@@ -8,7 +8,7 @@
           {
             "type": "command",
             "command": ".claude/hooks/expression-check.sh",
-            "timeout": 30,
+            "timeout": 60,
             "statusMessage": "Checking copy against the Expression Guidelines"
           }
         ]

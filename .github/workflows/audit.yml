@@ -42,21 +42,25 @@ concurrency:
   group: audit-${{ github.ref }}
   cancel-in-progress: false
 
+# Read-only by default. The one write — the audit tag — is done by a job of its
+# own at the end, so the token that can push is never in the job that runs
+# `pnpm install` and the network-facing decay check.
 permissions:
-  contents: write
-  packages: read
+  contents: read
 
 jobs:
   decide:
     name: Is an audit due?
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       due: ${{ steps.count.outputs.due }}
       since: ${{ steps.count.outputs.since }}
     steps:
       # Full history: `git describe` cannot find a tag in a shallow clone, and the
       # commit count would be wrong rather than absent.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
@@ -93,16 +97,19 @@ jobs:
     needs: decide
     if: needs.decide.outputs.due == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
 
       # Matches ci.yml. There is no .nvmrc in this repository, so the version is
       # literal here as it is there.
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -113,14 +120,27 @@ jobs:
       - name: Decay
         run: pnpm check:decay
 
-      # Only on a clean audit. A tag written after a failure would suppress the next
-      # five commits' worth of checking on the strength of a run that found problems.
-      - name: Record the audit
-        if: success()
-        continue-on-error: true
+  # Only on a clean audit. A tag written after a failure would suppress the next
+  # five commits' worth of checking on the strength of a run that found problems.
+  # Non-fatal, as the header says: a gate that fails because its bookkeeping
+  # failed teaches people to ignore it.
+  record:
+    name: Record the audit
+    needs: [decide, audit]
+    if: needs.audit.result == 'success'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - env:
+          TRIGGER: ${{ github.event_name }}
+          SINCE: ${{ needs.decide.outputs.since }}
         run: |
           set -euo pipefail
           tag="audit-$(git rev-parse --short HEAD)"
           git tag -f "$tag"
           git push origin "$tag" --force
-          echo "Recorded $tag (trigger: ${{ github.event_name }}, commits since last: ${{ needs.decide.outputs.since }})."
+          echo "Recorded $tag (trigger: $TRIGGER, commits since last: $SINCE)."

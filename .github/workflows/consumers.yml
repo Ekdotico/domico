@@ -88,9 +88,9 @@ jobs:
       # the version that was just published — changesets commits the bump before
       # it publishes — and it is also the right answer for the scheduled run,
       # which has no tag of its own.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
           # setup-node v5 turns the package-manager cache on by default, detects
@@ -109,6 +109,10 @@ jobs:
         id: pins
         env:
           EKDOTICO_SUITE_TOKEN: ${{ secrets.EKDOTICO_SUITE_TOKEN }}
+          # Through the environment, never interpolated into the script: a
+          # dispatch input is free text, and an expression expanded into `run:`
+          # is shell for whoever typed it.
+          VERSION: ${{ inputs.version }}
         run: |
           # `pipefail`, because the pipe into `tee` is the last command in this
           # pipeline and its exit status is the step's. Without it the script's
@@ -120,7 +124,7 @@ jobs:
 
           node scripts/check-consumers.mjs \
             --out "$RUNNER_TEMP/consumers.md" \
-            ${{ inputs.version && format('--version {0}', inputs.version) || '' }} \
+            ${VERSION:+--version "$VERSION"} \
             | tee "$RUNNER_TEMP/consumers.log"
 
           # `hashFiles` cannot answer this question. It resolves paths only

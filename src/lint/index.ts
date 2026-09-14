@@ -112,6 +112,10 @@ function vocabularyFindings(source: string, file: string, spans: Span[]): Findin
     .map((t) => t.canonical)
     .sort((a, b) => b.length - a.length);
 
+  // Once per file. This was inside the per-match, per-phrase test below, which
+  // made a document with many hits cost hits × phrases × its own length.
+  const haystack = source.toLowerCase();
+
   for (const term of vocabulary.terms) {
     const graded: Array<[string, boolean]> = [
       ...term.variants.map((v) => [v, false] as [string, boolean]),
@@ -138,7 +142,6 @@ function vocabularyFindings(source: string, file: string, spans: Span[]): Findin
         const enclosing = [...allCanonical, ...(term.allowedCompounds ?? [])];
         const covered = enclosing.some((phrase) => {
           if (phrase.toLowerCase() === m[0].toLowerCase()) return false;
-          const haystack = source.toLowerCase();
           const needle = phrase.toLowerCase();
           let at = haystack.indexOf(needle, Math.max(0, m.index - needle.length));
           while (at !== -1 && at <= m.index) {

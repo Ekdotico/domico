@@ -23,7 +23,11 @@ const INLINE_CODE = /`[^`\n]+`/g;
 const HTML_COMMENT = /<!--[\s\S]*?-->/g;
 const FRONTMATTER = /^---\n[\s\S]*?\n---/;
 const CITE_MARKER = /<!--\s*eg:cite\s*-->/g;
-const URL = /\bhttps?:\/\/\S+|\b[\w.-]+\/[\w./-]+\.(?:mdx?|tsx?|css|json)\b/g;
+// The path alternative is bounded on both sides of its first slash. Unbounded,
+// a long run of dotted identifiers with one slash in it made the scan quadratic
+// in the run's length, and a large enough file stalled the agent hook past its
+// timeout. No real path exceeds these.
+const URL = /\bhttps?:\/\/\S+|\b[\w.-]{1,256}\/[\w./-]{1,2048}\.(?:mdx?|tsx?|css|json)\b/g;
 
 /**
  * Markdown table blocks whose header announces that the table catalogues

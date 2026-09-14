@@ -29,7 +29,15 @@
  * consumer's install over a hook.
  */
 
-import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, chmodSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+  mkdirSync,
+  existsSync,
+  chmodSync,
+  lstatSync,
+} from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -65,8 +73,24 @@ const targetArg = args.indexOf('--target');
  * for a postinstall is the consumer's root. Falls back to this checkout when
  * run inside the package itself.
  */
-const target = resolve(targetArg === -1 ? process.env.INIT_CWD || process.cwd() : args[targetArg + 1]);
+const targetValue = targetArg === -1 ? undefined : args[targetArg + 1];
+if (targetArg !== -1 && (targetValue === undefined || targetValue.startsWith('--'))) {
+  console.error('install-agent-hooks: --target needs a directory. For example: --target ../some-checkout');
+  process.exit(1);
+}
+const target = resolve(targetValue ?? (process.env.INIT_CWD || process.cwd()));
 const destinationDir = join(target, '.claude', 'hooks');
+
+/**
+ * A symbolic link is never written through. The write set is fixed and small,
+ * but a write through a link lands wherever the link points, and a consumer's
+ * `.claude` that is a link to somewhere else is not this installer's to decide
+ * about. The link is reported and left alone.
+ */
+function isSymbolicLink(path) {
+  const stat = lstatSync(path, { throwIfNoEntry: false });
+  return stat !== undefined && stat.isSymbolicLink();
+}
 
 if (!existsSync(SOURCE_DIR)) {
   // An older published version that predates the hooks. Not an error: the
@@ -107,20 +131,46 @@ if (check) {
   process.exit(0);
 }
 
-mkdirSync(destinationDir, { recursive: true });
+for (const dir of [join(target, '.claude'), destinationDir]) {
+  if (isSymbolicLink(dir)) {
+    console.error(
+      `install-agent-hooks: ${dir} is a symbolic link, so no hook was installed. Replace it with a directory and run pnpm install again.`,
+    );
+    process.exit(0);
+  }
+}
 
 let written = 0;
-for (const name of hooks) {
-  const contents = render(readFileSync(join(SOURCE_DIR, name), 'utf8'));
-  const installed = join(destinationDir, name);
+try {
+  mkdirSync(destinationDir, { recursive: true });
 
-  // Rewrite only on change, so an install does not touch the mtime of a file a
-  // running session has already read.
-  if (!existsSync(installed) || readFileSync(installed, 'utf8') !== contents) {
-    writeFileSync(installed, contents);
-    written++;
+  for (const name of hooks) {
+    const contents = render(readFileSync(join(SOURCE_DIR, name), 'utf8'));
+    const installed = join(destinationDir, name);
+
+    if (isSymbolicLink(installed)) {
+      console.error(
+        `install-agent-hooks: ${installed} is a symbolic link and was left as it is. Replace it with a file to receive the hook.`,
+      );
+      continue;
+    }
+
+    // Rewrite only on change, so an install does not touch the mtime of a file a
+    // running session has already read.
+    if (!existsSync(installed) || readFileSync(installed, 'utf8') !== contents) {
+      writeFileSync(installed, contents);
+      written++;
+    }
+    chmodSync(installed, 0o755);
   }
-  chmodSync(installed, 0o755);
+} catch (error) {
+  // Reported, not thrown: the contract at the top is that the install path
+  // never fails a consumer's install over a hook. A read-only checkout or a
+  // permissions fault says so here and the install goes on without the hook.
+  console.error(
+    `install-agent-hooks: could not write to ${destinationDir}: ${error.message}. The hook is not installed; fix that and run pnpm install again.`,
+  );
+  process.exit(0);
 }
 
 if (written > 0) {

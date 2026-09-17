@@ -314,10 +314,22 @@ if (CHECK_URLS) {
     }),
   );
 
+  // Which statuses prove decay. The rule is "no longer answers", and only a
+  // response that says the resource is not there proves that: 404, 410, and
+  // the other 4xx that describe the request. A host that answered by refusing
+  // the anonymous probe — 401, 403, 407, 429 — has answered: the page is
+  // behind a login, a bot challenge, or a rate limit, each of which the estate
+  // runs on purpose, and a guard that reads Attack Challenge Mode on the
+  // marketing site as a dead link is a guard that gets switched off. A 5xx is
+  // the origin failing right now, which the monthly re-run sees again if it
+  // holds, so it is recorded as inconclusive rather than as a finding.
+  const ANSWERED_BY_REFUSING = new Set([401, 403, 407, 429]);
   for (const r of results) {
     if (r.error) {
       inconclusive.push(`${r.u} — ${r.error}`);
-    } else if (r.status >= 400) {
+    } else if (r.status >= 500) {
+      inconclusive.push(`${r.u} — ${r.status} from the origin`);
+    } else if (r.status >= 400 && !ANSWERED_BY_REFUSING.has(r.status)) {
       add('urls', r.where.file, r.where.line, `${r.u} -> ${r.status}`,
         'the URL no longer answers — correct it or remove the claim');
     }

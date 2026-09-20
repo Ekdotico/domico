@@ -33,8 +33,8 @@ confidential and proprietary property of Ekdotico.
 
 4. Third-party components
 
-   The Software references three typefaces — Source Serif 4, Inter Tight, and
-   JetBrains Mono — each licensed under the SIL Open Font License 1.1. The
+   The Software references three typefaces — Crimson Pro, Commissioner, and
+   Fira Code — each licensed under the SIL Open Font License 1.1. The
    Software ships loading configuration for these families, not the font files
    themselves; their licences govern their own use and are unaffected by this
    licence.

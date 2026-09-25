@@ -136,6 +136,23 @@
 .tbl-wrap tbody tr:last-child td:first-child { border-bottom-left-radius: var(--radius-lg); }
 .tbl-wrap tbody tr:last-child td:last-child  { border-bottom-right-radius: var(--radius-lg); }
 .tbl-wrap tbody tr:hover td { background: color-mix(in srgb, var(--bg-surface-2) 60%, transparent); }
+/* Narrow viewports scroll the table inside its card. The desktop note above is
+   why this is a media query and not the default: `overflow-x: auto` makes the
+   wrapper a scroll container in both axes, and a sticky header inside one
+   resolves to the wrapper's top rather than the page's, so the header is made
+   static here rather than left pinned to the wrong edge.
+
+   This rule lived only in the documentation site's stylesheet, while `Table`
+   put a tab stop on every wrapper on the grounds that it scrolls "in every
+   consumer". It did not: an application taking this entry got a focusable
+   wrapper that never scrolled, and a wide table that pushed out of the
+   column at phone width with nothing a keyboard or a finger could do about
+   it. 920px is the breakpoint all three applications already collapse their
+   chrome at. */
+@media (max-width: 920px) {
+  .tbl-wrap { overflow-x: auto; }
+  .tbl-wrap thead th { position: static; }
+}
 /* Two cell treatments for one kind of row: an identifier, and the thing it
    names. .td-id sets the identifier — a requirement code, a risk number, a
    stakeholder reference — in mono, so a column of them aligns and reads as a

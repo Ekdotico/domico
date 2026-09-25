@@ -20,7 +20,7 @@
  * and a copy would start out stale.
  */
 
-export { ThemeSwitcher } from './ThemeSwitcher.js';
+export { ThemeSwitcher, type ThemeSwitcherProps } from './ThemeSwitcher.js';
 export { ModeSwitcher } from './ModeSwitcher.js';
 export { useRadioGroup } from './useRadioGroup.js';
 

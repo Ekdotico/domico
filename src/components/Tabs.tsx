@@ -45,7 +45,19 @@ function isTabElement(node: ReactNode): node is TabElement {
   );
 }
 
-export function Tabs({ children }: { children: ReactNode }) {
+export function Tabs({
+  children,
+  label,
+}: {
+  children: ReactNode;
+  /**
+   * Accessible name for the tab list: what the tabs choose between. A tablist
+   * with no name is announced as "tab list" and nothing else, so a page with
+   * two sets of tabs offers two identical stops (WCAG 4.1.2). Optional, because
+   * a single set of tabs under a heading is already in context.
+   */
+  label?: string;
+}) {
   const tabs = Children.toArray(children).filter(isTabElement);
   const baseId = useId();
   const [active, setActive] = useState(0);
@@ -82,7 +94,7 @@ export function Tabs({ children }: { children: ReactNode }) {
 
   return (
     <div className="tabs">
-      <div role="tablist" className="tabs-list">
+      <div role="tablist" className="tabs-list" aria-label={label}>
         {tabs.map((tab, index) => {
           const tabId = `${baseId}-tab-${index}`;
           const panelId = `${baseId}-panel-${index}`;

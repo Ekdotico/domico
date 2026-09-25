@@ -231,9 +231,12 @@ already selected rather than on the first option, because the theme switcher is
 one tab stop parked on the active choice.
 
 Both properties are optional: `label` is the row label inside the panel, which
-defaults to "Theme", and `triggerLabel` is the accessible name on the button,
-which defaults to "Appearance". Its styles ship in `styles/appearance.css`
-alongside the two controls it composes.
+defaults to "Theme" and is also the accessible name of the theme group beneath
+it, and `triggerLabel` is the accessible name on the button, which defaults to
+"Appearance". Its styles ship in `styles/appearance.css` alongside the two
+controls it composes, and that entry carries its own forced-colours and
+reduced-motion rules, so it holds when it is the only package stylesheet an
+application takes.
 
 Add `themeInitScript()` to `<head>` as a blocking script. Without it the page
 renders one frame in Parchment light before the stored theme applies, which is

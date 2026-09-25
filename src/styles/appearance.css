@@ -279,3 +279,48 @@
 .appearance-panel .theme-header {
   margin-bottom: var(--sp-2);
 }
+
+/* --- Forced colours and reduced motion ------------------------------------ */
+
+/* Under forced colours — Windows High Contrast, and any reader who has told
+   the system to paint every surface from a short palette of its own — the
+   engine replaces background, box-shadow and colour with system colours. The
+   selected mode was shown by exactly those three, so the pill rendered three
+   identical icons and no choice at all (WCAG 1.4.11). Highlight is the system
+   colour for a selection, and `forced-color-adjust: none` is what lets the
+   rule paint it rather than have it overridden in turn.
+
+   The swatches are the other casualty: each is a preview of a theme's canvas,
+   and forcing it to the system's background makes all four the same circle.
+   They keep their own colours. The selected theme still reads without them,
+   through the name set in italic serif. */
+@media (forced-colors: active) {
+  .mode-btn[aria-checked="true"] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+  .theme-swatch {
+    forced-color-adjust: none;
+  }
+}
+
+/* The reset already removes every transition under a reduced-motion request,
+   and this entry is not allowed to rely on it: it ships on its own precisely
+   so that an application can take it without the rest of the package's
+   layers, and an application with a reset of its own would otherwise get the
+   panel's lift and fade whatever the reader asked for. Stated here, it holds
+   whichever reset is in front of it. */
+@media (prefers-reduced-motion: reduce) {
+  .theme-btn,
+  .theme-swatch,
+  .mode-btn,
+  .appearance-trigger,
+  .appearance-panel,
+  .appearance-menu[data-open="true"] .appearance-panel {
+    transition: none;
+  }
+  .appearance-panel {
+    transform: none;
+  }
+}

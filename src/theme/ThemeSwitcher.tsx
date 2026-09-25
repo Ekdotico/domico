@@ -48,7 +48,18 @@ function swatchColours(theme: Theme): CSSProperties {
   } as CSSProperties;
 }
 
-export function ThemeSwitcher() {
+export interface ThemeSwitcherProps {
+  /**
+   * The id of a visible label for the group. When given, the group is named by
+   * that element through `aria-labelledby` rather than by its own
+   * `aria-label`, so the name a screen reader announces is the word a sighted
+   * reader sees beside it. `AppearanceMenu` passes its "Theme" label this way.
+   * Standalone, the group names itself "Colour theme".
+   */
+  labelledBy?: string;
+}
+
+export function ThemeSwitcher({ labelledBy }: ThemeSwitcherProps = {}) {
   const theme = useTheme();
   const { containerProps, radioProps } = useRadioGroup<Theme>({
     values: themeNames,
@@ -57,7 +68,12 @@ export function ThemeSwitcher() {
   });
 
   return (
-    <div className="theme-switcher" role="radiogroup" aria-label="Colour theme" {...containerProps}>
+    <div
+      className="theme-switcher"
+      role="radiogroup"
+      {...(labelledBy ? { 'aria-labelledby': labelledBy } : { 'aria-label': 'Colour theme' })}
+      {...containerProps}
+    >
       {themeNames.map((key) => {
         const active = theme === key;
         return (

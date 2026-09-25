@@ -167,7 +167,8 @@ and never seals the page off behind a focus trap. Accordingly it takes no
 `aria-modal` and no focus trap. The inverse holds for anything that *does*
 claim `aria-modal="true"`: it owes a Tab cycle and an inert background, both,
 every time. Claiming the role without keeping its promise is worse than not
-claiming it.
+claiming it. `useModalSurface` from `@ekdotico/domico/a11y` keeps both, with
+Escape and the focus return, so a modal surface does not need its own.
 
 Do not pass `label` or `triggerLabel`, and do not wrap it — an application
 supplies placement and nothing else. Two instances on one page means two

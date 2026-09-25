@@ -125,6 +125,13 @@ const GUARDS: Record<string, Guard> = {
     what: 'annotateSvg writes <title> and <desc> in document order and names the image only when it can',
     developmentOnly: 'it builds a DOM with jsdom, which only this repository installs',
   },
+  components: {
+    script: 'check-components',
+    what:
+      'the shared components and the a11y helpers name, label, inert and return focus ' +
+      'as documented, rendered against a real DOM',
+    developmentOnly: 'it renders React into jsdom, which only this repository installs',
+  },
   generated: {
     script: 'check-generated',
     what: 'no generated token artefact was edited by hand',

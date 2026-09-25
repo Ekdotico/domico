@@ -183,7 +183,8 @@ function derivePackageExports(appDir) {
   const names = new Set();
   for (const root of roots) {
     for (const rel of ['dist/src/components/index.d.ts', 'dist/src/theme/index.d.ts',
-                       'src/components/index.ts', 'src/theme/index.ts']) {
+                       'dist/src/a11y/index.d.ts',
+                       'src/components/index.ts', 'src/theme/index.ts', 'src/a11y/index.ts']) {
       const p = join(root, rel);
       if (!existsSync(p)) continue;
       const txt = readFileSync(p, 'utf8');

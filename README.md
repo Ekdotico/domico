@@ -87,6 +87,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, and `tabs.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
+| `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, and `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord |
 | `@ekdotico/domico/fonts` | Font loading configuration for the three locked families |
 | `@ekdotico/domico/mermaid` | Mermaid `themeVariables` for all eight palettes |
 | `@ekdotico/domico/mermaid/accessibility` | Reads `accTitle` and `accDescr` out of a diagram source, and blanks the directive lines in place |
@@ -255,6 +256,29 @@ Add `themeInitScript()` to `<head>` as a blocking script. Without it the page
 renders one frame in Parchment light before the stored theme applies, which is
 a full-page colour flash. Under a strict Content-Security-Policy the script tag
 needs the request nonce.
+
+---
+
+## Modal surfaces and shortcuts
+
+A surface that claims `aria-modal="true"` owes four things: everything outside
+it inert, Tab and Shift+Tab cycling inside it, Escape closing it, and focus
+returned to its trigger on close — after the page is released, because an inert
+trigger cannot take focus. `useModalSurface` keeps all four, which is why it
+exists: the applications each wrote their own and each kept a different subset.
+
+```tsx
+import { useModalSurface } from '@ekdotico/domico/a11y';
+
+useModalSurface({ open, surfaceRef, triggerRef, onClose: () => setOpen(false) });
+```
+
+`inertOutside` is the inert half on its own, for a surface that manages the
+rest itself. `isShortcut(event, 'k')` answers to ⌘K on Apple platforms and
+Ctrl+K elsewhere — never both, so Ctrl+K is left to a macOS text field — and
+`shortcutLabel('k')` gives the same chord for the screen and for
+`aria-keyshortcuts`. All four read the document or the platform, so call them
+from an effect or an event handler, not during render.
 
 ---
 
@@ -562,10 +586,11 @@ out. It reads instruction documents, which do not change on most commits, so it
 belongs to a monthly audit workflow; running it per-change makes it noise, and
 noise is how a gate stops being read.
 
-Five guards run only here, and say so rather than failing on a missing import:
+Six guards run only here, and say so rather than failing on a missing import:
 `generated` rebuilds the tokens, `expression` validates the authoring schemas,
-`exports` packs this package, `svg` builds a DOM with jsdom, and `icons`
-compares against `lucide-static`. Each needs a development dependency that is
+`exports` packs this package, `svg` builds a DOM with jsdom, `components`
+renders the shared components and the accessibility helpers into jsdom, and
+`icons` compares against `lucide-static`. Each needs a development dependency that is
 never published. `icons` was the odd one out until the default set stopped being
 a hand-written list — it noted the dependency in its description and nowhere
 else, which was survivable while nothing picked it up automatically and would

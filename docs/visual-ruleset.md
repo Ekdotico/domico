@@ -170,7 +170,13 @@ inert background, both of them, every time.** Claiming the role without keeping
 its promise is worse than not claiming it. Where an inert background is
 genuinely wrong — a drawer nested inside the region the inert helper would
 inert — decline it explicitly and record why, rather than leaving the absence to
-look like an oversight.
+look like an oversight. `useModalSurface` from `@ekdotico/domico/a11y` keeps the
+whole promise, and its `inertOutside` spares the surface's own ancestors, which is
+the usual reason an inert background looked wrong.
+
+The same subpath carries `isShortcut` and `shortcutLabel`, for a
+chord that means one thing per platform: ⌘ on Apple, Ctrl elsewhere, never both,
+because Ctrl+K is an editing key in a macOS text field.
 
 An application supplies placement and nothing else. Do not pass `label` or
 `triggerLabel`, do not wrap it, and never render two instances on one page: two

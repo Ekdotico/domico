@@ -25,6 +25,7 @@ export { Figure, type FigureAlign } from './Figure.js';
 export { KeyValue, KeyValueList, type KeyValueTone } from './KeyValue.js';
 export { Logo, LogoMark, type LogoMarkVariant } from './Logo.js';
 export { SectionRule } from './SectionRule.js';
+export { SkipLink } from './SkipLink.js';
 export { Stat, StatGrid } from './Stat.js';
 export {
   Table,

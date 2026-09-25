@@ -635,6 +635,13 @@ else. `--table-sticky-offset` defaults to `0px` because the package cannot know
 whether a consumer has fixed chrome at all; an application with a top bar sets
 it to that bar's height, which is usually `--topbar-h`.
 
+`--topbar-h` also sets `scroll-padding-block-start` on the document, in
+`styles/reset.css`, so an anchor target or a field reached by Tab scrolls into
+view below a pinned bar rather than underneath it with its focus ring hidden
+(WCAG 2.4.11). An application with a taller bar gets the right padding by
+overriding the token it already overrides for its layout, and needs no rule of
+its own.
+
 That is an override of an existing token's value in every palette at once. It is
 not licence to introduce a name.
 

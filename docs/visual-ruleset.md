@@ -380,8 +380,16 @@ reduced opacity fails in every palette at once. The fix is not a tuned opacity �
 it is no opacity. Differentiate text by size and weight, never by transparency on
 a saturated field.
 
+**And colour is never the only cue (WCAG 1.4.1).** A link in running prose
+inherits its paragraph's colour, so contrast cannot identify it and something
+else must. The reset draws every unclassed anchor underlined — `a:where(:not([class]))`,
+at the specificity of a bare `a` — and leaves a classed one undecorated, on the
+reading that a class means chrome whose position already says "link". An
+application that gives a prose link a class takes the underline over with it.
+
 *Enforced by* `check:contrast`, across all eight palettes, at 4.5:1 for text and
-3:1 for non-text.
+3:1 for non-text. The underline is carried by `styles/reset.css` rather than
+checked: a guard cannot tell prose from chrome.
 
 ### Rule 15 — Documentation that contradicts the code is a defect with a severity
 

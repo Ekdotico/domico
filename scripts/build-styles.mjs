@@ -2,7 +2,7 @@
 /**
  * Assemble the shipped stylesheets.
  *
- * Seventeen entries, so a consumer can take as much or as little as it needs.
+ * Eighteen entries, so a consumer can take as much or as little as it needs.
  * Tokens are separate again, so the values can be had without any of the
  * opinions.
  *
@@ -23,6 +23,7 @@
  *   styles/table.css
  *   styles/tabs.css
  *   styles/access-gate.css
+ *   styles/nav-drawer.css
  *
  * The split exists because whole-stylesheet adoption is the wrong granularity
  * for an application that already has a layer of its own. deree wanted the
@@ -187,6 +188,7 @@ const COMPONENTS = [
   ['table', ['Tables', 'Table caption'], 'the table and its caption'],
   ['tabs', ['Tabs'], 'the tab panel'],
   ['access-gate', ['Access gate'], 'the access gate'],
+  ['nav-drawer', ['Navigation drawer'], 'the navigation drawer'],
 ];
 
 const header = (what, note) => `/**

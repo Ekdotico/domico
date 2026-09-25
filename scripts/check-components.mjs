@@ -61,7 +61,7 @@ const h = React.createElement;
 const { inertOutside, useModalSurface, isShortcut, shortcutLabel } = await import('../dist/src/a11y/index.js');
 const {
   Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
-  AccessGate, GateSubmitButton,
+  AccessGate, GateSubmitButton, NavDrawer,
 } = await import('../dist/src/components/index.js');
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
 
@@ -421,6 +421,61 @@ await it('GateSubmitButton', async () => {
   await act(async () => button.dispatchEvent(again));
   assert.ok(!again.defaultPrevented, 'a press at rest was refused');
   await view.unmount();
+});
+
+// --- NavDrawer ------------------------------------------------------------------
+await it('NavDrawer', async () => {
+  window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+  const page = (key) =>
+    h('div', null,
+      h('a', { href: '/behind', id: 'behind' }, 'Behind'),
+      h(NavDrawer, { label: 'Site navigation', closeKey: key },
+        h('nav', null, h('a', { href: '/one', id: 'one' }, 'One'))),
+    );
+  const view = await mount(page('/a'));
+  const trigger = view.container.querySelector('.mobile-nav-trigger');
+  const drawer = view.container.querySelector('[role="dialog"]');
+  const $ = (id) => document.getElementById(id);
+
+  assert.equal(trigger.getAttribute('aria-label'), 'Open navigation menu');
+  assert.equal(trigger.getAttribute('aria-controls'), drawer.id);
+  assert.equal(drawer.getAttribute('aria-label'), 'Site navigation');
+  assert.ok(drawer.hasAttribute('inert'), 'the closed drawer is reachable');
+
+  trigger.focus();
+  await act(async () => trigger.click());
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+  assert.ok(!drawer.hasAttribute('inert'), 'the open drawer is inert');
+  assert.ok(drawer.contains(document.activeElement), 'focus did not move into the drawer');
+  assert.ok($('behind').hasAttribute('inert'), 'the page behind the drawer stayed live');
+  assert.ok(!view.container.querySelector('.mobile-nav-backdrop').hasAttribute('inert'), 'the backdrop was inerted');
+
+  await act(async () => {
+    key(document.activeElement, { key: 'Escape' });
+  });
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+  assert.ok(drawer.hasAttribute('inert'));
+  assert.ok(!$('behind').hasAttribute('inert'), 'closing left the page inert');
+  assert.equal(document.activeElement, trigger, 'focus did not return to the trigger');
+
+  // A change of route closes it; the first render is not a change.
+  await act(async () => trigger.click());
+  await view.rerender(page('/b'));
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false', 'a new closeKey left the drawer open');
+  await view.unmount();
+
+  // Controlled: the drawer asks, and the owner decides.
+  const asked = [];
+  const controlled = await mount(
+    h(NavDrawer, { label: 'Menu', open: true, onOpenChange: (v) => asked.push(v) }, h('a', { href: '/x' }, 'X')),
+  );
+  const closeButton = controlled.container.querySelector('.mobile-nav-close');
+  assert.equal(closeButton.getAttribute('aria-label'), 'Close navigation menu');
+  await act(async () => closeButton.click());
+  assert.deepEqual(asked, [false]);
+  assert.equal(controlled.container.querySelector('.mobile-nav-trigger').getAttribute('aria-expanded'), 'true',
+    'a controlled drawer closed itself');
+  await controlled.unmount();
 });
 
 console.log(`check:components — ${cases} cases: the a11y helpers, and the components' names, roles and focus, against jsdom`);

@@ -70,6 +70,7 @@
     "./styles/table.css": "./dist/styles/table.css",
     "./styles/tabs.css": "./dist/styles/tabs.css",
     "./styles/access-gate.css": "./dist/styles/access-gate.css",
+    "./styles/nav-drawer.css": "./dist/styles/nav-drawer.css",
     "./components": {
       "types": "./dist/src/components/index.d.ts",
       "default": "./dist/src/components/index.js"

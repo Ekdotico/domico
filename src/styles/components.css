@@ -880,3 +880,152 @@
   .unlock-input,
   .unlock-button { transition: none; }
 }
+
+/* --- Navigation drawer --------------------------------------------------- */
+/* NavDrawer's trigger, backdrop and panel. The class names are the ones the
+   documentation site and deree's research area already style around — both
+   position the trigger, and both size their sidebar inside the panel — so a
+   placement rule an application keeps still finds its element.
+
+   From deree's copy, which had moved the durations onto the scale: the panel
+   and the backdrop run on one --dur-slow so they land together. Visibility is
+   delayed by the same length when closing, and not at all when opening, so the
+   panel is neither removed from view mid-slide nor still hidden when focus is
+   moved into it. */
+.mobile-nav-trigger {
+  display: none;
+  /* The chrome button size, as the appearance trigger; the icon is the whole
+     control. */
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-canvas);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  color: var(--fg-2);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-soft),
+    border-color var(--dur-fast) var(--ease-soft),
+    color var(--dur-fast) var(--ease-soft),
+    box-shadow var(--dur-fast) var(--ease-soft);
+}
+.mobile-nav-trigger:hover {
+  background: var(--bg-surface);
+  border-color: var(--rule-strong);
+  color: var(--fg-1);
+}
+.mobile-nav-trigger:active {
+  background: var(--bg-inset);
+  box-shadow: var(--shadow-inset);
+}
+/* The breakpoint the swipe listens at, and the one at which table.css stops
+   scrolling tables inside their cards. */
+@media (max-width: 920px) {
+  .mobile-nav-trigger { display: inline-flex; }
+}
+.mobile-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--overlay-scrim);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-slow) var(--ease-soft),
+    visibility 0s linear var(--dur-slow);
+}
+.mobile-nav-backdrop.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity var(--dur-slow) var(--ease-soft),
+    visibility 0s linear 0s;
+}
+.mobile-nav-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  width: 90vw;
+  max-width: 360px;
+  background: var(--bg-surface);
+  border-inline-end: 1px solid var(--rule);
+  box-shadow: var(--shadow-drawer);
+  transform: translateX(-100%);
+  visibility: hidden;
+  overflow: hidden;
+  /* Vertical scrolling is the panel's; a horizontal gesture is the swipe. */
+  touch-action: pan-y;
+  transition:
+    transform var(--dur-slow) var(--ease-soft),
+    visibility 0s linear var(--dur-slow);
+}
+.mobile-nav-drawer.is-open {
+  transform: translateX(0);
+  visibility: visible;
+  transition:
+    transform var(--dur-slow) var(--ease-soft),
+    visibility 0s linear 0s;
+}
+/* The navigation scrolls inside the panel, and the page beneath does not scroll
+   with it. A sidebar that scrolls itself at height: 100% works unchanged. */
+.mobile-nav-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.mobile-nav-close {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  z-index: 1;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-md);
+  color: var(--fg-3);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-soft),
+    color var(--dur-fast) var(--ease-soft);
+}
+.mobile-nav-close:hover {
+  background: var(--bg-canvas);
+  color: var(--fg-1);
+}
+.mobile-nav-close:active {
+  background: var(--bg-inset);
+  box-shadow: var(--shadow-inset);
+}
+@media (forced-colors: active) {
+  /* The drawer's shadow is dropped, so its edge is drawn in the system colour. */
+  .mobile-nav-drawer { border-inline-end-color: CanvasText; }
+}
+/* A flat prohibition, not a ceiling: the panel appears and disappears. */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav-trigger,
+  .mobile-nav-backdrop,
+  .mobile-nav-drawer,
+  .mobile-nav-close {
+    transition: none;
+  }
+}
+@media print {
+  .mobile-nav-trigger,
+  .mobile-nav-backdrop,
+  .mobile-nav-drawer {
+    display: none;
+  }
+}

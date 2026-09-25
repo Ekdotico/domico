@@ -84,7 +84,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, and `access-gate.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, and `nav-drawer.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, and `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord |
@@ -326,6 +326,27 @@ top of the document. It reads the form's status from React 19; pass `pending`
 to drive it yourself. The package supplies three defaults, the ones all three
 gates shared: "Access code", "Unlock", and "Checking the code…". Everything
 else on the screen is the application's to write.
+
+### The navigation drawer
+
+`NavDrawer` is the slide-in navigation for viewports of 920px and narrower. The
+navigation inside it is the application's own, passed as children.
+
+```tsx
+import { NavDrawer } from '@ekdotico/domico/components';
+import '@ekdotico/domico/styles/nav-drawer.css';
+
+<NavDrawer label="Site navigation" closeKey={pathname}>
+  <Sidebar idPrefix="drawer" />
+</NavDrawer>
+```
+
+It keeps the whole modal promise through `useModalSurface`, and it closes
+whenever `closeKey` changes. A swipe in from the start edge opens it, and a
+swipe back across it closes it. `open` and `onOpenChange` put it under outside
+control, for a shortcut that opens it on its search field, which
+`initialFocusRef` then names. The trigger renders where the component is
+placed, shows at 920px and below, and is the application's to position.
 
 ---
 

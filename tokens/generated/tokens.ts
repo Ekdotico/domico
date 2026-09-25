@@ -222,7 +222,7 @@ export const palettes = {
       "bg-elevated": "var(--bg-surface-2)",
       "fg-1": "oklch(29.797% 0.0421 59.19)",
       "fg-2": "oklch(41.975% 0.0391 73.97)",
-      "fg-3": "oklch(53.362% 0.0373 74.38)",
+      "fg-3": "oklch(51.8% 0.0373 74.38)",
       "fg-4": "oklch(53.1% 0.0453 82.83)",
       "fg-5": "oklch(78.082% 0.0308 80.62)",
       "rule-control": "oklch(58.373% 0.0408 82.29)",

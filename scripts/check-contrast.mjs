@@ -36,6 +36,12 @@ const PAIRS = [
   // field, the in-flight submit button, an error message inside a card, and a
   // hovered primary action. All four pass today; listed so they stay checked.
   ['fg-1', 'bg-inset', 4.5],
+  // --fg-3 as text on --bg-surface-2: the table header row, the table caption,
+  // and the non-critical and unpublished badges, all in the shared components.
+  // Unlisted, sepia light shipped it at 4.32:1. Its --fg-3 now sits at the
+  // lightness that first clears 4.6:1 there, a hue- and chroma-preserving move
+  // of 1.6 points, and the other seven palettes already cleared 4.7:1.
+  ['fg-3', 'bg-surface-2', 4.5],
   ['fg-1', 'accent-soft', 4.5],
   ['danger', 'bg-surface', 4.5],
   ['accent-ink', 'accent-hover', 4.5],

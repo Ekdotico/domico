@@ -171,6 +171,12 @@ the rule is written here.
 across the eight palettes. Decorative separators, disabled glyphs, and
 watermarks. Never a label, never placeholder text, never "muted" body copy.
 
+`--fg-3` is the quietest ink that is text on the tinted surface as well, and
+the guard measures it there: the table header row, the table caption, and two
+badges set it on `--bg-surface-2`, where the lowest ratio across the eight
+palettes is 4.60:1, in sepia light. That palette's `--fg-3` was moved down 1.6
+points of lightness to get there, from 4.32:1, keeping its hue and chroma.
+
 **When not to.** Do not reach down the scale to de-emphasise text; use size and
 weight. Text that must be quieter than `--fg-3` is text that should be shorter.
 

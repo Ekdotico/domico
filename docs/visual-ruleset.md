@@ -546,6 +546,14 @@ only when there is a title to name the image with.
 and additionally rejects any element carrying a non-operable role together with
 `tabIndex`.
 
+The same guard carries the other interaction failures this estate has shipped,
+each read from source: a removed outline that nothing puts back *as an outline*
+— a box-shadow ring or a tint is repainted away under forced colours, so
+`outline: 2px solid transparent` goes beside one — an icon-only button with no
+name, a tab stop with no role or name, placeholder text in `--fg-4` or `--fg-5`,
+a form control bordered with a hairline, a link or a button inside
+`role="tooltip"`, and a `role="menu"` with no arrow-key handling in its file.
+
 ---
 
 ## Current state

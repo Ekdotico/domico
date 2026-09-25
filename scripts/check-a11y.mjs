@@ -1,16 +1,21 @@
 #!/usr/bin/env node
 // Accessibility guard for @ekdotico/domico consumers.
 //
-// Seven checks, over the failure classes this estate has actually shipped. They
-// walk the same files, so they are one script rather than seven:
+// Twelve checks, over the failure classes this estate has actually shipped. They
+// walk the same files, so they are one script rather than twelve:
 //
 //   diagramalt      a Mermaid fence with no text alternative, or a placeholder one
 //   focusrole       one element carrying both a non-operable role and tabIndex
 //   modaltrap       aria-modal claimed without a focus trap or an inert background
 //   danglingid      aria-labelledby / aria-describedby naming an id that is not there
-//   focusring       outline removed with nothing restoring a focus indicator
+//   focusring       outline removed with no outline restoring a focus indicator
+//   inputring       the same, on a form control, where :focus-within cannot stand in
 //   unnamedcontrol  a button whose only content is an icon, with no accessible name
 //   unnamedfocus    a generic element put in the Tab order with no role or no name
+//   placeholder     placeholder text in --fg-4 or --fg-5, neither of them text-safe
+//   controlborder   a form control bordered with a hairline rather than --rule-control
+//   tooltipcontent  a role="tooltip" holding a link or a button nobody can reach
+//   menukeys        role="menu" in a file with no arrow-key handling
 //
 // Exit 1 on any violation. Rule 18 of the visual ruleset is the rule this
 // enforces; `ekdotico-check a11y` is how a consumer runs it.
@@ -23,7 +28,7 @@
 // Usage: node check-a11y.mjs [appDir] [--quiet] [--by-file]
 
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, extname } from 'node:path';
 import { extractAccessibility } from '../dist/src/mermaid/accessibility.js';
 
@@ -203,7 +208,11 @@ function checkFocusRole(file, src) {
 // Anything that indicates the promise is kept. Deliberately generous: the check
 // asks whether a focus trap was attempted anywhere in the file, not whether it
 // is correct. Proving a trap correct is a review question, not a regex one.
-const TRAP_EVIDENCE = /\binert\b|\.focus\s*\(|['"`]Tab['"`]|[Ff]ocus[- ]?[Tt]rap|focusTrap|trapFocus/;
+// `useModalSurface` and `inertOutside` are the package's own, from
+// `@ekdotico/domico/a11y`: a file that calls either has kept the promise by
+// construction, and neither name contains the word the first alternative looks
+// for as a whole word.
+const TRAP_EVIDENCE = /\binert\b|\.focus\s*\(|['"`]Tab['"`]|[Ff]ocus[- ]?[Tt]rap|focusTrap|trapFocus|\buseModalSurface\b|\binertOutside\b/;
 
 function checkModalTrap(file, src) {
   const m = /\baria-modal\s*=\s*(["']true["']|\{\s*true\s*\})/.exec(src);
@@ -224,18 +233,36 @@ function checkDanglingId(file, src) {
 }
 
 // ------------------------------------------------------------- focus rings
+// Does a declaration block put an outline back?
+//
+// An outline, and not any visible change, because the change has to survive
+// forced colours. Under Windows High Contrast the engine repaints background,
+// box-shadow and border-color from the reader's own short palette, so a ring
+// drawn as a box-shadow, or a focus shown as a background tint, vanishes for
+// exactly the readers who asked for more contrast (WCAG 2.4.7, 1.4.11). An
+// outline is kept, and repainted in a system colour. `outline: 2px solid
+// transparent` beside a box-shadow is the idiom: invisible normally, and the
+// ring the forced palette draws when the shadow is gone.
+//
+// The negative lookahead sits after the colon, not after `\s*`. Placed after
+// the whitespace, `\s*` backtracks to nothing and the lookahead then reads
+// " none", which is not "none" — so `outline: none` counted as putting an
+// outline back, and every :focus rule that removed the ring passed. It did,
+// until this was rewritten.
+const RESTORES_OUTLINE =
+  /\boutline\s*:(?!\s*(?:none|0)\s*(?:!important\s*)?(?:;|$))|\boutline-style\s*:(?!\s*none\b)/m;
+
 // Collect, across every stylesheet in the repository, the selector text of
-// every rule that styles a focused state. A replacement indicator does not have
-// to be an outline — a border or background change on :focus is a legitimate
-// visible indicator — so the test is whether the selector is styled when
-// focused at all, not what property is used.
+// every rule that styles a focused state with an outline.
 function focusSelectors(cssFiles) {
   const styled = new Set();
   for (const file of cssFiles) {
     const css = stripCssComments(readFileSync(file, 'utf8'));
-    for (const m of css.matchAll(/([^{}]+)\{/g)) {
+    for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
       const sel = m[1].trim();
-      if (/:focus\b|:focus-visible\b|:focus-within\b/.test(sel)) styled.add(sel);
+      if (!/:focus\b|:focus-visible\b|:focus-within\b/.test(sel)) continue;
+      if (!RESTORES_OUTLINE.test(m[2])) continue;
+      for (const part of sel.split(',')) styled.add(part.trim());
     }
   }
   return styled;
@@ -276,7 +303,25 @@ const hasFocusReplacement = (styled, base) => {
   return false;
 };
 
-const OUTLINE_NONE = /outline\s*:\s*(none|0)\b/;
+// `outline: none` or `outline: 0`, as the whole value. `\b` after the 0 would
+// also match `outline: 0.125rem solid`, which is a ring.
+const OUTLINE_NONE = /\boutline\s*:\s*(?:none|0)\s*(?:!important\s*)?(?:;|$)/m;
+
+// Is the selector's subject a form control? The last compound decides, so
+// `.form input` is a control and `input + label` is not. An element name, or a
+// class that ends in `input` or `textarea` — `.search-input`, `.unlock-input` —
+// which is how the applications name the fields they style.
+//
+// COVERAGE BOUNDARY: a field styled only by a class with some other name is
+// not recognised as one. That under-reports, which is the safe direction.
+function isControlSelector(sel) {
+  const subject = sel.trim().split(/\s*[\s>+~]\s*/).pop() ?? '';
+  const bare = subject.replace(/::?[\w-]+(\([^)]*\))?/g, '');
+  return /^(?:input|textarea|select)(?![\w-])/.test(bare) || /\.[\w-]*(?:input|textarea)(?![\w-])/i.test(bare);
+}
+
+/** A focus selector that names the element itself, not an ancestor's :focus-within. */
+const directFocus = (styled) => new Set([...styled].filter((s) => /:focus(?:-visible)?\b(?!-)/.test(s)));
 
 function checkFocusRingCss(file, src, styled) {
   const css = stripCssComments(src);
@@ -291,19 +336,36 @@ function checkFocusRingCss(file, src, styled) {
     // flagged the file establishing the right pattern would be reporting the
     // fix as the fault.
     if (/:focus\b[^,]*:not\(\s*:focus-visible\s*\)/.test(sel)) continue;
-    // A rule that removes the outline inside a focus selector usually replaces
-    // it in the same block. Report only when that block restores nothing.
-    if (/:focus/.test(sel)) {
-      if (/box-shadow|border|background|outline\s*:\s*(?!none|0)/.test(body)) continue;
-      add('focusring', file, lineOf(css, m.index), `${sel} { … outline: none … }`, NOTE.focusring.rule(sel));
-      continue;
+    const at = lineOf(css, m.index);
+    const parts = sel.split(',').map((s) => s.trim()).filter(Boolean);
+    for (const part of parts) {
+      if (/:focus/.test(part)) {
+        // A rule that removes the outline inside a focus selector has to put
+        // one back in the same block — a box-shadow or a tint is not enough,
+        // for the forced-colours reason above.
+        if (RESTORES_OUTLINE.test(body.replace(OUTLINE_NONE, ''))) continue;
+        // A plain `:focus` rule may drop the ring for pointer focus where the
+        // same element's :focus-visible rule draws it: :focus-visible matches
+        // whenever the ring is owed, and wins by order at equal specificity.
+        if (/:focus\b(?!-)/.test(part) && !/:focus-(?:visible|within)\b/.test(part)) {
+          const base = part.replace(/:focus\b(?!-)/g, '');
+          const visible = new Set([...styled].filter((s) => s.includes(':focus-visible')));
+          if (hasFocusReplacement(visible, base)) continue;
+        }
+        add('focusring', file, at, `${sel} { … outline: none … }`, NOTE.focusring.rule(part));
+        break;
+      }
+      // A base rule. A form control is inputring's to report, with its
+      // stricter replacement test; everything else is checked here.
+      if (isControlSelector(part)) {
+        if (hasFocusReplacement(directFocus(styled), part)) continue;
+        add('inputring', file, at, `${sel} { … outline: none … }`, NOTE.inputring(part));
+        break;
+      }
+      if (hasFocusReplacement(styled, part)) continue;
+      add('focusring', file, at, `${sel} { … outline: none … }`, NOTE.focusring.rule(part));
+      break;
     }
-    // Each comma-separated selector is checked on its own.
-    const bases = sel.split(',').map((s) => s.trim()).filter(Boolean);
-    const unreplaced = bases.filter((b) => !hasFocusReplacement(styled, b));
-    if (unreplaced.length === 0) continue;
-    add('focusring', file, lineOf(css, m.index), `${sel} { … outline: none … }`,
-      NOTE.focusring.rule(unreplaced[0]));
   }
 }
 
@@ -323,6 +385,52 @@ function checkFocusRingJsx(file, src, styled) {
   }
 }
 
+// ------------------------------------------------------- placeholder colour
+// Placeholder text is text, and 1.4.3 does not exempt it. --fg-5 is decoration
+// in every palette, at 1.41:1 to 2.01:1, and the catalogue says in as many
+// words that it is never placeholder text; --fg-4 is under 4.5:1 on
+// --bg-surface-2 in all four light palettes, and a field is exactly the kind of
+// tinted surface it gets drawn on. A placeholder that is legible only to some
+// readers is a hint that is missing for the rest, which is worse than none,
+// because it looks present.
+const PLACEHOLDER = /::?(?:-webkit-input-|-moz-|-ms-input-)?placeholder\b/;
+
+function checkPlaceholderCss(file, src) {
+  const css = stripCssComments(src);
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!PLACEHOLDER.test(m[1])) continue;
+    const ink = /(?:^|[;\s])color\s*:[^;]*var\(\s*(--fg-[45])\s*\)/.exec(m[2]);
+    if (!ink) continue;
+    add('placeholder', file, lineOf(css, m.index), `${m[1].trim()} { color: var(${ink[1]}) }`, NOTE.placeholder(ink[1]));
+  }
+}
+
+// ----------------------------------------------------------- control border
+// The visible edge of a text field is what identifies it as a field, and 1.4.11
+// asks 3:1 of it. The three hairlines measure 1.6:1 to 1.9:1 on every canvas,
+// which a divider wants and a field may not have; --rule-control exists for
+// exactly this and measures at least 3.3:1 on every surface. A field bordered
+// with --rule or --rule-soft reads as a box drawn round nothing.
+//
+// COVERAGE BOUNDARY: a control is recognised by its selector (see
+// isControlSelector). --rule-strong is not reported: it is not the control
+// token either, but it is the one hairline a reviewer might defensibly choose
+// for a heavy boundary, and this check reports only the two that cannot be.
+const HAIRLINE_BORDER = /\bborder(?:-(?:top|right|bottom|left|block|inline)(?:-(?:start|end))?)?(?:-color)?\s*:[^;]*var\(\s*(--rule(?:-soft)?)\s*\)/;
+
+function checkControlBorderCss(file, src) {
+  const css = stripCssComments(src);
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const parts = m[1].split(',').map((s) => s.trim()).filter(Boolean);
+    const control = parts.find((p) => isControlSelector(p) && !PLACEHOLDER.test(p));
+    if (!control) continue;
+    const hit = HAIRLINE_BORDER.exec(m[2]);
+    if (!hit) continue;
+    add('controlborder', file, lineOf(css, m.index), `${m[1].trim()} { border: … var(${hit[1]}) }`,
+      NOTE.controlborder(hit[1]));
+  }
+}
+
 // --------------------------------------------------------- unnamed controls
 // A button whose content is only an icon. Narrow on purpose: an expression
 // child may well render text ({label}, {t('save')}), and a check that cannot
@@ -330,13 +438,25 @@ function checkFocusRingJsx(file, src, styled) {
 // nothing but icon-shaped elements and whitespace.
 const ICON_ONLY = /^(?:\s|<svg[\s\S]*?<\/svg>|<[A-Z][\w.]*Icon\b[^>]*\/>|<Icon\b[^>]*\/>)+$/;
 
+//
+// The opening tag comes from jsxOpenTags, not a regex. `<button([^>]*)>` ended
+// the tag at the `>` of `onClick={() => close()}`, so the rest of the attributes
+// were read as the button's content, which is never icon-only — and every
+// icon-only button with an arrow-function handler, which is most of them,
+// passed unexamined.
+//
+// COVERAGE BOUNDARY: a spread ({...props}) may carry the name, so a tag
+// containing one is not read, as in unnamedfocus.
 function checkUnnamedControl(file, src) {
-  for (const m of src.matchAll(/<button([^>]*)>([\s\S]*?)<\/button>/g)) {
-    const attrs = m[1];
-    const body = m[2];
-    if (/\baria-label(ledby)?\s*=/.test(attrs) || /\btitle\s*=/.test(attrs)) continue;
-    if (!ICON_ONLY.test(body)) continue;
-    add('unnamedcontrol', file, lineOf(src, m.index), `<button${attrs.slice(0, 60)}>`, NOTE.unnamedcontrol);
+  for (const tag of jsxOpenTags(src)) {
+    if (tag.name !== 'button') continue;
+    if (/\/\s*$/.test(tag.attrs)) continue; // self-closing: no content to read
+    if (/\{\s*\.\.\./.test(tag.attrs)) continue;
+    if (/\baria-label(ledby)?\s*=/.test(tag.attrs) || /\btitle\s*=/.test(tag.attrs)) continue;
+    const close = src.indexOf('</button>', tag.end);
+    if (close === -1) continue;
+    if (!ICON_ONLY.test(src.slice(tag.end + 1, close))) continue;
+    add('unnamedcontrol', file, lineOf(src, tag.start), `<button${tag.attrs.slice(0, 60)}>`, NOTE.unnamedcontrol);
   }
 }
 
@@ -384,6 +504,66 @@ function checkUnnamedFocus(file, src) {
   }
 }
 
+// ---------------------------------------------------------- tooltip content
+// A tooltip is shown on hover and focus of something else and vanishes when
+// either moves, so nothing inside it can be reached: the pointer leaving the
+// trigger for the link closes it, and Tab from the trigger goes to the next
+// control in the page rather than into the tooltip. A link or a button inside
+// one is a control that exists only for a reader who never needs to operate it
+// (WCAG 2.1.1, 1.4.13). Content that needs a control is a disclosure or a
+// non-modal dialog, which can be entered.
+function checkTooltipContent(file, src) {
+  const tags = jsxOpenTags(src);
+  for (const tag of tags) {
+    if (!/\brole\s*=\s*(?:["']tooltip["']|\{\s*["']tooltip["']\s*\})/.test(tag.attrs)) continue;
+    if (/\/\s*$/.test(tag.attrs)) continue;
+    // The matching close tag, counting nested elements of the same name.
+    const open = new RegExp(`<${tag.name}\\b`, 'g');
+    const close = `</${tag.name}>`;
+    let depth = 1;
+    let at = tag.end + 1;
+    let end = -1;
+    while (depth > 0) {
+      const nextClose = src.indexOf(close, at);
+      if (nextClose === -1) break;
+      open.lastIndex = at;
+      const nextOpen = open.exec(src);
+      if (nextOpen && nextOpen.index < nextClose) {
+        depth++;
+        at = nextOpen.index + 1;
+        continue;
+      }
+      depth--;
+      at = nextClose + close.length;
+      if (depth === 0) end = nextClose;
+    }
+    if (end === -1) continue;
+    const inner = /<(a|button)\b/.exec(src.slice(tag.end + 1, end));
+    if (!inner) continue;
+    add('tooltipcontent', file, lineOf(src, tag.start), `<${tag.name} role="tooltip">…<${inner[1]}…`,
+      NOTE.tooltipcontent(inner[1]));
+  }
+}
+
+// ---------------------------------------------------------------- menu keys
+// `role="menu"` is a promise about the keyboard, as `radiogroup` is: the menu
+// is one tab stop, and the arrow keys move between its items. A menu that
+// answers only to Tab tells a screen reader user to press keys that do nothing,
+// and hides every item but the first from anyone who believes it. The appearance
+// control is not a menu for this reason; a component that does claim the role
+// owes the arrows.
+//
+// Advisory, like modaltrap and for the same reason: the evidence is looked for
+// across the file, so a handler in an imported hook reads as absent.
+const MENU_ROLE = /\brole\s*=\s*(?:["']menu["']|\{\s*["']menu["']\s*\})/;
+
+function checkMenuKeys(file, src) {
+  const m = MENU_ROLE.exec(src);
+  if (!m) return;
+  if (/ArrowDown|ArrowUp/.test(src)) return;
+  add('menukeys', file, lineOf(src, m.index), m[0], NOTE.menukeys);
+}
+
 // ------------------------------------------------------------------- notes
 // Filled from the Expression Guidelines' system feedback register: state what
 // holds and what to do, describe the process rather than any person, and never
@@ -401,9 +581,20 @@ const NOTE = {
     describedby: (id) => `no id="${id}" in this file — the description is absent; define the id or drop the attribute`,
   },
   focusring: {
-    rule: (sel) => `no :focus-visible ring for ${sel} — add outline: 2px solid var(--accent)`,
+    rule: (sel) =>
+      `no :focus-visible outline for ${sel} — add outline: 2px solid var(--accent), ` +
+      'or outline: 2px solid transparent beside a box-shadow ring',
     inline: 'outline removed inline — add a :focus-visible rule with outline: 2px solid var(--accent)',
   },
+  inputring: (sel) =>
+    `no :focus-visible outline for the control ${sel} — add one; a border or shadow change vanishes in forced colours`,
+  placeholder: (token) =>
+    `placeholder text in ${token}, which is not a text colour on a field — use var(--fg-3)`,
+  controlborder: (token) =>
+    `a control bordered in ${token}, which measures under 3:1 — use var(--rule-control)`,
+  tooltipcontent: (el) =>
+    `a <${el}> inside a tooltip cannot be reached by pointer or keyboard — use a disclosure`,
+  menukeys: 'role="menu" with no ArrowDown or ArrowUp handling in this file — add the arrow keys, or drop the role',
   unnamedcontrol: 'a screen reader announces "button" alone — add aria-label matching the tooltip',
   unnamedfocus: {
     noRole: 'a tab stop with no role announces nothing — add role="group" and aria-label, or drop tabIndex',
@@ -508,6 +699,14 @@ function selfCheck() {
 
   assert.equal(caught(() => checkUnnamedControl('t', '<button onClick={f}><svg><path d="M0"/></svg></button>')), 1);
   assert.equal(caught(() => checkUnnamedControl('t', '<button aria-label="Close"><svg><path d="M0"/></svg></button>')), 0);
+  // The shape the regex missed: an arrow function's `>` ended the tag early.
+  assert.equal(caught(() => checkUnnamedControl('t', '<button onClick={() => close()}><XIcon /></button>')), 1);
+  assert.equal(
+    caught(() => checkUnnamedControl('t', '<button onClick={() => close()} aria-label="Close"><XIcon /></button>')),
+    0,
+  );
+  assert.equal(caught(() => checkUnnamedControl('t', '<button onClick={() => go()}>Save</button>')), 0);
+  assert.equal(caught(() => checkUnnamedControl('t', '<button {...rest}><XIcon /></button>')), 0);
 
   // The table wrapper as it shipped, and as corrected.
   assert.equal(caught(() => checkUnnamedFocus('t', '<div className="tbl-wrap" tabIndex={0}><table /></div>')), 1);
@@ -534,6 +733,72 @@ function selfCheck() {
   assert.equal(caught(() => checkFocusRingCss('t', '.b { outline: none; }', noStyled)), 1);
   assert.equal(
     caught(() => checkFocusRingCss('t', '.b { outline: none; }', new Set(['.b:focus-visible']))),
+    0,
+  );
+  // A ring drawn as a box-shadow or a tint vanishes in forced colours, so a
+  // focus rule that removes the outline must put one back — and the lookahead
+  // bug that read `outline: none` as a restoration must stay fixed.
+  assert.equal(caught(() => checkFocusRingCss('t', '.b:focus-visible { outline: none; box-shadow: 0 0 0 2px red; }', noStyled)), 1);
+  assert.equal(caught(() => checkFocusRingCss('t', '.b:focus { outline: none; background: red; }', noStyled)), 1);
+  assert.equal(
+    caught(() => checkFocusRingCss('t', '.b:focus-visible { outline: 2px solid transparent; box-shadow: 0 0 0 2px red; }', noStyled)),
+    0,
+  );
+  assert.ok(!RESTORES_OUTLINE.test('outline: none;'), 'outline: none read as a restoration');
+  assert.ok(!RESTORES_OUTLINE.test('outline:0'), 'outline: 0 read as a restoration');
+  assert.ok(RESTORES_OUTLINE.test('outline: 2px solid transparent'));
+  assert.ok(RESTORES_OUTLINE.test('outline: 0.125rem solid var(--accent)'));
+  assert.ok(!OUTLINE_NONE.test('outline: 0.125rem solid var(--accent)'), 'a 0.125rem ring read as a removal');
+  // Pointer focus may drop the ring where :focus-visible draws it.
+  assert.equal(caught(() => checkFocusRingCss('t', '.b:focus { outline: none; }', new Set(['.b:focus-visible']))), 0);
+  assert.equal(caught(() => checkFocusRingCss('t', '.b:focus { outline: none; }', noStyled)), 1);
+  // The collected set holds only rules that restore an outline.
+  const tmpCss = join(process.env.TMPDIR ?? '/tmp', `check-a11y-${process.pid}.css`);
+  writeFileSync(tmpCss, '.s:focus-visible { box-shadow: 0 0 0 2px red; }\n.o:focus-visible { outline: 2px solid red; }');
+  const collected = focusSelectors([tmpCss]);
+  rmSync(tmpCss);
+  assert.ok(!collected.has('.s:focus-visible') && collected.has('.o:focus-visible'), 'a shadow ring counted as a replacement');
+
+  // inputring: a control's replacement must be its own :focus or
+  // :focus-visible outline, not an ancestor's :focus-within.
+  assert.ok(isControlSelector('.form input') && isControlSelector('.search-input') && isControlSelector('textarea'));
+  assert.ok(!isControlSelector('input + label') && !isControlSelector('.inputs-row') && !isControlSelector('::selection'));
+  assert.equal(caught(() => checkFocusRingCss('t', '.search-input { outline: none; }', noStyled)), 1);
+  assert.equal(
+    caught(() => checkFocusRingCss('t', '.search-input { outline: none; }', new Set(['.search-input:focus-visible']))),
+    0,
+  );
+  assert.equal(
+    caught(() => checkFocusRingCss('t', '.search-input { outline: none; }', new Set(['.search-input-row:focus-within']))),
+    1,
+  );
+
+  // placeholder and controlborder, both directions.
+  assert.equal(caught(() => checkPlaceholderCss('t', '.f::placeholder { color: var(--fg-5); }')), 1);
+  assert.equal(caught(() => checkPlaceholderCss('t', 'input::placeholder { color: var(--fg-4); }')), 1);
+  assert.equal(caught(() => checkPlaceholderCss('t', 'input::placeholder { color: var(--fg-3); }')), 0);
+  assert.equal(caught(() => checkPlaceholderCss('t', '.hint { color: var(--fg-4); }')), 0);
+  assert.equal(caught(() => checkControlBorderCss('t', 'input { border: 1px solid var(--rule); }')), 1);
+  assert.equal(caught(() => checkControlBorderCss('t', '.unlock-input { border-bottom: 1px solid var(--rule-soft); }')), 1);
+  assert.equal(caught(() => checkControlBorderCss('t', 'input { border: 1px solid var(--rule-control); }')), 0);
+  assert.equal(caught(() => checkControlBorderCss('t', '.card { border: 1px solid var(--rule); }')), 0);
+  assert.equal(caught(() => checkControlBorderCss('t', 'input::placeholder { border-color: var(--rule); }')), 0);
+
+  // tooltipcontent and menukeys.
+  assert.equal(caught(() => checkTooltipContent('t', '<div role="tooltip">See <a href="/x">more</a></div>')), 1);
+  assert.equal(caught(() => checkTooltipContent('t', '<span role="tooltip">Plain text</span><a href="/x">after</a>')), 0);
+  assert.equal(
+    caught(() => checkTooltipContent('t', '<div role="tooltip"><div>nested</div> text</div><button>after</button>')),
+    0,
+  );
+  assert.equal(caught(() => checkMenuKeys('t', '<ul role="menu"><li role="menuitem">A</li></ul>')), 1);
+  assert.equal(
+    caught(() => checkMenuKeys('t', '<ul role="menu" onKeyDown={(e) => e.key === "ArrowDown" && next()} />')),
+    0,
+  );
+  // aria-modal evidence from the package's own helpers.
+  assert.equal(
+    caught(() => checkModalTrap('t', '<div aria-modal="true" role="dialog">x</div>\nuseModalSurface({ open });')),
     0,
   );
 
@@ -581,6 +846,8 @@ for (const file of files) {
   }
   if (CSS_EXT.has(ext)) {
     checkFocusRingCss(file, raw, styled);
+    checkPlaceholderCss(file, raw);
+    checkControlBorderCss(file, raw);
     continue;
   }
   const src = stripJsComments(raw);
@@ -590,18 +857,28 @@ for (const file of files) {
   checkFocusRingJsx(file, src, styled);
   checkUnnamedControl(file, src);
   checkUnnamedFocus(file, src);
+  checkTooltipContent(file, src);
+  checkMenuKeys(file, src);
 }
 
 // ------------------------------------------------------------------ report
-const ORDER = ['diagramalt', 'focusrole', 'modaltrap', 'danglingid', 'focusring', 'unnamedcontrol', 'unnamedfocus'];
+const ORDER = [
+  'diagramalt', 'focusrole', 'modaltrap', 'danglingid', 'focusring', 'inputring', 'unnamedcontrol',
+  'unnamedfocus', 'placeholder', 'controlborder', 'tooltipcontent', 'menukeys',
+];
 const LABEL = {
   diagramalt: 'Mermaid diagram with no text alternative (WCAG 2.2 §1.1.1)',
   focusrole: 'Non-operable role holding tabIndex (WCAG 2.2 §4.1.2)',
   modaltrap: 'aria-modal with no focus trap or inert background',
   danglingid: 'aria reference resolving to no element (WCAG 2.2 §4.1.2)',
-  focusring: 'outline removed with no :focus-visible ring (WCAG 2.2 §2.4.7)',
+  focusring: 'outline removed with no :focus-visible outline (WCAG 2.2 §2.4.7)',
+  inputring: 'Form control outline removed with no :focus-visible outline (WCAG 2.2 §2.4.7)',
   unnamedcontrol: 'Icon-only button with no accessible name (WCAG 2.2 §4.1.2)',
   unnamedfocus: 'Generic element in the Tab order with no role or name (WCAG 2.2 §4.1.2)',
+  placeholder: 'Placeholder text in --fg-4 or --fg-5 (WCAG 2.2 §1.4.3)',
+  controlborder: 'Form control bordered with a hairline, not --rule-control (WCAG 2.2 §1.4.11)',
+  tooltipcontent: 'Link or button inside a role="tooltip" (WCAG 2.2 §2.1.1)',
+  menukeys: 'role="menu" with no arrow-key handling (WCAG 2.2 §2.1.1)',
 };
 
 // modaltrap warns rather than fails, following the discipline guard's handling
@@ -609,7 +886,7 @@ const LABEL = {
 // rather than an element for structure, so a trap living in an imported hook
 // reads as absent. A heuristic that blocks a pipeline is a heuristic somebody
 // switches off; one that reports is one somebody acts on.
-const ADVISORY = new Set(['modaltrap']);
+const ADVISORY = new Set(['modaltrap', 'menukeys']);
 
 console.log(`\ncheck-a11y — ${relative(process.cwd(), APP) || APP}  (${files.length} files)\n`);
 let hard = 0;
@@ -623,8 +900,8 @@ for (const check of ORDER) {
   const shown = hits.slice(0, 12);
   for (const h of shown) console.log(`          ${h.file}:${h.line}  ${h.note}\n            ${h.text}`);
   if (hits.length > shown.length) console.log(`          … and ${hits.length - shown.length} more`);
-  if (check === 'modaltrap') {
-    console.log('          note  read one file at a time; a trap in an imported hook reads as absent.');
+  if (check === 'modaltrap' || check === 'menukeys') {
+    console.log('          note  read one file at a time; a trap or a key handler in an imported hook reads as absent.');
   }
 }
 

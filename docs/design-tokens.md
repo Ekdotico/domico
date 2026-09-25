@@ -171,6 +171,11 @@ the rule is written here.
 across the eight palettes. Decorative separators, disabled glyphs, and
 watermarks. Never a label, never placeholder text, never "muted" body copy.
 
+Placeholder text is the one place both constraints are checked rather than
+stated: `ekdotico-check a11y` reports a `::placeholder` coloured with `--fg-4`
+or `--fg-5`, because a field is exactly the tinted surface `--fg-4` fails on.
+Use `--fg-3`.
+
 `--fg-3` is the quietest ink that is text on the tinted surface as well, and
 the guard measures it there: the table header row, the table caption, and two
 badges set it on `--bg-surface-2`, where the lowest ratio across the eight
@@ -199,7 +204,9 @@ to 1.9:1 on every canvas. Each palette sets it at the lightness that first
 clears 3.3:1 against its worst surface — the darkest light surface, the
 lightest dark one — so it holds on the canvas, a card, a sunken field, and a
 raised sheet alike. Use it for a boundary that identifies a control and for
-nothing else; a divider drawn with it reads as a frame.
+nothing else; a divider drawn with it reads as a frame. `ekdotico-check a11y`
+reports an `input`, `textarea`, or `select` — or a class ending in `input` —
+bordered with `--rule` or `--rule-soft`.
 
 **When not to.** Do not use a rule token as a text or icon colour; it is
 calibrated for a 1px line against its own canvas and nothing else. Do not

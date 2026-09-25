@@ -205,7 +205,8 @@ colour is never the sole carrier of the choice.
 Each component with styles of its own ships a stylesheet **export entry** —
 `styles/badge.css`, `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`,
 `primitives.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, and
-for the application chrome `access-gate.css`, `nav-drawer.css`, and `on-this-page.css`. They are build outputs sliced
+for the application chrome `access-gate.css`, `nav-drawer.css`,
+`on-this-page.css`, and `opening-sequence.css`. They are build outputs sliced
 from one source stylesheet; there is no per-component source file, so do not
 cite one. `styles/components.css` remains the whole set, and `build-styles.mjs`
 is where the list lives, so read it there rather than counting it here.
@@ -217,11 +218,12 @@ table it mirrors, and `GateSubmitButton` by `access-gate.css`, beside the gate
 it submits.
 
 The chrome is shared for the same reason the components are. The passcode page,
-the navigation drawer, and the on-this-page rail were each two or three copies
-that had drifted: a gate that described its error and not its rate limit, a
-drawer that kept half the modal promise, and a rail that let two headings share
-an id. The navigation itself — which pages exist, how they group — stays in each
-application. None of them imports a router.
+the navigation drawer, the on-this-page rail, and the opening sequence were each
+two or three copies that had drifted: a gate that described its error and not
+its rate limit, a drawer that kept half the modal promise, a rail that let two
+headings share an id, and an intro that made a reader who asked for no motion
+wait for the fonts first. The navigation itself — which pages exist, how they
+group — stays in each application. None of them imports a router.
 
 ### Rule 8 — A component used twice comes from the package
 
@@ -239,7 +241,7 @@ per component is not licence to import every entry.
 reimplementation of anything this package exports, deriving the export list from
 the package barrels rather than from a hardcoded list — and, from the same
 barrels, the names an export replaced, where an application's copy was called
-something else (`UnlockScreen` for `AccessGate`).
+something else (`PageLoader` for `OpeningSequence`).
 
 ### Rule 9 — Never fork a projection of the palette
 

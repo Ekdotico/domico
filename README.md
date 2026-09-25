@@ -84,7 +84,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, and `on-this-page.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, and `opening-sequence.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, and `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord |
@@ -366,6 +366,20 @@ the visible label and the name of the `<nav>`. A child of a heading matching
 `badgeSelector`, `.badge` by default, keeps its classes in the rail. Where the
 rail sits in a layout, and the width below which it is hidden, are the
 application's.
+
+### The opening sequence
+
+`OpeningSequence` draws the mark, fades in the wordmark, and lifts, once per
+session under a key every surface shares. A reader who asks for reduced motion
+never sees it. It never takes a press, the page beneath it is inert while it
+covers it, and it waits at most 400ms for webfonts before starting.
+
+```tsx
+import { OpeningSequence } from '@ekdotico/domico/components';
+import '@ekdotico/domico/styles/opening-sequence.css';
+
+<OpeningSequence />   {/* first in the body; sessionKey defaults to ekd:intro-shown */}
+```
 
 ---
 

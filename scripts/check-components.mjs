@@ -61,7 +61,7 @@ const h = React.createElement;
 const { inertOutside, useModalSurface, isShortcut, shortcutLabel } = await import('../dist/src/a11y/index.js');
 const {
   Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
-  AccessGate, GateSubmitButton, NavDrawer, OnThisPage,
+  AccessGate, GateSubmitButton, NavDrawer, OnThisPage, OpeningSequence,
 } = await import('../dist/src/components/index.js');
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
 
@@ -357,6 +357,10 @@ await it('StickyTableHead', async () => {
 });
 
 // --- AccessGate --------------------------------------------------------------
+// Elements are compared with assert.ok rather than assert.equal throughout the
+// cases below: a failing equal inspects both sides for its message, and
+// inspecting a jsdom element walks the whole window, which exhausts memory
+// before it prints anything.
 await it('AccessGate', async () => {
   const gate = (extra) =>
     h(AccessGate, { title: 'Enter the access code', lede: 'Restricted.', action: '/unlock', from: '/next', ...extra });
@@ -412,7 +416,7 @@ await it('GateSubmitButton', async () => {
   const click = new window.MouseEvent('click', { bubbles: true, cancelable: true });
   await act(async () => button.dispatchEvent(click));
   assert.ok(click.defaultPrevented, 'a second press was not refused');
-  assert.equal(document.activeElement, button, 'focus left the button');
+  assert.ok(document.activeElement === button, 'focus left the button');
 
   await view.rerender(h(GateSubmitButton, { pending: false }, 'Continue'));
   assert.ok(!button.hasAttribute('aria-disabled'));
@@ -456,7 +460,7 @@ await it('NavDrawer', async () => {
   assert.equal(trigger.getAttribute('aria-expanded'), 'false');
   assert.ok(drawer.hasAttribute('inert'));
   assert.ok(!$('behind').hasAttribute('inert'), 'closing left the page inert');
-  assert.equal(document.activeElement, trigger, 'focus did not return to the trigger');
+  assert.ok(document.activeElement === trigger, 'focus did not return to the trigger');
 
   // A change of route closes it; the first render is not a change.
   await act(async () => trigger.click());
@@ -534,10 +538,64 @@ await it('OnThisPage', async () => {
   article.innerHTML = '';
   await view.rerender(h(OnThisPage, { root: '.content-inner', rescanKey: 3 }));
   await wait();
-  assert.equal(view.container.querySelector('nav'), null, 'an empty rail rendered');
+  assert.ok(!view.container.querySelector('nav'), 'an empty rail rendered');
   await view.unmount();
   article.remove();
   delete globalThis.IntersectionObserver;
+});
+
+// --- OpeningSequence ------------------------------------------------------------
+await it('OpeningSequence', async () => {
+  let reduce = true;
+  window.matchMedia = (q) => ({ matches: q.includes('reduced-motion') && reduce, addEventListener() {}, removeEventListener() {} });
+  window.sessionStorage.clear();
+  // A short sequence, read back through the computed animation as the
+  // component reads the stylesheet's.
+  const style = document.createElement('style');
+  style.textContent = '.opening-sequence.is-playing { animation-delay: 20ms; animation-duration: 20ms; }';
+  document.head.appendChild(style);
+  const tree = () => h('div', null, h(OpeningSequence), h('a', { href: '/page', id: 'page' }, 'Page'));
+
+  // Reduced motion: nothing is painted, nothing is covered, nothing is remembered.
+  let view = await mount(tree());
+  assert.ok(!view.container.querySelector('.opening-sequence'), 'the sequence rendered under reduced motion');
+  assert.ok(!document.getElementById('page').hasAttribute('inert'));
+  assert.equal(window.sessionStorage.getItem('ekd:intro-shown'), null);
+  await view.unmount();
+
+  reduce = false;
+  view = await mount(tree());
+  const overlay = view.container.querySelector('.opening-sequence');
+  assert.equal(overlay?.getAttribute('aria-hidden'), 'true');
+  assert.ok(overlay.classList.contains('is-covering'));
+  assert.ok(document.getElementById('page').hasAttribute('inert'), 'the covered page is reachable');
+  assert.equal(overlay.querySelector('path')?.getAttribute('pathLength'), '1');
+  assert.equal(window.sessionStorage.getItem('ekd:intro-shown'), '1');
+  // The font wait is capped at 400ms, and the sequence then runs 40ms.
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 600)));
+  assert.ok(!view.container.querySelector('.opening-sequence'), 'the overlay outlived its sequence');
+  assert.ok(!document.getElementById('page').hasAttribute('inert'), 'the page stayed inert');
+  await view.unmount();
+
+  // Once per session.
+  view = await mount(tree());
+  assert.ok(!view.container.querySelector('.opening-sequence'), 'the sequence played twice in a session');
+  await view.unmount();
+
+  // Released once: the unmount does not release what another surface — an
+  // open drawer — has inerted since the sequence ended.
+  window.sessionStorage.clear();
+  const outside = document.createElement('p');
+  document.body.appendChild(outside);
+  view = await mount(tree());
+  assert.ok(outside.hasAttribute('inert'), 'the page outside the layout is reachable');
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 600)));
+  assert.ok(!outside.hasAttribute('inert'));
+  outside.setAttribute('inert', '');
+  await view.unmount();
+  assert.ok(outside.hasAttribute('inert'), 'unmounting released an inert it no longer owned');
+  outside.remove();
+  style.remove();
 });
 
 console.log(`check:components — ${cases} cases: the a11y helpers, and the components' names, roles and focus, against jsdom`);

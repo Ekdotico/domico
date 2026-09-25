@@ -1096,3 +1096,84 @@
 @media print {
   .on-this-page { display: none; }
 }
+
+/* --- Opening sequence ---------------------------------------------------- */
+/* OpeningSequence: the mark draws on as one stroke, the wordmark fades in over
+   the tail of it, a hold, and the overlay fades away — about 1.6s in all, the
+   figures the three surfaces already shared.
+
+   Every duration is derived from --dur-slow. The catalogue's durations are
+   interface transitions and none can express a 900ms draw, so the sequence is
+   proportioned from one of them and keeps its proportions if the token moves.
+   The five are scoped to this element and are not tokens.
+
+   Nothing here waits on an event. The component skips the sequence for a
+   reader who asks for no motion and otherwise removes the overlay on a timer,
+   reading the length back from the computed animation below. */
+.opening-sequence {
+  --intro-draw: calc(var(--dur-slow) * 2.4);
+  --intro-wordmark-delay: calc(var(--dur-slow) * 1.6);
+  --intro-wordmark: calc(var(--dur-slow) * 1.2);
+  --intro-hold: calc(var(--dur-slow) * 3.2);
+  --intro-fade: var(--dur-slow);
+
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+  color: var(--fg-1);
+  /* Server-rendered, so it exists before any script decides whether it plays.
+     Transparent until then, and never a target for the pointer — without
+     JavaScript it stays exactly this. */
+  opacity: 0;
+  pointer-events: none;
+}
+.opening-sequence.is-covering {
+  opacity: 1;
+  background: var(--bg-canvas);
+}
+.opening-sequence.is-playing {
+  animation: ekd-opening-out var(--intro-fade) var(--ease-soft) var(--intro-hold) forwards;
+}
+/* stroke-dasharray and -dashoffset inherit, so stating them on the <svg>
+   reaches the path without depending on the mark's element structure. 1, not a
+   length: the component sets pathLength="1" on the path. */
+.opening-sequence-mark {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.opening-sequence.is-playing .opening-sequence-mark {
+  animation: ekd-opening-draw var(--intro-draw) var(--ease-soft) forwards;
+}
+.opening-sequence-wordmark {
+  font-family: var(--font-serif);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tr-tight);
+  opacity: 0;
+}
+.opening-sequence.is-playing .opening-sequence-wordmark {
+  animation: ekd-opening-in var(--intro-wordmark) var(--ease-soft) var(--intro-wordmark-delay) forwards;
+}
+@keyframes ekd-opening-out {
+  to { opacity: 0; }
+}
+@keyframes ekd-opening-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes ekd-opening-in {
+  to { opacity: 1; }
+}
+/* The component never plays the sequence under this query. If it is ever
+   painted anyway, it is not painted at all. */
+@media (prefers-reduced-motion: reduce) {
+  .opening-sequence { display: none; }
+}
+@media print {
+  .opening-sequence { display: none; }
+}

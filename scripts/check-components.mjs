@@ -61,7 +61,7 @@ const h = React.createElement;
 const { inertOutside, useModalSurface, isShortcut, shortcutLabel } = await import('../dist/src/a11y/index.js');
 const {
   Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
-  AccessGate, GateSubmitButton, NavDrawer,
+  AccessGate, GateSubmitButton, NavDrawer, OnThisPage,
 } = await import('../dist/src/components/index.js');
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
 
@@ -476,6 +476,68 @@ await it('NavDrawer', async () => {
   assert.equal(controlled.container.querySelector('.mobile-nav-trigger').getAttribute('aria-expanded'), 'true',
     'a controlled drawer closed itself');
   await controlled.unmount();
+});
+
+// --- OnThisPage -----------------------------------------------------------------
+await it('OnThisPage', async () => {
+  const observed = [];
+  let report = null;
+  globalThis.IntersectionObserver = class {
+    constructor(callback) { report = callback; }
+    observe(el) { observed.push(el); }
+    disconnect() {}
+  };
+  const wait = () => act(async () => new Promise((resolve) => setTimeout(resolve, 60)));
+
+  const article = document.createElement('article');
+  article.className = 'content-inner';
+  article.innerHTML = `
+    <h2 id="scope">Scope</h2>
+    <h3>Terms</h3>
+    <h2>Risks <span class="badge badge-warn">Draft</span></h2>
+    <h2>Terms</h2>
+    <h2 id="terms-1">Taken</h2>`;
+  document.body.appendChild(article);
+
+  const view = await mount(h(OnThisPage, { root: '.content-inner', rescanKey: 1 }));
+  await wait();
+  const nav = view.container.querySelector('nav');
+  assert.ok(nav, 'the rail is not a nav');
+  assert.equal(document.getElementById(nav.getAttribute('aria-labelledby'))?.textContent, 'On this page');
+
+  const links = [...nav.querySelectorAll('a')];
+  const hrefs = links.map((a) => a.getAttribute('href'));
+  // A real id is read; made-up ones are de-duplicated against the document,
+  // including an id a later heading already carries.
+  assert.equal(hrefs[0], '#scope');
+  assert.equal(new Set(hrefs).size, hrefs.length, `two entries share an id: ${hrefs.join(' ')}`);
+  for (const href of hrefs) assert.equal(document.querySelectorAll(href).length, 1, `${href} is not one element`);
+  assert.equal(nav.querySelectorAll('li.otp-l3').length, 1, 'the h3 is not a second-level entry');
+
+  // The badge keeps its classes and leaves the name to the heading's text.
+  const risks = links[2];
+  assert.ok(risks.querySelector('.badge.badge-warn[aria-hidden="true"]'), 'the badge was flattened');
+  assert.equal(risks.getAttribute('aria-label'), 'Risks Draft');
+
+  assert.ok(!nav.querySelector('[aria-current]'));
+  assert.equal(observed.length, links.length);
+  await act(async () => report([{ isIntersecting: true, target: observed[2], boundingClientRect: { top: 10 } }]));
+  assert.equal(risks.getAttribute('aria-current'), 'location', 'the heading being read is not marked');
+  assert.equal(nav.querySelectorAll('[aria-current]').length, 1);
+
+  // A new route: the rail reads the new page.
+  article.innerHTML = '<h2 id="only">Only</h2>';
+  await view.rerender(h(OnThisPage, { root: '.content-inner', rescanKey: 2 }));
+  await wait();
+  assert.deepEqual([...view.container.querySelectorAll('nav a')].map((a) => a.getAttribute('href')), ['#only']);
+
+  article.innerHTML = '';
+  await view.rerender(h(OnThisPage, { root: '.content-inner', rescanKey: 3 }));
+  await wait();
+  assert.equal(view.container.querySelector('nav'), null, 'an empty rail rendered');
+  await view.unmount();
+  article.remove();
+  delete globalThis.IntersectionObserver;
 });
 
 console.log(`check:components — ${cases} cases: the a11y helpers, and the components' names, roles and focus, against jsdom`);

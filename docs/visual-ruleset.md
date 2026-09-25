@@ -205,7 +205,7 @@ colour is never the sole carrier of the choice.
 Each component with styles of its own ships a stylesheet **export entry** —
 `styles/badge.css`, `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`,
 `primitives.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, and
-for the application chrome `access-gate.css` and `nav-drawer.css`. They are build outputs sliced
+for the application chrome `access-gate.css`, `nav-drawer.css`, and `on-this-page.css`. They are build outputs sliced
 from one source stylesheet; there is no per-component source file, so do not
 cite one. `styles/components.css` remains the whole set, and `build-styles.mjs`
 is where the list lives, so read it there rather than counting it here.
@@ -216,11 +216,12 @@ viewport mirror of a table header at narrow widths — by `table.css`, beside th
 table it mirrors, and `GateSubmitButton` by `access-gate.css`, beside the gate
 it submits.
 
-The chrome is shared for the same reason the components are. The passcode page
-and the navigation drawer were each two or three copies that had drifted: a gate
-that described its error and not its rate limit and a drawer that kept half the
-modal promise. The navigation itself — which pages exist, how they group — stays
-in each application. None of them imports a router.
+The chrome is shared for the same reason the components are. The passcode page,
+the navigation drawer, and the on-this-page rail were each two or three copies
+that had drifted: a gate that described its error and not its rate limit, a
+drawer that kept half the modal promise, and a rail that let two headings share
+an id. The navigation itself — which pages exist, how they group — stays in each
+application. None of them imports a router.
 
 ### Rule 8 — A component used twice comes from the package
 

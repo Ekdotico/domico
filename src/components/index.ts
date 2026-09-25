@@ -8,10 +8,11 @@
  *
  * "Navigation" there means the content: which pages exist, how they group, and
  * what a sidebar lists. The chrome that carries it is not tied to any of that,
- * and `NavDrawer` now ships here, taking the application's sidebar as its
- * children. It was two copies of one component that had already drifted
- * apart, and it knows no route: an application passes its route as a key, so
- * nothing here imports a router.
+ * and two pieces of it now ship here: `NavDrawer`, which takes the
+ * application's sidebar as its children, and `OnThisPage`, which reads
+ * whatever headings the page has. Each was two copies of one component that
+ * had already drifted apart, and neither knows a route: an application passes
+ * its route as a key, so nothing here imports a router.
  *
  * `@supersedes` names the local component an export replaced, where the name
  * changed on the way in. `ekdotico-check discipline` reads it from this file,
@@ -56,3 +57,4 @@ export { AccessGate } from './AccessGate.js';
 export { GateSubmitButton } from './GateSubmitButton.js';
 /** @supersedes MobileNav, ResearchMobileNav */
 export { NavDrawer } from './NavDrawer.js';
+export { OnThisPage } from './OnThisPage.js';

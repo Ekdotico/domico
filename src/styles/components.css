@@ -1029,3 +1029,70 @@
     display: none;
   }
 }
+
+/* --- On this page -------------------------------------------------------- */
+/* The rail OnThisPage renders, from the two copies it replaces, which were
+   identical once deree's spacing had been moved onto the scale. Where the rail
+   sits in a layout — its grid column, and the width below which it is hidden —
+   is the application's; this is the rail itself, and it sticks below the top
+   bar. */
+.on-this-page {
+  align-self: start;
+  position: sticky;
+  top: calc(var(--topbar-h) + var(--sp-9));
+  margin-top: var(--sp-9);
+  padding: 0 var(--sp-6) 0 var(--sp-7);
+  max-width: 240px;
+  border-inline-start: 1px solid var(--rule-soft);
+}
+.otp-eyebrow {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-sans);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-3xs);
+  letter-spacing: var(--tr-widest);
+  color: var(--fg-4);
+}
+.otp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.otp-list li a {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-snug);
+  color: var(--fg-3);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-soft);
+}
+.otp-list li a:hover { color: var(--fg-1); }
+/* A second-level heading is indented under the first. */
+.otp-list li.otp-l3 a { padding-inline-start: var(--sp-3); }
+.otp-list li.otp-l4 a { padding-inline-start: var(--sp-6); }
+/* The entry being read. Italic as well as the accent, so the mark is not
+   colour alone — and it survives forced colours, where the accent does not. */
+.otp-list li a[aria-current="location"] {
+  color: var(--accent);
+  font-style: italic;
+}
+.otp-list .badge {
+  font-size: var(--fs-3xs);
+  padding: 1px var(--sp-2);
+  margin-inline-start: var(--sp-1);
+  letter-spacing: var(--tr-wide);
+  vertical-align: 1px;
+}
+@media (forced-colors: active) {
+  .otp-list li a[aria-current="location"] { color: Highlight; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .otp-list li a { transition: none; }
+}
+@media print {
+  .on-this-page { display: none; }
+}

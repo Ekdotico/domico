@@ -84,7 +84,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, and `nav-drawer.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, and `on-this-page.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, and `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord |
@@ -347,6 +347,25 @@ swipe back across it closes it. `open` and `onOpenChange` put it under outside
 control, for a shortcut that opens it on its search field, which
 `initialFocusRef` then names. The trigger renders where the component is
 placed, shows at 920px and below, and is the application's to position.
+
+### The on-this-page rail
+
+`OnThisPage` lists the page's headings and marks the one being read with
+`aria-current="location"`. It reads a heading's own id and gives one only to a
+heading that has none, de-duplicated against every id in the document.
+
+```tsx
+import { OnThisPage } from '@ekdotico/domico/components';
+import '@ekdotico/domico/styles/on-this-page.css';
+
+<OnThisPage root=".content-inner" rescanKey={pathname} />
+```
+
+`selector` defaults to `h2, h3` and `label` to "On this page", which is both
+the visible label and the name of the `<nav>`. A child of a heading matching
+`badgeSelector`, `.badge` by default, keeps its classes in the rail. Where the
+rail sits in a layout, and the width below which it is hidden, are the
+application's.
 
 ---
 

@@ -213,6 +213,32 @@ function derivePackageExports(appDir) {
   return [...names];
 }
 
+// The local names an export replaced, where the name changed on the way into
+// the package: `/** @supersedes PageLoader */` above `export { OpeningSequence }`
+// in the components barrel. Read from the barrel for the same reason the export
+// list is — a hardcoded map here would fall behind the package. Without it, the
+// copies an extraction was made from are exactly the ones this check misses,
+// because each application had named its own.
+//
+// Only the source barrel carries it: tsc does not keep a comment on a re-export
+// in the declaration file. The package ships src/, so a consumer has it.
+function deriveSupersededNames(appDir) {
+  const roots = [join(appDir, 'node_modules/@ekdotico/domico'), join(appDir, '..', 'domico'), appDir];
+  const map = new Map();
+  for (const root of roots) {
+    for (const rel of ['src/components/index.ts', 'src/theme/index.ts', 'src/a11y/index.ts']) {
+      const p = join(root, rel);
+      if (!existsSync(p)) continue;
+      const txt = readFileSync(p, 'utf8');
+      for (const m of txt.matchAll(/@supersedes\s+([\w$,\s]+?)\s*\*\/\s*export\s*\{\s*([A-Za-z_$][\w$]*)/g)) {
+        for (const old of m[1].split(',').map((s) => s.trim()).filter(Boolean)) map.set(old, m[2]);
+      }
+    }
+    if (map.size > 0) break;
+  }
+  return map;
+}
+
 // Auditing the package itself: it necessarily defines everything it exports, so
 // the reimplementation check is a category error there and is skipped. Detected
 // from the manifest rather than a path, so a rename cannot silently re-enable it.
@@ -224,9 +250,14 @@ const IS_PACKAGE_ITSELF = (() => {
 })();
 
 const PACKAGE_EXPORTS = IS_PACKAGE_ITSELF ? [] : derivePackageExports(APP);
+const SUPERSEDED = IS_PACKAGE_ITSELF ? new Map() : deriveSupersededNames(APP);
 if (process.argv.includes('--list-exports')) {
   console.log(`${PACKAGE_EXPORTS.length} exports derived from @ekdotico/domico:`);
   console.log('  ' + PACKAGE_EXPORTS.join(', '));
+  if (SUPERSEDED.size > 0) {
+    console.log(`${SUPERSEDED.size} local names they replaced:`);
+    console.log('  ' + [...SUPERSEDED].map(([old, now]) => `${old} → ${now}`).join(', '));
+  }
   process.exit(0);
 }
 if (!IS_PACKAGE_ITSELF && PACKAGE_EXPORTS.length === 0) {
@@ -330,6 +361,14 @@ for (const file of files) {
       if (m) {
         const n = src.slice(0, src.indexOf(m[0])).split('\n').length;
         add('dupes', file, n, m[0], `@ekdotico/domico already exports ${name}`);
+      }
+    }
+    for (const [old, now] of SUPERSEDED) {
+      const re = new RegExp(`(export\\s+(?:default\\s+)?(?:function|const|class)\\s+${old}\\b)`);
+      const m = src.match(re);
+      if (m) {
+        const n = src.slice(0, src.indexOf(m[0])).split('\n').length;
+        add('dupes', file, n, m[0], `@ekdotico/domico exports ${now}, which replaces ${old}`);
       }
     }
   }

@@ -6,6 +6,11 @@
  * one application's information architecture — page headers, navigation,
  * requirement tables, glossary tooltips — stays in that application.
  *
+ * `@supersedes` names the local component an export replaced, where the name
+ * changed on the way in. `ekdotico-check discipline` reads it from this file,
+ * so a copy left behind under its old name is reported as a reimplementation
+ * like one under the new name.
+ *
  * Styles ship separately and must be imported once at the application root:
  *
  *   import '@ekdotico/domico/tokens.css';

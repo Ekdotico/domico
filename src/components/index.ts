@@ -35,4 +35,5 @@ export {
   TableHeaderCell,
   TableRow,
 } from './Table.js';
+export { StickyTableHead } from './StickyTableHead.js';
 export { Tab, Tabs } from './Tabs.js';

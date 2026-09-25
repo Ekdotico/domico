@@ -202,6 +202,11 @@ entry** — `styles/badge.css`, `callout.css`, `figure.css`, `keyvalue.css`,
 `tabs.css`. They are build outputs sliced from one source stylesheet; there is no
 per-component source file, so do not cite one.
 
+Two more components need no entry of their own. `SkipLink` is styled by the
+reset's `.skip-link`, which every application takes, and `StickyTableHead` — the
+viewport mirror of a table header at narrow widths — by `table.css`, beside the
+table it mirrors.
+
 ### Rule 8 — A component used twice comes from the package
 
 The split above is why this is possible rather than aspirational. Components

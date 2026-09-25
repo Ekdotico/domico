@@ -142,6 +142,19 @@ offset token once, in the application's own stylesheet:
 }
 ```
 
+Below 920px a wide table scrolls inside its card, which stops a native sticky
+header from sticking to the page. Render `StickyTableHead` once in the root
+layout and it mirrors each table's header at the same offset while the reader
+scrolls; pass the route as `rescanKey` so a client-side navigation rebuilds the
+mirrors. Its styles are in `styles/table.css`.
+
+```tsx
+import { SkipLink, StickyTableHead } from '@ekdotico/domico/components';
+
+<SkipLink />              {/* → #main-content, "Skip to main content" */}
+<StickyTableHead rescanKey={pathname} />
+```
+
 ### deree
 
 The institutional site takes the visual layer and the brand assets. Its content

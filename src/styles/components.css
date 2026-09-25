@@ -140,7 +140,7 @@
    why this is a media query and not the default: `overflow-x: auto` makes the
    wrapper a scroll container in both axes, and a sticky header inside one
    resolves to the wrapper's top rather than the page's, so the header is made
-   static here rather than left pinned to the wrong edge.
+   static here, and StickyTableHead mirrors it at the viewport instead.
 
    This rule lived only in the documentation site's stylesheet, while `Table`
    put a tab stop on every wrapper on the grounds that it scrolls "in every
@@ -152,6 +152,36 @@
 @media (max-width: 920px) {
   .tbl-wrap { overflow-x: auto; }
   .tbl-wrap thead th { position: static; }
+}
+/* The mirror StickyTableHead appends to <body> at narrow viewports. It carries
+   the wrapper's own classes, so anything an application hangs on a table
+   cascades to its header copy, and every rule here therefore has to come after
+   the .tbl-wrap rules it overrides. Fixed rather than sticky, so no scroll
+   container can trap it; one layer below the top bar the documentation site
+   stacks at 5, so a bar scrolling over it wins. A copy for the eye alone:
+   hover and pointer reach the real table beneath. */
+.tbl-sticky-clone {
+  position: fixed;
+  z-index: 4;
+  pointer-events: none;
+  margin: 0;
+  /* Clips the synced table, and hides the scrollbar the copy would otherwise
+     draw under its header. */
+  overflow: hidden;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  /* At rest the copy sits exactly over the original, so the card shadow would
+     be drawn twice. */
+  box-shadow: none;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-soft);
+}
+.tbl-sticky-clone.is-visible { opacity: 1; }
+.tbl-sticky-clone-scroll { overflow: hidden; }
+/* The copy is the sticky element; its cells sit still inside it. */
+.tbl-sticky-clone thead th {
+  position: static;
+  top: auto;
+  z-index: auto;
 }
 /* Two cell treatments for one kind of row: an identifier, and the thing it
    names. .td-id sets the identifier — a requirement code, a risk number, a

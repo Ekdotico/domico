@@ -202,16 +202,23 @@ colour is never the sole carrier of the choice.
 
 ## 4 · Components
 
-Ten components ship in this package, each with its own stylesheet **export
-entry** — `styles/badge.css`, `callout.css`, `figure.css`, `keyvalue.css`,
-`logo.css`, `primitives.css`, `section-rule.css`, `stat.css`, `table.css`,
-`tabs.css`. They are build outputs sliced from one source stylesheet; there is no
-per-component source file, so do not cite one.
+Each component with styles of its own ships a stylesheet **export entry** —
+`styles/badge.css`, `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`,
+`primitives.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, and
+for the application chrome `access-gate.css`. They are build outputs sliced
+from one source stylesheet; there is no per-component source file, so do not
+cite one. `styles/components.css` remains the whole set, and `build-styles.mjs`
+is where the list lives, so read it there rather than counting it here.
 
-Two more components need no entry of their own. `SkipLink` is styled by the
-reset's `.skip-link`, which every application takes, and `StickyTableHead` — the
+Three components need no entry of their own. `SkipLink` is styled by the
+reset's `.skip-link`, which every application takes, `StickyTableHead` — the
 viewport mirror of a table header at narrow widths — by `table.css`, beside the
-table it mirrors.
+table it mirrors, and `GateSubmitButton` by `access-gate.css`, beside the gate
+it submits.
+
+The chrome is shared for the same reason the components are. The passcode page
+was three copies that had drifted: a gate that described its error and not its
+rate limit.
 
 ### Rule 8 — A component used twice comes from the package
 
@@ -222,12 +229,14 @@ all. Shipping one stylesheet per component means an application imports only the
 CSS for what it renders — the same factoring this package had already performed
 twice, for `reset.css` at 0.7.0 and `appearance.css` at 0.8.0.
 
-An import arrives with the first requirement that needs it. Shipping ten entries
-is not licence to import ten.
+An import arrives with the first requirement that needs it. Shipping an entry
+per component is not licence to import every entry.
 
 *Enforced by* `ekdotico-check discipline`, which fails on a local
 reimplementation of anything this package exports, deriving the export list from
-the package barrels rather than from a hardcoded list.
+the package barrels rather than from a hardcoded list — and, from the same
+barrels, the names an export replaced, where an application's copy was called
+something else (`UnlockScreen` for `AccessGate`).
 
 ### Rule 9 — Never fork a projection of the palette
 

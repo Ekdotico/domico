@@ -69,6 +69,7 @@
     "./styles/stat.css": "./dist/styles/stat.css",
     "./styles/table.css": "./dist/styles/table.css",
     "./styles/tabs.css": "./dist/styles/tabs.css",
+    "./styles/access-gate.css": "./dist/styles/access-gate.css",
     "./components": {
       "types": "./dist/src/components/index.d.ts",
       "default": "./dist/src/components/index.js"

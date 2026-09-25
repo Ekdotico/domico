@@ -733,3 +733,150 @@
   line-height: 1;
   color: var(--fg-1);
 }
+
+/* --- Access gate --------------------------------------------------------- */
+/* The passcode page AccessGate renders. From deree's stylesheet, which the
+   documentation site's matched but for three fixes it had not taken:
+   --rule-control on the field, no `outline: none` on it, and --tr-label on the
+   two labels. The spacing is moved onto the scale; each step is within 4px of
+   the value it replaces.
+
+   The page, not an overlay. Fixed and opaque, so whatever a root layout renders
+   around the gate is covered — but the gate renders its own <main>, so it
+   belongs outside any layout that renders one of its own. */
+.unlock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  /* Start-aligned with an auto block margin on the card, not centred. A box
+     inset to the viewport is exactly as tall as the viewport, so a centred card
+     taller than it overflows off the top edge as well as the bottom, and the
+     half above cannot be scrolled back to. The card grows taller for the
+     readers least able to absorb it: 200% zoom, a large default font, a short
+     landscape window, a phone with the keyboard open (WCAG 1.4.4, 1.4.10).
+     The auto margin centres it whenever there is room, and collapses to zero
+     when there is not. */
+  align-items: start;
+  justify-items: center;
+  padding: var(--sp-6);
+  overflow-y: auto;
+  background: var(--bg-canvas);
+}
+.unlock-card {
+  width: 100%;
+  max-width: 380px;
+  margin-block: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  padding: var(--sp-7) var(--sp-6) var(--sp-6);
+}
+/* Case is authored, never applied: an eyebrow on size, weight, tracking and a
+   receding foreground. */
+.unlock-eyebrow {
+  margin: 0 0 var(--sp-2);
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--tr-label);
+  color: var(--fg-4);
+}
+.unlock-title {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-serif);
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-semi);
+  color: var(--fg-1);
+}
+.unlock-lede {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--fs-base);
+  line-height: var(--lh-prose);
+  color: var(--fg-3);
+}
+.unlock-lede + .unlock-lede { margin-block-start: var(--sp-3); }
+.unlock-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-block-start: var(--sp-5);
+}
+.unlock-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tr-label);
+  color: var(--fg-4);
+}
+.unlock-input {
+  width: 100%;
+  background: var(--bg-inset);
+  /* The field's only visible boundary, which owes 3:1 against the surface
+     (WCAG 1.4.11). --rule measures 1.6:1 to 1.9:1. */
+  border: 1px solid var(--rule-control);
+  border-radius: var(--radius-md);
+  padding: var(--sp-2) var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-lg);
+  letter-spacing: var(--tr-widest);
+  text-align: center;
+  color: var(--fg-1);
+  /* No `outline: none`. The focus ring is the reset's; the border tint below
+     reinforces it, and a 1px colour change is not a focus indicator. */
+  transition: border-color var(--dur-fast) var(--ease-soft);
+}
+.unlock-input:focus-visible { border-color: var(--accent); }
+.unlock-input[aria-invalid="true"] { border-color: var(--danger); }
+.unlock-error {
+  margin: var(--sp-1) 0 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  color: var(--danger);
+}
+.unlock-button {
+  margin-block-start: var(--sp-3);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: var(--sp-2) var(--sp-4);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--tr-wide);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-soft),
+    border-color var(--dur-fast) var(--ease-soft);
+}
+.unlock-button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.unlock-button:focus-visible { border-color: var(--accent-hover); }
+/* In flight. GateSubmitButton keeps the button focusable and marks it
+   aria-disabled rather than disabling it, so the state is styled from the
+   attribute. The sunken surface step rather than --bg-inset, which the
+   catalogue reserves for a recessed well: an inset button directly under an
+   inset field reads as a second empty field at the moment the reader waits. */
+.unlock-button[aria-disabled="true"],
+.unlock-button[aria-busy="true"] {
+  background: var(--bg-surface-2);
+  color: var(--fg-3);
+  border-color: var(--rule);
+  cursor: progress;
+}
+@media (forced-colors: active) {
+  /* The state tints are flattened to system colours, so the invalid field and
+     the waiting button each keep a signal that is not colour. */
+  .unlock-input[aria-invalid="true"] { border-width: 2px; }
+  .unlock-button[aria-disabled="true"] {
+    color: GrayText;
+    border-color: GrayText;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .unlock-input,
+  .unlock-button { transition: none; }
+}

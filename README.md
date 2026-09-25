@@ -84,7 +84,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, and `tabs.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, and `access-gate.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, and `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord |
@@ -279,6 +279,53 @@ Ctrl+K elsewhere — never both, so Ctrl+K is left to a macOS text field — and
 `shortcutLabel('k')` gives the same chord for the screen and for
 `aria-keyshortcuts`. All four read the document or the platform, so call them
 from an effect or an event handler, not during render.
+
+---
+
+## Application chrome
+
+Chrome that every application had written for itself, two or three times
+over, and that had already drifted apart. Each takes its words from
+the application and imports no router: where a copy read the route from
+`next/navigation`, the component takes the route as a key instead.
+
+### The access gate
+
+`AccessGate` is the passcode page a pre-release site shows in place of itself.
+It holds no state, so a server component renders it with a server action, and
+its one client piece is the submit button.
+
+```tsx
+import { AccessGate } from '@ekdotico/domico/components';
+import '@ekdotico/domico/styles/access-gate.css';
+
+<AccessGate
+  eyebrow="Ekdotico"
+  title="Enter the access code"
+  lede="This site is restricted while it is in development. Enter the four-digit access code to continue."
+  contact={<>If you do not have a code, write to <a href="mailto:…">…</a>.</>}
+  digits={4}
+  action={submitPasscode}
+  error={wrong ? 'The access code is incorrect. Check the code and enter it again.' : undefined}
+  notice={limited ? `The limit of five attempts in fifteen minutes has been reached. Try again ${retryIn}.` : undefined}
+  from={from}
+/>
+```
+
+The gate is the page, so it renders the `<main>` landmark and no dialog role;
+render it outside any layout that has a `<main>` of its own. `error` marks the
+field invalid and `notice` does not, because a rate limit says nothing about
+the code, and the field is described by whichever message is on screen. The
+field takes a one-time code from the phone's keyboard, offers the numeric
+keypad, and expects exactly `digits` digits.
+
+The submit button is `GateSubmitButton`, exported on its own for a form laid out
+differently. While the action is in flight it is marked `aria-disabled` and
+refuses a second press, and it keeps focus, which `disabled` would drop to the
+top of the document. It reads the form's status from React 19; pass `pending`
+to drive it yourself. The package supplies three defaults, the ones all three
+gates shared: "Access code", "Unlock", and "Checking the code…". Everything
+else on the screen is the application's to write.
 
 ---
 

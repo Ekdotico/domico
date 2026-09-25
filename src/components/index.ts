@@ -42,3 +42,8 @@ export {
 } from './Table.js';
 export { StickyTableHead } from './StickyTableHead.js';
 export { Tab, Tabs } from './Tabs.js';
+
+/** @supersedes UnlockScreen, ResearchUnlockScreen */
+export { AccessGate } from './AccessGate.js';
+/** @supersedes UnlockSubmitButton */
+export { GateSubmitButton } from './GateSubmitButton.js';

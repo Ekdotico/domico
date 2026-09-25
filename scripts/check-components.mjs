@@ -30,7 +30,8 @@ const { window } = dom;
 for (const name of [
   'window', 'document', 'HTMLElement', 'HTMLTableElement', 'HTMLTableSectionElement',
   'Node', 'Element', 'MutationObserver', 'KeyboardEvent', 'getComputedStyle',
-  'requestAnimationFrame', 'cancelAnimationFrame',
+  'requestAnimationFrame', 'cancelAnimationFrame', 'HTMLInputElement', 'HTMLButtonElement',
+  'MouseEvent', 'Event', 'SVGElement',
 ]) {
   Object.defineProperty(globalThis, name, {
     value: name === 'window' ? window : window[name],
@@ -58,8 +59,10 @@ const act = React.act ?? (await import('react-dom/test-utils')).act;
 const h = React.createElement;
 
 const { inertOutside, useModalSurface, isShortcut, shortcutLabel } = await import('../dist/src/a11y/index.js');
-const { Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead } =
-  await import('../dist/src/components/index.js');
+const {
+  Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
+  AccessGate, GateSubmitButton,
+} = await import('../dist/src/components/index.js');
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
 
 /** Mount into a fresh container; returns it with a rerender and an unmount. */
@@ -351,6 +354,73 @@ await it('StickyTableHead', async () => {
   assert.equal(clones().length, 2);
   await view.unmount();
   assert.equal(clones().length, 0, 'unmounting left mirrors in the document');
+});
+
+// --- AccessGate --------------------------------------------------------------
+await it('AccessGate', async () => {
+  const gate = (extra) =>
+    h(AccessGate, { title: 'Enter the access code', lede: 'Restricted.', action: '/unlock', from: '/next', ...extra });
+
+  // A wrong code: the field is invalid and described by the message on screen.
+  let view = await mount(gate({ digits: 6, error: 'The access code is incorrect.' }));
+  const $ = (sel) => view.container.querySelector(sel);
+  assert.ok($('main'), 'the gate renders no main landmark');
+  assert.ok(!$('[role="dialog"]') && !$('[aria-modal]'), 'the gate claims to be a dialog');
+  let input = $('input[name="code"]');
+  assert.equal(document.querySelector(`label[for="${input.id}"]`)?.textContent, 'Access code');
+  assert.equal(input.getAttribute('inputmode'), 'numeric');
+  assert.equal(input.getAttribute('autocomplete'), 'one-time-code');
+  assert.equal(input.getAttribute('pattern'), '[0-9]{6}');
+  assert.equal(input.getAttribute('maxlength'), '6');
+  assert.equal(input.getAttribute('aria-invalid'), 'true');
+  let described = document.getElementById(input.getAttribute('aria-describedby'));
+  assert.equal(described?.textContent, 'The access code is incorrect.');
+  assert.equal(described?.getAttribute('role'), 'alert');
+  assert.equal($('input[name="from"]')?.value, '/next');
+  await view.unmount();
+
+  // A rate limit: described by the notice, and the field is not judged. With
+  // both passed, the code was never checked, so the error does not render.
+  view = await mount(gate({ error: 'Incorrect.', notice: 'The limit has been reached. Try again in about a minute.' }));
+  input = view.container.querySelector('input[name="code"]');
+  described = document.getElementById(input.getAttribute('aria-describedby'));
+  assert.equal(described?.textContent, 'The limit has been reached. Try again in about a minute.',
+    'the rendered notice is not what the field names');
+  assert.ok(!input.hasAttribute('aria-invalid'), 'a rate limit marked the code invalid');
+  assert.equal(view.container.querySelectorAll('[role="alert"]').length, 1);
+  assert.equal(input.getAttribute('pattern'), '[0-9]{4}', 'the default is not four digits');
+  await view.unmount();
+
+  // Nothing to say: nothing named.
+  view = await mount(gate({ idPrefix: 'research' }));
+  input = view.container.querySelector('input[name="code"]');
+  assert.equal(input.id, 'research-code');
+  assert.ok(!input.hasAttribute('aria-describedby') && !input.hasAttribute('aria-invalid'));
+  await view.unmount();
+});
+
+// --- GateSubmitButton ---------------------------------------------------------
+await it('GateSubmitButton', async () => {
+  const view = await mount(h(GateSubmitButton, { pending: true }));
+  const button = view.container.querySelector('button');
+  // Focusable while in flight: `disabled` would drop focus to <body>.
+  assert.ok(!button.disabled, 'the pending button is disabled, which drops focus');
+  assert.equal(button.getAttribute('aria-disabled'), 'true');
+  assert.equal(button.getAttribute('aria-busy'), 'true');
+  assert.equal(button.textContent, 'Checking the code…');
+  button.focus();
+  const click = new window.MouseEvent('click', { bubbles: true, cancelable: true });
+  await act(async () => button.dispatchEvent(click));
+  assert.ok(click.defaultPrevented, 'a second press was not refused');
+  assert.equal(document.activeElement, button, 'focus left the button');
+
+  await view.rerender(h(GateSubmitButton, { pending: false }, 'Continue'));
+  assert.ok(!button.hasAttribute('aria-disabled'));
+  assert.equal(button.textContent, 'Continue');
+  const again = new window.MouseEvent('click', { bubbles: true, cancelable: true });
+  await act(async () => button.dispatchEvent(again));
+  assert.ok(!again.defaultPrevented, 'a press at rest was refused');
+  await view.unmount();
 });
 
 console.log(`check:components — ${cases} cases: the a11y helpers, and the components' names, roles and focus, against jsdom`);

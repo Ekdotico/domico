@@ -1,5 +1,116 @@
 # @ekdotico/domico
 
+## 0.22.0
+
+### Minor Changes
+
+- 477cbe3: An accessibility subpath, two components moved in from the applications,
+  corrections to five existing ones, and five more checks in the accessibility
+  guard, from a WCAG 2.2 AA audit of docs, deree and praktico.
+
+  **`@ekdotico/domico/a11y` is new.** `useModalSurface({ open, surfaceRef,
+triggerRef?, initialFocusRef?, onClose, keep?, lockScroll? })` keeps the whole
+  promise `aria-modal="true"` makes: everything outside the surface inert, a Tab
+  cycle inside it, Escape to close, and focus returned to the trigger after the
+  page is released. `inertOutside(node, keep?)` is the inert half alone, and
+  `tabbableWithin(root)` the stops the cycle visits. `isShortcut(event, key)` and
+  `shortcutLabel(key)` give a chord that is ⌘ on Apple platforms and Ctrl
+  elsewhere, never both. Each was ported from the most complete of the
+  applications' copies. `ekdotico-check discipline` now counts this barrel, so a
+  local copy of any of them is reported as a reimplementation.
+
+  **`SkipLink` and `StickyTableHead` join `@ekdotico/domico/components`.**
+  `SkipLink` renders the reset's `.skip-link`, defaulting to "Skip to main
+  content" and `#main-content`; the applications had three versions. The two
+  identical copies of `StickyTableHead` move here, drop their Next.js import for
+  an optional `rescanKey`, and park the mirrored header at
+  `--table-sticky-offset`, which the native sticky header already reads. Its
+  styles are in `styles/table.css`.
+
+  **Corrections.**
+
+  - `styles/reset.css` underlines an unclassed link, so a link in prose is not
+    identified by colour alone (1.4.1). It sets `scroll-padding-block-start` to
+    `--topbar-h`, so focus is not scrolled under a pinned bar (2.4.11), and adds
+    `.sr-only-focusable`.
+  - Sepia light `--fg-3` moves from 53.362% to 51.8% lightness, to 4.60:1 on
+    `--bg-surface-2`, where the table header, the caption and two badges draw it.
+    It was 4.32:1. `check:contrast` now lists the pair.
+  - `Callout` is `role="note"` for every type and is named by its title. Four
+    types rendered an unnamed complementary landmark.
+  - `Table` takes a `caption`, which draws the caption row and names the scrolling
+    wrapper. Without one the name comes from `label`, then from an `aria-label`
+    passed for the table, which moves to the wrapper rather than being read
+    twice. "Table" is now the last resort, not the default. `styles/table.css`
+    now ships the narrow-viewport horizontal scroll that the wrapper's tab stop
+    depends on.
+  - `Tabs` takes an optional `label` for its tab list.
+  - `AppearanceMenu` names the theme group by the "Theme" label beside it,
+    through a new optional `labelledBy` on `ThemeSwitcher`. `styles/appearance.css`
+    shows the checked mode as Highlight under forced colours and keeps the
+    swatches' own colours, and states its own reduced-motion rule.
+
+  **`ekdotico-check a11y` is stricter, and can fail where it passed.**
+  `unnamedcontrol` missed every icon-only button with an arrow-function handler,
+  because the `>` in `=>` ended its tag match. `focusring` now requires an
+  outline — `2px solid transparent` beside a box-shadow ring is enough — because
+  a shadow or a tint is repainted away under forced colours. Its in-block test
+  also read `outline: none` as restoring an outline. New checks: `inputring`,
+  `placeholder` (`--fg-4` or `--fg-5`), `controlborder` (a hairline on a form
+  control), `tooltipcontent` (a link or a button in `role="tooltip"`), and
+  `menukeys` (advisory: `role="menu"` without arrow keys). At this release docs,
+  deree and praktico pass all twelve. The new exports do add `dupes` findings in
+  `discipline`, for the local helpers this release replaces.
+
+  A development-only guard, `components`, renders the helpers and components
+  into jsdom and asserts their names, roles, inertness and focus.
+
+- d1b6001: Four pieces of application chrome move into `@ekdotico/domico/components`, each
+  with a stylesheet entry of its own, from the two or three copies the
+  applications carried of each. None imports a router: a client-side router passes
+  the route as `closeKey` or `rescanKey`.
+
+  - **`AccessGate`** and **`GateSubmitButton`**, the passcode page, with
+    `styles/access-gate.css`. `<AccessGate eyebrow? title lede contact? label?
+digits? action error? notice? from? idPrefix? submitLabel? pendingLabel?
+pending? />` holds no state, so a server component renders it with a server
+    action. It renders the page's `<main>`, not a dialog; the field is described
+    by whichever message is on screen — `error` marks it invalid, `notice` (a
+    rate limit) does not — and takes `one-time-code`, the numeric keypad, and a
+    pattern of exactly `digits` digits. The button is `aria-disabled` with a
+    click guard while in flight, so it keeps focus, and reads the form status
+    from React 19 or a `pending` prop.
+  - **`NavDrawer`**, the slide-in navigation for 920px and narrower, with
+    `styles/nav-drawer.css`. `<NavDrawer label triggerLabel? closeLabel? open?
+onOpenChange? closeKey? initialFocusRef? id?>{sidebar}</NavDrawer>` keeps the
+    whole modal promise through `useModalSurface`, keeps the edge-swipe
+    thresholds both copies used, and is inert while closed.
+  - **`OnThisPage`**, the heading rail, with `styles/on-this-page.css`.
+    `<OnThisPage selector? root? label? rescanKey? rootMargin? badgeSelector? />`
+    marks the heading being read with `aria-current="location"`, reads real ids,
+    de-duplicates made-up ones against the document, and is a `<nav>` named by
+    its visible label.
+  - **`OpeningSequence`**, the intro, with `styles/opening-sequence.css`.
+    `<OpeningSequence sessionKey? />` plays once per session under
+    `ekd:intro-shown`, never under reduced motion, never takes a press, inerts the
+    page it covers, waits at most 400ms for fonts, and draws the mark with two CSS
+    keyframes rather than an animation library.
+
+  The class names are the ones the applications already style around —
+  `.unlock-*`, `.mobile-nav-*`, `.on-this-page` and `.otp-*` — so a placement
+  rule an application keeps still finds its element; delete the rest of the local
+  rules with the local component.
+
+  `ekdotico-check discipline` now reads `@supersedes` in the components barrel,
+  so a copy left under its old name is reported: `UnlockScreen`,
+  `ResearchUnlockScreen`, `UnlockSubmitButton`, `MobileNav`, `ResearchMobileNav`
+  and `PageLoader`, beside `AccessGate` and `OnThisPage` under their own. Expect
+  the guard to find these on the pin bump.
+
+### Patch Changes
+
+- f1412ba: The Document entry's rationale no longer calls FR-AU's "project" a residue awaiting amendment: FR-AU now says document. "Project" stays confirmable because it is also an ordinary English word.
+
 ## 0.21.3
 
 ### Patch Changes

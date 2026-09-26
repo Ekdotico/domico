@@ -60,6 +60,7 @@ export function AppearanceMenu({
 }: AppearanceMenuProps = {}) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
+  const labelId = useId();
   const wrapper = useRef<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const panel = useRef<HTMLDivElement | null>(null);
@@ -144,11 +145,18 @@ export function AppearanceMenu({
           an attribute; CSS does the rest, and `visibility` is what takes the
           closed panel out of the tab order and the accessibility tree. */}
       <div ref={panel} id={panelId} className="appearance-panel">
+        {/* The visible label names the theme group it sits above. Without the
+            reference the group announced "Colour theme" from its own
+            aria-label while the reader saw "Theme" — two names for one
+            control, and a speech-input reader saying the one on screen
+            would not reach it (WCAG 2.5.3). */}
         <div className="theme-header">
-          <span className="theme-header-label">{label}</span>
+          <span className="theme-header-label" id={labelId}>
+            {label}
+          </span>
           <ModeSwitcher />
         </div>
-        <ThemeSwitcher />
+        <ThemeSwitcher labelledBy={labelId} />
       </div>
     </div>
   );

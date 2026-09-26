@@ -170,7 +170,13 @@ inert background, both of them, every time.** Claiming the role without keeping
 its promise is worse than not claiming it. Where an inert background is
 genuinely wrong — a drawer nested inside the region the inert helper would
 inert — decline it explicitly and record why, rather than leaving the absence to
-look like an oversight.
+look like an oversight. `useModalSurface` from `@ekdotico/domico/a11y` keeps the
+whole promise, and its `inertOutside` spares the surface's own ancestors, which is
+the usual reason an inert background looked wrong.
+
+The same subpath carries `isShortcut` and `shortcutLabel`, for a
+chord that means one thing per platform: ⌘ on Apple, Ctrl elsewhere, never both,
+because Ctrl+K is an editing key in a macOS text field.
 
 An application supplies placement and nothing else. Do not pass `label` or
 `triggerLabel`, do not wrap it, and never render two instances on one page: two
@@ -196,11 +202,28 @@ colour is never the sole carrier of the choice.
 
 ## 4 · Components
 
-Ten components ship in this package, each with its own stylesheet **export
-entry** — `styles/badge.css`, `callout.css`, `figure.css`, `keyvalue.css`,
-`logo.css`, `primitives.css`, `section-rule.css`, `stat.css`, `table.css`,
-`tabs.css`. They are build outputs sliced from one source stylesheet; there is no
-per-component source file, so do not cite one.
+Each component with styles of its own ships a stylesheet **export entry** —
+`styles/badge.css`, `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`,
+`primitives.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, and
+for the application chrome `access-gate.css`, `nav-drawer.css`,
+`on-this-page.css`, and `opening-sequence.css`. They are build outputs sliced
+from one source stylesheet; there is no per-component source file, so do not
+cite one. `styles/components.css` remains the whole set, and `build-styles.mjs`
+is where the list lives, so read it there rather than counting it here.
+
+Three components need no entry of their own. `SkipLink` is styled by the
+reset's `.skip-link`, which every application takes, `StickyTableHead` — the
+viewport mirror of a table header at narrow widths — by `table.css`, beside the
+table it mirrors, and `GateSubmitButton` by `access-gate.css`, beside the gate
+it submits.
+
+The chrome is shared for the same reason the components are. The passcode page,
+the navigation drawer, the on-this-page rail, and the opening sequence were each
+two or three copies that had drifted: a gate that described its error and not
+its rate limit, a drawer that kept half the modal promise, a rail that let two
+headings share an id, and an intro that made a reader who asked for no motion
+wait for the fonts first. The navigation itself — which pages exist, how they
+group — stays in each application. None of them imports a router.
 
 ### Rule 8 — A component used twice comes from the package
 
@@ -211,12 +234,14 @@ all. Shipping one stylesheet per component means an application imports only the
 CSS for what it renders — the same factoring this package had already performed
 twice, for `reset.css` at 0.7.0 and `appearance.css` at 0.8.0.
 
-An import arrives with the first requirement that needs it. Shipping ten entries
-is not licence to import ten.
+An import arrives with the first requirement that needs it. Shipping an entry
+per component is not licence to import every entry.
 
 *Enforced by* `ekdotico-check discipline`, which fails on a local
 reimplementation of anything this package exports, deriving the export list from
-the package barrels rather than from a hardcoded list.
+the package barrels rather than from a hardcoded list — and, from the same
+barrels, the names an export replaced, where an application's copy was called
+something else (`PageLoader` for `OpeningSequence`).
 
 ### Rule 9 — Never fork a projection of the palette
 
@@ -380,8 +405,16 @@ reduced opacity fails in every palette at once. The fix is not a tuned opacity �
 it is no opacity. Differentiate text by size and weight, never by transparency on
 a saturated field.
 
+**And colour is never the only cue (WCAG 1.4.1).** A link in running prose
+inherits its paragraph's colour, so contrast cannot identify it and something
+else must. The reset draws every unclassed anchor underlined — `a:where(:not([class]))`,
+at the specificity of a bare `a` — and leaves a classed one undecorated, on the
+reading that a class means chrome whose position already says "link". An
+application that gives a prose link a class takes the underline over with it.
+
 *Enforced by* `check:contrast`, across all eight palettes, at 4.5:1 for text and
-3:1 for non-text.
+3:1 for non-text. The underline is carried by `styles/reset.css` rather than
+checked: a guard cannot tell prose from chrome.
 
 ### Rule 15 — Documentation that contradicts the code is a defect with a severity
 
@@ -526,6 +559,14 @@ only when there is a title to name the image with.
 *Enforced by* `ekdotico-check a11y`, which reads the directives out of the fence
 and additionally rejects any element carrying a non-operable role together with
 `tabIndex`.
+
+The same guard carries the other interaction failures this estate has shipped,
+each read from source: a removed outline that nothing puts back *as an outline*
+— a box-shadow ring or a tint is repainted away under forced colours, so
+`outline: 2px solid transparent` goes beside one — an icon-only button with no
+name, a tab stop with no role or name, placeholder text in `--fg-4` or `--fg-5`,
+a form control bordered with a hairline, a link or a button inside
+`role="tooltip"`, and a `role="menu"` with no arrow-key handling in its file.
 
 ---
 

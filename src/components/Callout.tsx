@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 
 // Callout — editorial aside with semantic tone. Six types, each mapped
 // to a token pair (--*-soft for the wash, --* for the hairline border
@@ -12,9 +12,19 @@ import type { ReactNode } from 'react';
 // from `@ekdotico/domico/styles/callout.css` if the whole component layer
 // is more than the application wants.
 //
-// `role="note"` on warn and danger is what keeps the tone out of colour
-// alone: with the title above it, the aside announces itself as an aside
-// whether or not the reader can distinguish the wash from the canvas.
+// Every type is `role="note"`, and it used to be only warn and danger. The
+// others rendered a bare `<aside>`, which is a complementary landmark: a page
+// with six notes put six unnamed "complementary" entries in the landmark list,
+// beside the real one a sidebar is, and a reader navigating by landmark could
+// not tell a tip from the navigation. A callout is subordinate to the text it
+// sits in, which is what `note` says. None of the six is `alert`: the content
+// is part of the page, present on load, and an alert would announce it over
+// whatever the reader was doing.
+//
+// The title names the note through `aria-labelledby`, so a screen reader
+// announces "Caution, note" rather than "note" and then the title as the first
+// line of its content. The title stays a `<p>`, not a heading: a callout is not
+// a section, and a heading per callout would put every tip in the outline.
 //
 // "quote" is for editorial pull-quotes. Source quotations should still
 // use the native <blockquote> element, which has its own styling.
@@ -30,9 +40,14 @@ export function Callout({
   title?: string;
   children: ReactNode;
 }) {
+  const titleId = useId();
   return (
-    <aside className="callout" data-type={type} role={type === 'danger' || type === 'warn' ? 'note' : undefined}>
-      {title && <p className="callout-title">{title}</p>}
+    <aside className="callout" data-type={type} role="note" aria-labelledby={title ? titleId : undefined}>
+      {title && (
+        <p className="callout-title" id={titleId}>
+          {title}
+        </p>
+      )}
       <div className="callout-body">{children}</div>
     </aside>
   );

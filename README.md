@@ -84,9 +84,10 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, and `tabs.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, and `opening-sequence.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
+| `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, and `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord |
 | `@ekdotico/domico/fonts` | Font loading configuration for the three locked families |
 | `@ekdotico/domico/mermaid` | Mermaid `themeVariables` for all eight palettes |
 | `@ekdotico/domico/mermaid/accessibility` | Reads `accTitle` and `accDescr` out of a diagram source, and blanks the directive lines in place |
@@ -140,6 +141,19 @@ offset token once, in the application's own stylesheet:
 :root {
   --table-sticky-offset: var(--topbar-h);
 }
+```
+
+Below 920px a wide table scrolls inside its card, which stops a native sticky
+header from sticking to the page. Render `StickyTableHead` once in the root
+layout and it mirrors each table's header at the same offset while the reader
+scrolls; pass the route as `rescanKey` so a client-side navigation rebuilds the
+mirrors. Its styles are in `styles/table.css`.
+
+```tsx
+import { SkipLink, StickyTableHead } from '@ekdotico/domico/components';
+
+<SkipLink />              {/* → #main-content, "Skip to main content" */}
+<StickyTableHead rescanKey={pathname} />
 ```
 
 ### deree
@@ -231,14 +245,141 @@ already selected rather than on the first option, because the theme switcher is
 one tab stop parked on the active choice.
 
 Both properties are optional: `label` is the row label inside the panel, which
-defaults to "Theme", and `triggerLabel` is the accessible name on the button,
-which defaults to "Appearance". Its styles ship in `styles/appearance.css`
-alongside the two controls it composes.
+defaults to "Theme" and is also the accessible name of the theme group beneath
+it, and `triggerLabel` is the accessible name on the button, which defaults to
+"Appearance". Its styles ship in `styles/appearance.css` alongside the two
+controls it composes, and that entry carries its own forced-colours and
+reduced-motion rules, so it holds when it is the only package stylesheet an
+application takes.
 
 Add `themeInitScript()` to `<head>` as a blocking script. Without it the page
 renders one frame in Parchment light before the stored theme applies, which is
 a full-page colour flash. Under a strict Content-Security-Policy the script tag
 needs the request nonce.
+
+---
+
+## Modal surfaces and shortcuts
+
+A surface that claims `aria-modal="true"` owes four things: everything outside
+it inert, Tab and Shift+Tab cycling inside it, Escape closing it, and focus
+returned to its trigger on close — after the page is released, because an inert
+trigger cannot take focus. `useModalSurface` keeps all four, which is why it
+exists: the applications each wrote their own and each kept a different subset.
+
+```tsx
+import { useModalSurface } from '@ekdotico/domico/a11y';
+
+useModalSurface({ open, surfaceRef, triggerRef, onClose: () => setOpen(false) });
+```
+
+`inertOutside` is the inert half on its own, for a surface that manages the
+rest itself. `isShortcut(event, 'k')` answers to ⌘K on Apple platforms and
+Ctrl+K elsewhere — never both, so Ctrl+K is left to a macOS text field — and
+`shortcutLabel('k')` gives the same chord for the screen and for
+`aria-keyshortcuts`. All four read the document or the platform, so call them
+from an effect or an event handler, not during render.
+
+---
+
+## Application chrome
+
+Chrome that every application had written for itself, two or three times
+over, and that had already drifted apart. Each takes its words from
+the application and imports no router: where a copy read the route from
+`next/navigation`, the component takes the route as a key instead.
+
+### The access gate
+
+`AccessGate` is the passcode page a pre-release site shows in place of itself.
+It holds no state, so a server component renders it with a server action, and
+its one client piece is the submit button.
+
+```tsx
+import { AccessGate } from '@ekdotico/domico/components';
+import '@ekdotico/domico/styles/access-gate.css';
+
+<AccessGate
+  eyebrow="Ekdotico"
+  title="Enter the access code"
+  lede="This site is restricted while it is in development. Enter the four-digit access code to continue."
+  contact={<>If you do not have a code, write to <a href="mailto:…">…</a>.</>}
+  digits={4}
+  action={submitPasscode}
+  error={wrong ? 'The access code is incorrect. Check the code and enter it again.' : undefined}
+  notice={limited ? `The limit of five attempts in fifteen minutes has been reached. Try again ${retryIn}.` : undefined}
+  from={from}
+/>
+```
+
+The gate is the page, so it renders the `<main>` landmark and no dialog role;
+render it outside any layout that has a `<main>` of its own. `error` marks the
+field invalid and `notice` does not, because a rate limit says nothing about
+the code, and the field is described by whichever message is on screen. The
+field takes a one-time code from the phone's keyboard, offers the numeric
+keypad, and expects exactly `digits` digits.
+
+The submit button is `GateSubmitButton`, exported on its own for a form laid out
+differently. While the action is in flight it is marked `aria-disabled` and
+refuses a second press, and it keeps focus, which `disabled` would drop to the
+top of the document. It reads the form's status from React 19; pass `pending`
+to drive it yourself. The package supplies three defaults, the ones all three
+gates shared: "Access code", "Unlock", and "Checking the code…". Everything
+else on the screen is the application's to write.
+
+### The navigation drawer
+
+`NavDrawer` is the slide-in navigation for viewports of 920px and narrower. The
+navigation inside it is the application's own, passed as children.
+
+```tsx
+import { NavDrawer } from '@ekdotico/domico/components';
+import '@ekdotico/domico/styles/nav-drawer.css';
+
+<NavDrawer label="Site navigation" closeKey={pathname}>
+  <Sidebar idPrefix="drawer" />
+</NavDrawer>
+```
+
+It keeps the whole modal promise through `useModalSurface`, and it closes
+whenever `closeKey` changes. A swipe in from the start edge opens it, and a
+swipe back across it closes it. `open` and `onOpenChange` put it under outside
+control, for a shortcut that opens it on its search field, which
+`initialFocusRef` then names. The trigger renders where the component is
+placed, shows at 920px and below, and is the application's to position.
+
+### The on-this-page rail
+
+`OnThisPage` lists the page's headings and marks the one being read with
+`aria-current="location"`. It reads a heading's own id and gives one only to a
+heading that has none, de-duplicated against every id in the document.
+
+```tsx
+import { OnThisPage } from '@ekdotico/domico/components';
+import '@ekdotico/domico/styles/on-this-page.css';
+
+<OnThisPage root=".content-inner" rescanKey={pathname} />
+```
+
+`selector` defaults to `h2, h3` and `label` to "On this page", which is both
+the visible label and the name of the `<nav>`. A child of a heading matching
+`badgeSelector`, `.badge` by default, keeps its classes in the rail. Where the
+rail sits in a layout, and the width below which it is hidden, are the
+application's.
+
+### The opening sequence
+
+`OpeningSequence` draws the mark, fades in the wordmark, and lifts, once per
+session under a key every surface shares. A reader who asks for reduced motion
+never sees it. It never takes a press, the page beneath it is inert while it
+covers it, and it waits at most 400ms for webfonts before starting.
+
+```tsx
+import { OpeningSequence } from '@ekdotico/domico/components';
+import '@ekdotico/domico/styles/opening-sequence.css';
+
+<OpeningSequence />   {/* first in the body; sessionKey defaults to ekd:intro-shown */}
+```
 
 ---
 
@@ -546,10 +687,11 @@ out. It reads instruction documents, which do not change on most commits, so it
 belongs to a monthly audit workflow; running it per-change makes it noise, and
 noise is how a gate stops being read.
 
-Five guards run only here, and say so rather than failing on a missing import:
+Six guards run only here, and say so rather than failing on a missing import:
 `generated` rebuilds the tokens, `expression` validates the authoring schemas,
-`exports` packs this package, `svg` builds a DOM with jsdom, and `icons`
-compares against `lucide-static`. Each needs a development dependency that is
+`exports` packs this package, `svg` builds a DOM with jsdom, `components`
+renders the shared components and the accessibility helpers into jsdom, and
+`icons` compares against `lucide-static`. Each needs a development dependency that is
 never published. `icons` was the odd one out until the default set stopped being
 a hand-written list — it noted the dependency in its description and nowhere
 else, which was survivable while nothing picked it up automatically and would

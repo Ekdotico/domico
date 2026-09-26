@@ -171,6 +171,17 @@ the rule is written here.
 across the eight palettes. Decorative separators, disabled glyphs, and
 watermarks. Never a label, never placeholder text, never "muted" body copy.
 
+Placeholder text is the one place both constraints are checked rather than
+stated: `ekdotico-check a11y` reports a `::placeholder` coloured with `--fg-4`
+or `--fg-5`, because a field is exactly the tinted surface `--fg-4` fails on.
+Use `--fg-3`.
+
+`--fg-3` is the quietest ink that is text on the tinted surface as well, and
+the guard measures it there: the table header row, the table caption, and two
+badges set it on `--bg-surface-2`, where the lowest ratio across the eight
+palettes is 4.60:1, in sepia light. That palette's `--fg-3` was moved down 1.6
+points of lightness to get there, from 4.32:1, keeping its hue and chroma.
+
 **When not to.** Do not reach down the scale to de-emphasise text; use size and
 weight. Text that must be quieter than `--fg-3` is text that should be shorter.
 
@@ -193,7 +204,9 @@ to 1.9:1 on every canvas. Each palette sets it at the lightness that first
 clears 3.3:1 against its worst surface — the darkest light surface, the
 lightest dark one — so it holds on the canvas, a card, a sunken field, and a
 raised sheet alike. Use it for a boundary that identifies a control and for
-nothing else; a divider drawn with it reads as a frame.
+nothing else; a divider drawn with it reads as a frame. `ekdotico-check a11y`
+reports an `input`, `textarea`, or `select` — or a class ending in `input` —
+bordered with `--rule` or `--rule-soft`.
 
 **When not to.** Do not use a rule token as a text or icon colour; it is
 calibrated for a 1px line against its own canvas and nothing else. Do not
@@ -634,6 +647,13 @@ chrome above a table re-declares those values on `:root` and touches nothing
 else. `--table-sticky-offset` defaults to `0px` because the package cannot know
 whether a consumer has fixed chrome at all; an application with a top bar sets
 it to that bar's height, which is usually `--topbar-h`.
+
+`--topbar-h` also sets `scroll-padding-block-start` on the document, in
+`styles/reset.css`, so an anchor target or a field reached by Tab scrolls into
+view below a pinned bar rather than underneath it with its focus ring hidden
+(WCAG 2.4.11). An application with a taller bar gets the right padding by
+overriding the token it already overrides for its layout, and needs no rule of
+its own.
 
 That is an override of an existing token's value in every palette at once. It is
 not licence to introduce a name.

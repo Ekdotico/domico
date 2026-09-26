@@ -69,6 +69,10 @@
     "./styles/stat.css": "./dist/styles/stat.css",
     "./styles/table.css": "./dist/styles/table.css",
     "./styles/tabs.css": "./dist/styles/tabs.css",
+    "./styles/access-gate.css": "./dist/styles/access-gate.css",
+    "./styles/nav-drawer.css": "./dist/styles/nav-drawer.css",
+    "./styles/on-this-page.css": "./dist/styles/on-this-page.css",
+    "./styles/opening-sequence.css": "./dist/styles/opening-sequence.css",
     "./components": {
       "types": "./dist/src/components/index.d.ts",
       "default": "./dist/src/components/index.js"
@@ -76,6 +80,10 @@
     "./icons": {
       "types": "./dist/src/components/icons.d.ts",
       "default": "./dist/src/components/icons.js"
+    },
+    "./a11y": {
+      "types": "./dist/src/a11y/index.d.ts",
+      "default": "./dist/src/a11y/index.js"
     },
     "./theme": {
       "types": "./dist/src/theme/index.d.ts",
@@ -127,6 +135,7 @@
     "check:discipline": "node scripts/check-discipline.mjs .",
     "check:a11y": "node scripts/check-a11y.mjs .",
     "check:svg": "node scripts/check-svg.mjs",
+    "check:components": "node scripts/check-components.mjs",
     "check:decay": "node scripts/check-decay.mjs .",
     "check:consumers": "node scripts/check-consumers.mjs",
     "check:ruleset": "node ruleset/verify.mjs",
@@ -136,7 +145,7 @@
     "hooks:check": "node scripts/install-agent-hooks.mjs --check --target .",
     "prepare": "node scripts/install-agent-hooks.mjs --target .",
     "lint:fixture": "node scripts/check-lint-fixture.mjs",
-    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:styles && pnpm check:discipline && pnpm check:a11y && pnpm check:svg && pnpm check:ruleset && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
+    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:styles && pnpm check:discipline && pnpm check:a11y && pnpm check:svg && pnpm check:components && pnpm check:ruleset && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
     "release": "changeset publish"
   },
   "peerDependencies": {

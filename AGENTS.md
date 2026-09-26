@@ -139,13 +139,18 @@ and a receding foreground. Small caps are not the escape route: no house family
 ships `smcp`, so the browser scales capitals and you have traded a copy defect
 for rule 5's typographic one.
 
-**A component used twice comes from the package.** Ten components ship here
-with a stylesheet entry each, so an application imports only the CSS for what
-it renders, and two more ride on entries it already takes: `SkipLink` on the
-reset, `StickyTableHead` on the table. Reimplementing one locally is a defect,
-not a shortcut — and that includes the appearance control, which is one shared
-component and not three, and the skip link, which the three applications once
-wrote three different ways.
+**A component used twice comes from the package.** Every shared component with
+styles of its own ships a stylesheet entry, so an application imports only the
+CSS for what it renders, and two more ride on entries it already takes:
+`SkipLink` on the reset, `StickyTableHead` on the table. Reimplementing one
+locally is a defect, not a shortcut — and that includes the appearance control,
+which is one shared component and not three, and the skip link, which the three
+applications once wrote three different ways. It includes the chrome, too: the
+passcode page is `AccessGate`, the mobile drawer `NavDrawer`, the heading rail
+`OnThisPage`, and the intro `OpeningSequence`. Each takes its copy from you and
+imports no router, so pass the route as `closeKey` or `rescanKey` rather than
+writing a wrapper that reads it. `ekdotico-check discipline` reports a local
+copy under the name it had before, not only under the package's.
 
 **`role="img"` prunes everything inside it from the accessibility tree.** A
 diagram wrapped in that role reaches a screen reader as its `aria-label` and

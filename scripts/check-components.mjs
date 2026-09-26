@@ -30,7 +30,8 @@ const { window } = dom;
 for (const name of [
   'window', 'document', 'HTMLElement', 'HTMLTableElement', 'HTMLTableSectionElement',
   'Node', 'Element', 'MutationObserver', 'KeyboardEvent', 'getComputedStyle',
-  'requestAnimationFrame', 'cancelAnimationFrame',
+  'requestAnimationFrame', 'cancelAnimationFrame', 'HTMLInputElement', 'HTMLButtonElement',
+  'MouseEvent', 'Event', 'SVGElement',
 ]) {
   Object.defineProperty(globalThis, name, {
     value: name === 'window' ? window : window[name],
@@ -58,8 +59,10 @@ const act = React.act ?? (await import('react-dom/test-utils')).act;
 const h = React.createElement;
 
 const { inertOutside, useModalSurface, isShortcut, shortcutLabel } = await import('../dist/src/a11y/index.js');
-const { Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead } =
-  await import('../dist/src/components/index.js');
+const {
+  Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
+  AccessGate, GateSubmitButton, NavDrawer, OnThisPage, OpeningSequence,
+} = await import('../dist/src/components/index.js');
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
 
 /** Mount into a fresh container; returns it with a rerender and an unmount. */
@@ -351,6 +354,248 @@ await it('StickyTableHead', async () => {
   assert.equal(clones().length, 2);
   await view.unmount();
   assert.equal(clones().length, 0, 'unmounting left mirrors in the document');
+});
+
+// --- AccessGate --------------------------------------------------------------
+// Elements are compared with assert.ok rather than assert.equal throughout the
+// cases below: a failing equal inspects both sides for its message, and
+// inspecting a jsdom element walks the whole window, which exhausts memory
+// before it prints anything.
+await it('AccessGate', async () => {
+  const gate = (extra) =>
+    h(AccessGate, { title: 'Enter the access code', lede: 'Restricted.', action: '/unlock', from: '/next', ...extra });
+
+  // A wrong code: the field is invalid and described by the message on screen.
+  let view = await mount(gate({ digits: 6, error: 'The access code is incorrect.' }));
+  const $ = (sel) => view.container.querySelector(sel);
+  assert.ok($('main'), 'the gate renders no main landmark');
+  assert.ok(!$('[role="dialog"]') && !$('[aria-modal]'), 'the gate claims to be a dialog');
+  let input = $('input[name="code"]');
+  assert.equal(document.querySelector(`label[for="${input.id}"]`)?.textContent, 'Access code');
+  assert.equal(input.getAttribute('inputmode'), 'numeric');
+  assert.equal(input.getAttribute('autocomplete'), 'one-time-code');
+  assert.equal(input.getAttribute('pattern'), '[0-9]{6}');
+  assert.equal(input.getAttribute('maxlength'), '6');
+  assert.equal(input.getAttribute('aria-invalid'), 'true');
+  let described = document.getElementById(input.getAttribute('aria-describedby'));
+  assert.equal(described?.textContent, 'The access code is incorrect.');
+  assert.equal(described?.getAttribute('role'), 'alert');
+  assert.equal($('input[name="from"]')?.value, '/next');
+  await view.unmount();
+
+  // A rate limit: described by the notice, and the field is not judged. With
+  // both passed, the code was never checked, so the error does not render.
+  view = await mount(gate({ error: 'Incorrect.', notice: 'The limit has been reached. Try again in about a minute.' }));
+  input = view.container.querySelector('input[name="code"]');
+  described = document.getElementById(input.getAttribute('aria-describedby'));
+  assert.equal(described?.textContent, 'The limit has been reached. Try again in about a minute.',
+    'the rendered notice is not what the field names');
+  assert.ok(!input.hasAttribute('aria-invalid'), 'a rate limit marked the code invalid');
+  assert.equal(view.container.querySelectorAll('[role="alert"]').length, 1);
+  assert.equal(input.getAttribute('pattern'), '[0-9]{4}', 'the default is not four digits');
+  await view.unmount();
+
+  // Nothing to say: nothing named.
+  view = await mount(gate({ idPrefix: 'research' }));
+  input = view.container.querySelector('input[name="code"]');
+  assert.equal(input.id, 'research-code');
+  assert.ok(!input.hasAttribute('aria-describedby') && !input.hasAttribute('aria-invalid'));
+  await view.unmount();
+});
+
+// --- GateSubmitButton ---------------------------------------------------------
+await it('GateSubmitButton', async () => {
+  const view = await mount(h(GateSubmitButton, { pending: true }));
+  const button = view.container.querySelector('button');
+  // Focusable while in flight: `disabled` would drop focus to <body>.
+  assert.ok(!button.disabled, 'the pending button is disabled, which drops focus');
+  assert.equal(button.getAttribute('aria-disabled'), 'true');
+  assert.equal(button.getAttribute('aria-busy'), 'true');
+  assert.equal(button.textContent, 'Checking the code…');
+  button.focus();
+  const click = new window.MouseEvent('click', { bubbles: true, cancelable: true });
+  await act(async () => button.dispatchEvent(click));
+  assert.ok(click.defaultPrevented, 'a second press was not refused');
+  assert.ok(document.activeElement === button, 'focus left the button');
+
+  await view.rerender(h(GateSubmitButton, { pending: false }, 'Continue'));
+  assert.ok(!button.hasAttribute('aria-disabled'));
+  assert.equal(button.textContent, 'Continue');
+  const again = new window.MouseEvent('click', { bubbles: true, cancelable: true });
+  await act(async () => button.dispatchEvent(again));
+  assert.ok(!again.defaultPrevented, 'a press at rest was refused');
+  await view.unmount();
+});
+
+// --- NavDrawer ------------------------------------------------------------------
+await it('NavDrawer', async () => {
+  window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+  const page = (key) =>
+    h('div', null,
+      h('a', { href: '/behind', id: 'behind' }, 'Behind'),
+      h(NavDrawer, { label: 'Site navigation', closeKey: key },
+        h('nav', null, h('a', { href: '/one', id: 'one' }, 'One'))),
+    );
+  const view = await mount(page('/a'));
+  const trigger = view.container.querySelector('.mobile-nav-trigger');
+  const drawer = view.container.querySelector('[role="dialog"]');
+  const $ = (id) => document.getElementById(id);
+
+  assert.equal(trigger.getAttribute('aria-label'), 'Open navigation menu');
+  assert.equal(trigger.getAttribute('aria-controls'), drawer.id);
+  assert.equal(drawer.getAttribute('aria-label'), 'Site navigation');
+  assert.ok(drawer.hasAttribute('inert'), 'the closed drawer is reachable');
+
+  trigger.focus();
+  await act(async () => trigger.click());
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+  assert.ok(!drawer.hasAttribute('inert'), 'the open drawer is inert');
+  assert.ok(drawer.contains(document.activeElement), 'focus did not move into the drawer');
+  assert.ok($('behind').hasAttribute('inert'), 'the page behind the drawer stayed live');
+  assert.ok(!view.container.querySelector('.mobile-nav-backdrop').hasAttribute('inert'), 'the backdrop was inerted');
+
+  await act(async () => {
+    key(document.activeElement, { key: 'Escape' });
+  });
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+  assert.ok(drawer.hasAttribute('inert'));
+  assert.ok(!$('behind').hasAttribute('inert'), 'closing left the page inert');
+  assert.ok(document.activeElement === trigger, 'focus did not return to the trigger');
+
+  // A change of route closes it; the first render is not a change.
+  await act(async () => trigger.click());
+  await view.rerender(page('/b'));
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false', 'a new closeKey left the drawer open');
+  await view.unmount();
+
+  // Controlled: the drawer asks, and the owner decides.
+  const asked = [];
+  const controlled = await mount(
+    h(NavDrawer, { label: 'Menu', open: true, onOpenChange: (v) => asked.push(v) }, h('a', { href: '/x' }, 'X')),
+  );
+  const closeButton = controlled.container.querySelector('.mobile-nav-close');
+  assert.equal(closeButton.getAttribute('aria-label'), 'Close navigation menu');
+  await act(async () => closeButton.click());
+  assert.deepEqual(asked, [false]);
+  assert.equal(controlled.container.querySelector('.mobile-nav-trigger').getAttribute('aria-expanded'), 'true',
+    'a controlled drawer closed itself');
+  await controlled.unmount();
+});
+
+// --- OnThisPage -----------------------------------------------------------------
+await it('OnThisPage', async () => {
+  const observed = [];
+  let report = null;
+  globalThis.IntersectionObserver = class {
+    constructor(callback) { report = callback; }
+    observe(el) { observed.push(el); }
+    disconnect() {}
+  };
+  const wait = () => act(async () => new Promise((resolve) => setTimeout(resolve, 60)));
+
+  const article = document.createElement('article');
+  article.className = 'content-inner';
+  article.innerHTML = `
+    <h2 id="scope">Scope</h2>
+    <h3>Terms</h3>
+    <h2>Risks <span class="badge badge-warn">Draft</span></h2>
+    <h2>Terms</h2>
+    <h2 id="terms-1">Taken</h2>`;
+  document.body.appendChild(article);
+
+  const view = await mount(h(OnThisPage, { root: '.content-inner', rescanKey: 1 }));
+  await wait();
+  const nav = view.container.querySelector('nav');
+  assert.ok(nav, 'the rail is not a nav');
+  assert.equal(document.getElementById(nav.getAttribute('aria-labelledby'))?.textContent, 'On this page');
+
+  const links = [...nav.querySelectorAll('a')];
+  const hrefs = links.map((a) => a.getAttribute('href'));
+  // A real id is read; made-up ones are de-duplicated against the document,
+  // including an id a later heading already carries.
+  assert.equal(hrefs[0], '#scope');
+  assert.equal(new Set(hrefs).size, hrefs.length, `two entries share an id: ${hrefs.join(' ')}`);
+  for (const href of hrefs) assert.equal(document.querySelectorAll(href).length, 1, `${href} is not one element`);
+  assert.equal(nav.querySelectorAll('li.otp-l3').length, 1, 'the h3 is not a second-level entry');
+
+  // The badge keeps its classes and leaves the name to the heading's text.
+  const risks = links[2];
+  assert.ok(risks.querySelector('.badge.badge-warn[aria-hidden="true"]'), 'the badge was flattened');
+  assert.equal(risks.getAttribute('aria-label'), 'Risks Draft');
+
+  assert.ok(!nav.querySelector('[aria-current]'));
+  assert.equal(observed.length, links.length);
+  await act(async () => report([{ isIntersecting: true, target: observed[2], boundingClientRect: { top: 10 } }]));
+  assert.equal(risks.getAttribute('aria-current'), 'location', 'the heading being read is not marked');
+  assert.equal(nav.querySelectorAll('[aria-current]').length, 1);
+
+  // A new route: the rail reads the new page.
+  article.innerHTML = '<h2 id="only">Only</h2>';
+  await view.rerender(h(OnThisPage, { root: '.content-inner', rescanKey: 2 }));
+  await wait();
+  assert.deepEqual([...view.container.querySelectorAll('nav a')].map((a) => a.getAttribute('href')), ['#only']);
+
+  article.innerHTML = '';
+  await view.rerender(h(OnThisPage, { root: '.content-inner', rescanKey: 3 }));
+  await wait();
+  assert.ok(!view.container.querySelector('nav'), 'an empty rail rendered');
+  await view.unmount();
+  article.remove();
+  delete globalThis.IntersectionObserver;
+});
+
+// --- OpeningSequence ------------------------------------------------------------
+await it('OpeningSequence', async () => {
+  let reduce = true;
+  window.matchMedia = (q) => ({ matches: q.includes('reduced-motion') && reduce, addEventListener() {}, removeEventListener() {} });
+  window.sessionStorage.clear();
+  // A short sequence, read back through the computed animation as the
+  // component reads the stylesheet's.
+  const style = document.createElement('style');
+  style.textContent = '.opening-sequence.is-playing { animation-delay: 20ms; animation-duration: 20ms; }';
+  document.head.appendChild(style);
+  const tree = () => h('div', null, h(OpeningSequence), h('a', { href: '/page', id: 'page' }, 'Page'));
+
+  // Reduced motion: nothing is painted, nothing is covered, nothing is remembered.
+  let view = await mount(tree());
+  assert.ok(!view.container.querySelector('.opening-sequence'), 'the sequence rendered under reduced motion');
+  assert.ok(!document.getElementById('page').hasAttribute('inert'));
+  assert.equal(window.sessionStorage.getItem('ekd:intro-shown'), null);
+  await view.unmount();
+
+  reduce = false;
+  view = await mount(tree());
+  const overlay = view.container.querySelector('.opening-sequence');
+  assert.equal(overlay?.getAttribute('aria-hidden'), 'true');
+  assert.ok(overlay.classList.contains('is-covering'));
+  assert.ok(document.getElementById('page').hasAttribute('inert'), 'the covered page is reachable');
+  assert.equal(overlay.querySelector('path')?.getAttribute('pathLength'), '1');
+  assert.equal(window.sessionStorage.getItem('ekd:intro-shown'), '1');
+  // The font wait is capped at 400ms, and the sequence then runs 40ms.
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 600)));
+  assert.ok(!view.container.querySelector('.opening-sequence'), 'the overlay outlived its sequence');
+  assert.ok(!document.getElementById('page').hasAttribute('inert'), 'the page stayed inert');
+  await view.unmount();
+
+  // Once per session.
+  view = await mount(tree());
+  assert.ok(!view.container.querySelector('.opening-sequence'), 'the sequence played twice in a session');
+  await view.unmount();
+
+  // Released once: the unmount does not release what another surface — an
+  // open drawer — has inerted since the sequence ended.
+  window.sessionStorage.clear();
+  const outside = document.createElement('p');
+  document.body.appendChild(outside);
+  view = await mount(tree());
+  assert.ok(outside.hasAttribute('inert'), 'the page outside the layout is reachable');
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 600)));
+  assert.ok(!outside.hasAttribute('inert'));
+  outside.setAttribute('inert', '');
+  await view.unmount();
+  assert.ok(outside.hasAttribute('inert'), 'unmounting released an inert it no longer owned');
+  outside.remove();
+  style.remove();
 });
 
 console.log(`check:components — ${cases} cases: the a11y helpers, and the components' names, roles and focus, against jsdom`);

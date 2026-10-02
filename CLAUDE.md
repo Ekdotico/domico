@@ -9,7 +9,7 @@ the eighteen rules; read this for how this repository is worked in.
 ## This repository owns the agent hooks the estate runs
 
 `scripts/agent-hooks/` is the source. `scripts/install-agent-hooks.mjs` copies
-everything in it into a consumer's `.claude/hooks/`, prefixing a generated
+every `.sh` file in it into a consumer's `.claude/hooks/`, prefixing a generated
 banner that names the version, and every consumer calls that installer from its
 `postinstall`. The installed copies are gitignored there and here — including
 this repository's own, which `prepare` writes on `pnpm install`.

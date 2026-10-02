@@ -64,7 +64,9 @@ reader who raised their browser font size scales the whole interface with it.
 **3 — Never declare a token in an application.** A custom property defined in
 an app stylesheet shadows the package in one theme and not the others, so it
 resolves correctly in the palette you tested and silently wrongly in the other
-seven. There are eight.
+seven. There are eight. The one exception is the three chrome dimensions,
+`--sidebar-w`, `--topbar-h` and `--table-sticky-offset`, which an application
+re-declares on `:root` and nothing else (see the catalogue).
 
 **4 — Stop and recommend; do not improvise.** If a change cannot be made with
 the tokens that exist: stop, name the closest existing token, and recommend
@@ -204,7 +206,10 @@ pnpm exec ekdotico-check discipline   # literals, var() fallbacks, Greek in the 
 pnpm exec ekdotico-check --list       # the full set, and which one the bare command runs
 ```
 
-Every guard audits the working directory with no argument. Run the bare command
+The guards that audit your repository (`discipline`, `a11y`, `copy`, `styles`
+and `decay`) default to the working directory; the rest, `contrast` and
+`appearance` among them, check the package's own tokens and components, so a
+pass there says nothing about colours you set. Run the bare command
 before you report a styling or copy change as complete: it is derived from the
 guard table, so it covers whatever this version ships rather than whatever a
 document once listed. A passing guard is not proof of good design, but a failing

@@ -49,7 +49,7 @@ In GitHub Actions the built-in token is sufficient:
 ```yaml
 - uses: actions/setup-node@v4
   with:
-    node-version: 20
+    node-version: 24
     registry-url: https://npm.pkg.github.com
 - run: pnpm install --frozen-lockfile
   env:
@@ -111,12 +111,20 @@ import '@ekdotico/domico/tokens.css';
 import '@ekdotico/domico/styles.css';
 
 import { Crimson_Pro, Commissioner, Fira_Code } from 'next/font/google';
-import { fontConfig } from '@ekdotico/domico/fonts';
 import { themeInitScript } from '@ekdotico/domico/theme';
 
-const serif = Crimson_Pro(fontConfig.serif);
-const sans = Commissioner(fontConfig.sans);
-const mono = Fira_Code(fontConfig.mono);
+// next/font accepts only literal options, so these restate `fontConfig` from
+// @ekdotico/domico/fonts rather than passing it; passing it fails the build.
+const serif = Crimson_Pro({
+  subsets: ['latin'], display: 'swap',
+  variable: '--font-crimson-pro', style: ['normal', 'italic'],
+});
+const sans = Commissioner({
+  subsets: ['latin'], display: 'swap', variable: '--font-commissioner',
+});
+const mono = Fira_Code({
+  subsets: ['latin'], display: 'swap', variable: '--font-fira-code',
+});
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

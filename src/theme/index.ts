@@ -12,8 +12,10 @@
  *   data-mode="light | dark"                          on <html>, or absent
  *
  * An absent data-mode means "follow the system", which the stylesheet handles
- * through prefers-color-scheme. Persistence uses localStorage keys `ekd-theme`
- * and `ekd-mode`; both are shared across all three applications by design.
+ * through prefers-color-scheme. Persistence uses cookies named `ekd-theme`
+ * and `ekd-mode`, so the server can render the restored choice, with
+ * localStorage under the same keys as a fallback (see `persist` in
+ * appearance.ts); both are shared across the applications by design.
  *
  * The document is the state. Every hook here reads those attributes rather
  * than holding a copy, because the init script writes them before React runs

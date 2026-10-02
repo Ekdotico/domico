@@ -19,9 +19,13 @@
  */
 
 /**
- * - `original` — the mark in oxford plum.
- * - `dark` — the mark in white, for dark grounds.
- * - `branded` — the mark on a filled accent tile.
+ * - `original` — the mark in ink (#2a2a28), for light grounds; its solid tile
+ *   is cream (#f5f1e8).
+ * - `dark` — the mark in cream (#f0ead8), for dark grounds; its solid tile is
+ *   #1f1c2c.
+ * - `branded` — the mark in plum (#5a4a7a); its solid tile is #ece8f4.
+ *
+ * The colours are as the files under assets/logo draw them.
  */
 export type LogoVariant = 'original' | 'dark' | 'branded';
 

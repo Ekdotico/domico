@@ -156,6 +156,19 @@ import { SkipLink, StickyTableHead } from '@ekdotico/domico/components';
 <StickyTableHead rescanKey={pathname} />
 ```
 
+A document with a version of its own states it with `DocMeta`, under its title.
+The application supplies both values; `updated` is an ISO date and is rendered
+as written. A missing or malformed value is shown as "unset" or "unknown" in a
+bordered strip rather than hidden. Its styles are in `styles/doc-meta.css`.
+
+```tsx
+import { DocMeta } from '@ekdotico/domico/components';
+import '@ekdotico/domico/styles/doc-meta.css';
+
+<DocMeta version="1.2" updated="2026-09-30" />
+{/* → Version 1.2 · Last updated 2026-09-30 */}
+```
+
 ### deree
 
 The institutional site takes the visual layer and the brand assets. Its content

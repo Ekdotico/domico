@@ -34,6 +34,7 @@ export {
 
 export { Badge, type BadgeVariant } from './Badge.js';
 export { Callout, type CalloutType } from './Callout.js';
+export { DocMeta } from './DocMeta.js';
 export { Figure, type FigureAlign } from './Figure.js';
 export { KeyValue, KeyValueList, type KeyValueTone } from './KeyValue.js';
 export { Logo, LogoMark, type LogoMarkVariant } from './Logo.js';

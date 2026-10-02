@@ -206,7 +206,7 @@ Each component with styles of its own ships a stylesheet **export entry** —
 `styles/badge.css`, `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`,
 `primitives.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, and
 for the application chrome `access-gate.css`, `nav-drawer.css`,
-`on-this-page.css`, and `opening-sequence.css`. They are build outputs sliced
+`on-this-page.css`, `doc-meta.css`, and `opening-sequence.css`. They are build outputs sliced
 from one source stylesheet; there is no per-component source file, so do not
 cite one. `styles/components.css` remains the whole set, and `build-styles.mjs`
 is where the list lives, so read it there rather than counting it here.

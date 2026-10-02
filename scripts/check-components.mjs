@@ -61,7 +61,7 @@ const h = React.createElement;
 const { inertOutside, useModalSurface, isShortcut, shortcutLabel } = await import('../dist/src/a11y/index.js');
 const {
   Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
-  AccessGate, GateSubmitButton, NavDrawer, OnThisPage, OpeningSequence,
+  AccessGate, GateSubmitButton, NavDrawer, OnThisPage, OpeningSequence, DocMeta,
 } = await import('../dist/src/components/index.js');
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
 
@@ -293,6 +293,30 @@ await it('SkipLink', async () => {
   assert.equal(plain.className, 'skip-link');
   assert.equal(custom.getAttribute('href'), '#main');
   assert.equal(custom.textContent, 'Skip to the results');
+  await view.unmount();
+});
+
+// --- DocMeta ----------------------------------------------------------------
+await it('DocMeta states both values, and says which one is missing', async () => {
+  const view = await mount(
+    h('div', null,
+      h(DocMeta, { version: '1.2', updated: '2026-09-30' }),
+      h(DocMeta, { version: '1.0' }),
+      h(DocMeta, { updated: '30/09/2026' }),
+    ),
+  );
+  const [full, noDate, badDate] = view.container.querySelectorAll('p');
+  assert.equal(full.textContent, 'Version 1.2 · Last updated 2026-09-30');
+  assert.equal(full.className, 'doc-meta');
+  assert.equal(full.querySelector('time')?.getAttribute('dateTime'), '2026-09-30');
+  assert.equal(noDate.textContent, 'Version 1.0 · Last updated unknown');
+  assert.ok(noDate.classList.contains('doc-meta--incomplete'), 'a missing date rendered as complete');
+  assert.ok(!noDate.querySelector('time'), 'a missing date still rendered a <time>');
+  // Anything but YYYY-MM-DD is treated as missing, not echoed.
+  assert.equal(badDate.textContent, 'Version unset · Last updated unknown');
+  // The separator is decoration; the label stays in the text at every width.
+  assert.equal(full.querySelector('[aria-hidden="true"]')?.textContent, ' · ');
+  assert.equal(full.querySelector('.doc-meta-label')?.textContent, 'Last updated ');
   await view.unmount();
 });
 

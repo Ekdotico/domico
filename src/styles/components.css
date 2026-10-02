@@ -1097,6 +1097,43 @@
   .on-this-page { display: none; }
 }
 
+/* --- Document meta ------------------------------------------------------- */
+/* DocMeta: a document's version and last-updated date, one line under its
+   title. Set like the other secondary metadata in the suite: the mono family,
+   a receding foreground, and wide tracking, with no case transform. */
+.doc-meta {
+  margin: var(--sp-2) 0 var(--sp-6);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-wider);
+  color: var(--fg-3);
+}
+/* A missing or malformed value is shown, not hidden, so a forgotten entry is
+   seen on the page. The border is the signal; the text already says what is
+   missing, so colour is not the only carrier. */
+.doc-meta--incomplete {
+  display: inline-block;
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+}
+/* Below 360px the label leaves the visual line and stays in the accessible
+   name, the same technique as .sr-only in the reset. */
+@media (max-width: 359px) {
+  .doc-meta-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
 /* --- Opening sequence ---------------------------------------------------- */
 /* OpeningSequence: the mark draws on as one stroke, the wordmark fades in over
    the tail of it, a hold, and the overlay fades away — about 1.6s in all, the

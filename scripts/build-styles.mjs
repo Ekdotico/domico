@@ -25,6 +25,7 @@
  *   styles/access-gate.css
  *   styles/nav-drawer.css
  *   styles/on-this-page.css
+ *   styles/doc-meta.css
  *   styles/opening-sequence.css
  *
  * The split exists because whole-stylesheet adoption is the wrong granularity
@@ -192,6 +193,7 @@ const COMPONENTS = [
   ['access-gate', ['Access gate'], 'the access gate'],
   ['nav-drawer', ['Navigation drawer'], 'the navigation drawer'],
   ['on-this-page', ['On this page'], 'the on-this-page rail'],
+  ['doc-meta', ['Document meta'], 'the document version strip'],
   ['opening-sequence', ['Opening sequence'], 'the opening sequence'],
 ];
 

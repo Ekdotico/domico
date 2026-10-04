@@ -1,5 +1,23 @@
 # @ekdotico/domico
 
+## 0.24.0
+
+### Minor Changes
+
+- 38aaf65: The package is licensed under the GNU Affero General Public License, version 3 only. `LICENSE` is the standard text and `package.json` declares `AGPL-3.0-only`. Versions up to and including 0.23.1 stay under the proprietary licence they were published with.
+
+  Two files ship beside it. `TRADEMARKS.md` says the licence grants no rights in the Ekdotico name, logo mark or wordmarks as marks, and names the files that carry them. `THIRD-PARTY-NOTICES.md` carries the ISC and MIT notices for the vendored Lucide icons, which had shipped without them, and states that the three typefaces remain under the SIL Open Font License 1.1 and are loaded, not bundled.
+
+- 38aaf65: Collaborator colours: ten slots for the other people in a shared document, in all eight palettes. Each slot is three tokens — `--collab-N` (the caret and the presence label's ground), `--collab-N-ink` (the name on it) and `--collab-N-soft` (a translucent selection wash) — with `N` from 1 to 10 in assignment order. `@ekdotico/domico/tokens` exports `collaboratorSlots` and `collaboratorSlot(index)`, which cycles.
+
+  Ten because a document holds at most ten connections. The hues are the house earth tones on three lightness tiers, so that every pair stays apart under simulated protanopia and deuteranopia as well as for typical vision, and slots 1 to 4 are the four furthest apart. The label carries the person's name; colour is never the only signal.
+
+  `ekdotico-check collaborators` (`pnpm check:collaborators` here) is new and is in the no-argument set. It measures, per palette: the ink on its solid at 4.5:1; the solid on each of the five grounds at 3:1; `--fg-1` and `--fg-2` over the wash on each ground at 4.5:1; and the OKLab distance between every pair of solids under three visions. `luminance` and `contrast` moved into `tokens/lib/color.mjs`, where both contrast guards read them.
+
+  The catalogue has a Collaborator section with the measured table. Its token totals also now count `--overlay-scrim`, which they had left out: 75 per palette and 147 in all.
+
+- 38aaf65: `engines.node` is `>=24 <27`, from `>=22`. The package is built and published on Node 26, which `.nvmrc` now pins, and stays supported on 24 because deree and the documentation site deploy on Vercel, which offers 24 at most. No consumer runs it on 22. CI verifies on both 24 and 26; the publish, audit and consumers jobs read `.nvmrc`.
+
 ## 0.23.1
 
 ### Patch Changes

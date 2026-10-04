@@ -20,6 +20,21 @@ jobs:
   verify:
     name: Build and verify
     runs-on: ubuntu-latest
+    # Both ends of engines.node, because the range is a claim about each. 26 is
+    # what .nvmrc pins and what this package is built and published on; 24 is
+    # the floor, kept because deree and the documentation site deploy on Vercel,
+    # which offers 24 at most, and the guards run there through ekdotico-check.
+    # Without the second row the floor would be a line in package.json that
+    # nothing had run.
+    #
+    # fail-fast is off so that a fault on one line does not cancel the other
+    # and hide whether it is shared. The two numbers are literals, which .nvmrc
+    # cannot replace: it holds one version. Every job outside this matrix reads
+    # .nvmrc instead.
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [24, 26]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -27,7 +42,7 @@ jobs:
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: 22
+          node-version: ${{ matrix.node }}
           cache: pnpm
           registry-url: https://npm.pkg.github.com
 
@@ -125,7 +140,7 @@ jobs:
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
           registry-url: https://npm.pkg.github.com
 

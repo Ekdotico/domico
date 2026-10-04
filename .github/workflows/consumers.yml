@@ -92,7 +92,7 @@ jobs:
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           # setup-node v5 turns the package-manager cache on by default, detects
           # pnpm from the lockfile, and runs `pnpm store path` to find the cache
           # directory. This job installs no pnpm on purpose, so that lookup fails
@@ -103,7 +103,7 @@ jobs:
           package-manager-cache: false
 
       # No install. The script has no dependencies and uses the global fetch
-      # Node 22 ships, so a lockfile install here would only add a minute and a
+      # Node ships, so a lockfile install here would only add a minute and a
       # registry that can be down.
       - name: Read every consumer's pin
         id: pins

@@ -107,11 +107,12 @@ jobs:
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
 
-      # Matches ci.yml. There is no .nvmrc in this repository, so the version is
-      # literal here as it is there.
+      # node-version-file rather than a literal, matching the publish job in
+      # ci.yml, so .nvmrc is the one line that says what this package is built
+      # and audited on.
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
           registry-url: https://npm.pkg.github.com
 

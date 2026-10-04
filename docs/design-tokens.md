@@ -40,15 +40,15 @@ and forest under library.
 | Mode, explicit      | `[data-theme=…][data-mode="dark"]`                                        | The reader chose dark.                                              |
 | Mode, automatic     | `@media (prefers-color-scheme: dark)` + `[data-theme=…]:not([data-mode])` | The reader chose Auto, or has never chosen.                         |
 
-**44 tokens resolve under all eight palettes** — 39 colours and five shadow
-composites. Each of the twelve theme blocks declares the complete set of 44
-rather than inheriting part of it from another theme.
+**75 tokens resolve under all eight palettes** — 69 colours, five shadow
+composites, and the overlay scrim. Each of the twelve theme blocks declares the
+complete set of 75 rather than inheriting part of it from another theme.
 
 **72 tokens are theme-invariant scales**, declared once under `:root`: the type
 scale, spacing, radius, optical offsets, motion, layout geometry, three named
 shadows, and the four brand values. They take no theme or mode override.
 
-That is **116 tokens** in total, and every one of them is in a table below.
+That is **147 tokens** in total, and every one of them is in a table below.
 
 ### Auto is the absence of `data-mode`, not a value of it
 
@@ -329,6 +329,113 @@ are washes over the canvas, not grounds in the surface stack. Do not use a
 are calibrated behind a hairline, the highlight washes behind running text. Do
 not stack two highlights on overlapping ranges — they composite into a third
 colour that is in no palette.
+
+## Collaborator
+
+Ten slots, three tokens each, for the other people in a shared document: where
+their caret is, what they have selected, and the label that says who they are.
+
+| Token               | Role                                                          |
+| ------------------- | ------------------------------------------------------------- |
+| `--collab-N`        | The solid: the caret, and the ground of the presence label.   |
+| `--collab-N-ink`    | The ink that sits **on** `--collab-N` — the name in the label. |
+| `--collab-N-soft`   | The selection wash. Translucent, painted over the text's own ground. |
+
+`N` runs from 1 to 10, in assignment order.
+
+| Slot | Hue         | Tier   |   | Slot | Hue      | Tier   |
+| ---- | ----------- | ------ | - | ---- | -------- | ------ |
+| 1    | Terracotta  | deep   |   | 6    | Forest   | deep   |
+| 2    | Violet      | bright |   | 7    | Teal     | middle |
+| 3    | Ochre       | bright |   | 8    | Mulberry | deep   |
+| 4    | Oxford blue | deep   |   | 9    | Olive    | middle |
+| 5    | Rose        | middle |   | 10   | Green    | bright |
+
+**Why ten.** A document holds at most ten connections, so ten slots means no two
+people in one document ever share a colour. The typed export says the same thing
+to code: `collaboratorSlots` from `@ekdotico/domico/tokens` is the list, and
+`collaboratorSlot(index)` maps a connection index, counted from zero, onto it.
+It cycles, so an eleventh index would repeat slot 1 rather than resolve to
+nothing — a case the connection limit rules out today, and the reason the label
+is not optional.
+
+**Why these ten.** They are the house hues — the earth tones the state and
+editorial groups already use, at the same restrained chroma, never above 0.118
+— spread round the wheel and then set on three lightness tiers. The tiers are
+the part that does the work. A caret has to clear 3:1 on its ground and carry a
+label at 4.5:1, which confines every solid to a narrow band of lightness, and
+ten hues inside one band are ten colours to typical vision and about four to a
+reader with protanopia or deuteranopia, for whom red, olive and green collapse
+onto one axis. Setting neighbours on that axis at different lightness keeps
+every pair apart for those readers as well. It is why slot 6 is a darker green
+than slot 10 rather than a different green.
+
+**The order is part of the design.** Slots 1 to 4 are the four that are furthest
+apart, in every palette and under each simulated vision, so the common case of
+two to five people in a document is also the best-separated one. Assign from
+the front, and hand a freed slot to the next person to arrive rather than
+counting upward.
+
+**The hue of a slot is the same in all eight palettes; its lightness is not.**
+The four light palettes share one calibration and the four dark palettes share
+another, the way `--danger` does, so a person is terracotta for every reader
+whatever theme each has chosen. Mono keeps the hues, as it keeps them for the
+state group: identity is information, not decoration. Light solids take white
+ink; dark solids are light enough that their ink is a dark tint of the same
+hue, exactly as `--accent-ink` behaves.
+
+**The wash is translucent, and it is the only colour token that is.** A
+selection runs across whatever the text sits on — the canvas, a card, a code
+block — so one opaque wash would be right on one ground and wrong on the other
+four. The house rule against opacity-derived colour is a rule against a
+composite nobody measured. This one is composited by the guard onto every
+ground and measured there.
+
+`pnpm check:collaborators` measures all of it, in all eight palettes. The worst
+case in each:
+
+| Palette         | Label  | Caret  | Selection | Apart, typical | Apart, protanopia | Apart, deuteranopia |
+| --------------- | ------ | ------ | --------- | -------------- | ----------------- | ------------------- |
+| parchment light | 4.68:1 | 3.69:1 | 5.31:1    | 0.132          | 0.064             | 0.065               |
+| parchment dark  | 5.22:1 | 4.08:1 | 5.73:1    | 0.142          | 0.071             | 0.070               |
+| library light   | 4.68:1 | 3.96:1 | 6.54:1    | 0.132          | 0.064             | 0.065               |
+| library dark    | 5.22:1 | 4.33:1 | 5.62:1    | 0.142          | 0.071             | 0.070               |
+| sepia light     | 4.68:1 | 3.67:1 | 4.86:1    | 0.132          | 0.064             | 0.065               |
+| sepia dark      | 5.22:1 | 4.20:1 | 4.83:1    | 0.142          | 0.071             | 0.070               |
+| mono light      | 4.68:1 | 3.99:1 | 6.94:1    | 0.132          | 0.064             | 0.065               |
+| mono dark       | 5.22:1 | 4.72:1 | 6.24:1    | 0.142          | 0.071             | 0.070               |
+
+- **Label** is `--collab-N-ink` on `--collab-N`, as text, against 4.5:1.
+- **Caret** is `--collab-N` on each of `--bg-canvas`, `--bg-surface`,
+  `--bg-surface-2`, `--bg-raised` and `--bg-inset`, as a graphical object,
+  against 3:1 (WCAG 2.2 SC 1.4.11).
+- **Selection** is `--fg-1` and `--fg-2` over `--collab-N-soft` composited onto
+  each of those five grounds, against 4.5:1.
+- **Apart** is the smallest distance in OKLab between any two solids. The guard
+  holds it at 0.12 for typical vision and 0.055 under either simulation, and
+  holds slots 1 to 4 at 0.15 in all three.
+
+**Colour is never the only signal.** The distances under simulated dichromacy
+are half those for typical vision, and a simulation is a model of two
+conditions rather than of every reader. The presence label carries the person's
+name, in text, beside the caret; a list of who is present carries the name
+beside the swatch. A caret or a selection with a colour and no name anywhere is
+a defect whatever it measures.
+
+**When not to.** These are for people and for nothing else. Do not use a slot as
+a chart series, a tag colour, or a category — a colour that means "Maria" in the
+editor cannot also mean "overdue" in a list. Do not use one for the reader's own
+caret or selection: that is `--fg-1` and `--hl-quote`, and the reader's own
+identity colour appears only where other people would see it. Do not set
+`--collab-N-ink` or any body ink on `--collab-N-soft` as though the wash were a
+surface — it is measured over the five grounds above and over nothing else, so
+not over a `--hl-*` wash and not over a second collaborator's selection, where
+two washes composite into a ground nothing has measured. `--fg-3` and quieter
+are not measured over it either. Do not raise the wash's opacity at the use
+site, and do not build a wash from `--collab-N` with `color-mix()` or an alpha:
+that is a second selection colour with no guard behind it. And do not choose a
+slot by hashing a name; the order above is what makes the first few the most
+distinct.
 
 ## Elevation
 
@@ -735,6 +842,8 @@ custom property declared in an application's own stylesheet.
    are emitted from the source, so there is no set of blocks to keep in step
    manually.
 5. Run the guards. `pnpm check:contrast` measures the palettes,
+   `pnpm check:collaborators` measures the collaborator slots against their
+   grounds and against each other,
    `pnpm check:appearance` covers the mode-resolution rule, and
    `pnpm exec ekdotico-check discipline` audits a consuming repository for
    literals, `var()` fallbacks, and local reimplementation.

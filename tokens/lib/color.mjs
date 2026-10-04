@@ -53,6 +53,22 @@ export function oklchToHex(value) {
   return '#' + [r, g, bl].map((v) => v.toString(16).padStart(2, '0')).join('');
 }
 
+/** WCAG relative luminance of an sRGB hex colour. */
+export function luminance(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** WCAG contrast ratio between two sRGB hex colours. */
+export function contrast(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
 /** sRGB hex -> OKLCH string. Used by the round-trip self-check in the build. */
 export function hexToOklch(hex) {
   let h = hex.slice(1);

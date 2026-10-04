@@ -55,6 +55,12 @@ const GUARDS: Record<string, Guard> = {
     script: 'check-contrast',
     what: 'every foreground/surface pair meets its WCAG threshold, across all eight palettes',
   },
+  collaborators: {
+    script: 'check-collaborators',
+    what:
+      'every collaborator slot holds its label, its caret and its selection wash against ' +
+      'every ground, and stays apart from every other slot, across all eight palettes',
+  },
   discipline: {
     script: 'check-discipline',
     what:
@@ -181,7 +187,7 @@ function list(): void {
   console.log('ekdotico-check — drift gates from @ekdotico/domico\n');
   for (const [name, guard] of Object.entries(GUARDS)) {
     const note = guard.developmentOnly ? '  [development only]' : '';
-    console.log(`  ${name.padEnd(12)} ${guard.what}${note}`);
+    console.log(`  ${name.padEnd(14)} ${guard.what}${note}`);
   }
   console.log(`\nWith no arguments: ${DEFAULT_GUARDS.join(', ')}.`);
 }

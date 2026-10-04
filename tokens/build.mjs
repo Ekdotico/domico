@@ -164,6 +164,11 @@ const scales = {
   brand: values('brand.json'),
 };
 
+const collaboratorSlots = Object.keys(palettes.parchment.light)
+  .map((k) => /^collab-(\d+)$/.exec(k)?.[1])
+  .filter(Boolean)
+  .map(Number);
+
 const ts = `${BANNER}
 /** The four theme names. Parchment is the default. */
 export const themeNames = ${JSON.stringify(THEMES)} as const;
@@ -201,6 +206,26 @@ export function resolveTokens(
   const base = palettes.parchment.light as Record<string, string>;
   const layer = palettes[theme][mode] as Record<string, string>;
   return { ...base, ...layer } as Record<ColorToken, string>;
+}
+
+/**
+ * The collaborator slots, in assignment order. Slot \`n\` is the three custom
+ * properties \`--collab-n\`, \`--collab-n-ink\` and \`--collab-n-soft\`.
+ *
+ * There is one slot for each connection a document may hold. The order is
+ * part of the design: the first four are the furthest apart, so assign from
+ * the front and give a freed slot to the next person to arrive.
+ */
+export const collaboratorSlots = ${JSON.stringify(collaboratorSlots)} as const;
+export type CollaboratorSlot = (typeof collaboratorSlots)[number];
+
+/**
+ * The slot for a connection index counted from zero. It cycles, so an index
+ * past the last slot repeats the first — which is why the label carries the
+ * name and the colour is never the only thing telling two people apart.
+ */
+export function collaboratorSlot(index: number): CollaboratorSlot {
+  return collaboratorSlots[Math.abs(Math.trunc(index)) % collaboratorSlots.length] as CollaboratorSlot;
 }
 `;
 

@@ -155,6 +155,126 @@
     "$value": "oklch(75.503% 0.0693 231.42)",
     "$type": "color"
   },
+  "collab-1": {
+    "$value": "oklch(64% 0.115 56)",
+    "$type": "color"
+  },
+  "collab-1-ink": {
+    "$value": "oklch(20% 0.03 56)",
+    "$type": "color"
+  },
+  "collab-1-soft": {
+    "$value": "oklch(72% 0.09 56 / 0.24)",
+    "$type": "color"
+  },
+  "collab-2": {
+    "$value": "oklch(85.5% 0.076 291)",
+    "$type": "color"
+  },
+  "collab-2-ink": {
+    "$value": "oklch(20% 0.03 291)",
+    "$type": "color"
+  },
+  "collab-2-soft": {
+    "$value": "oklch(72% 0.09 291 / 0.24)",
+    "$type": "color"
+  },
+  "collab-3": {
+    "$value": "oklch(86% 0.115 76)",
+    "$type": "color"
+  },
+  "collab-3-ink": {
+    "$value": "oklch(20% 0.03 76)",
+    "$type": "color"
+  },
+  "collab-3-soft": {
+    "$value": "oklch(72% 0.09 76 / 0.24)",
+    "$type": "color"
+  },
+  "collab-4": {
+    "$value": "oklch(65% 0.115 258)",
+    "$type": "color"
+  },
+  "collab-4-ink": {
+    "$value": "oklch(20% 0.03 258)",
+    "$type": "color"
+  },
+  "collab-4-soft": {
+    "$value": "oklch(72% 0.09 258 / 0.24)",
+    "$type": "color"
+  },
+  "collab-5": {
+    "$value": "oklch(77% 0.115 14)",
+    "$type": "color"
+  },
+  "collab-5-ink": {
+    "$value": "oklch(20% 0.03 14)",
+    "$type": "color"
+  },
+  "collab-5-soft": {
+    "$value": "oklch(72% 0.09 14 / 0.24)",
+    "$type": "color"
+  },
+  "collab-6": {
+    "$value": "oklch(62% 0.105 162)",
+    "$type": "color"
+  },
+  "collab-6-ink": {
+    "$value": "oklch(20% 0.03 162)",
+    "$type": "color"
+  },
+  "collab-6-soft": {
+    "$value": "oklch(72% 0.09 162 / 0.24)",
+    "$type": "color"
+  },
+  "collab-7": {
+    "$value": "oklch(75% 0.115 202)",
+    "$type": "color"
+  },
+  "collab-7-ink": {
+    "$value": "oklch(20% 0.03 202)",
+    "$type": "color"
+  },
+  "collab-7-soft": {
+    "$value": "oklch(72% 0.09 202 / 0.24)",
+    "$type": "color"
+  },
+  "collab-8": {
+    "$value": "oklch(64.5% 0.115 335)",
+    "$type": "color"
+  },
+  "collab-8-ink": {
+    "$value": "oklch(20% 0.03 335)",
+    "$type": "color"
+  },
+  "collab-8-soft": {
+    "$value": "oklch(72% 0.09 335 / 0.24)",
+    "$type": "color"
+  },
+  "collab-9": {
+    "$value": "oklch(73% 0.115 114)",
+    "$type": "color"
+  },
+  "collab-9-ink": {
+    "$value": "oklch(20% 0.03 114)",
+    "$type": "color"
+  },
+  "collab-9-soft": {
+    "$value": "oklch(72% 0.09 114 / 0.24)",
+    "$type": "color"
+  },
+  "collab-10": {
+    "$value": "oklch(86% 0.115 153)",
+    "$type": "color"
+  },
+  "collab-10-ink": {
+    "$value": "oklch(20% 0.03 153)",
+    "$type": "color"
+  },
+  "collab-10-soft": {
+    "$value": "oklch(72% 0.09 153 / 0.24)",
+    "$type": "color"
+  },
   "shadow-0": {
     "$value": "0 0 0 1px rgba(255,255,255,0.04)",
     "$type": "shadow"

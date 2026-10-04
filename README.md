@@ -76,7 +76,7 @@ packages are being installed, and fatal when this one is.
 | Import | Contents |
 |---|---|
 | `@ekdotico/domico/tokens.css` | Every custom property, for all four themes across both modes |
-| `@ekdotico/domico/tokens` | The same values, typed, for use outside a stylesheet |
+| `@ekdotico/domico/tokens` | The same values, typed, for use outside a stylesheet, and `collaboratorSlots` with `collaboratorSlot(index)` for assigning a collaborator colour |
 | `@ekdotico/domico/styles.css` | The base layer and the shared component styles |
 | `@ekdotico/domico/styles/base.css` | The reset and the semantic type utilities |
 | `@ekdotico/domico/styles/reset.css` | The reset, document defaults, accessibility primitives, scrollbars |

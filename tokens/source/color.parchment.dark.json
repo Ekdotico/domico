@@ -165,7 +165,7 @@
     "$type": "color"
   },
   "collab-1-soft": {
-    "$value": "oklch(72% 0.09 56 / 0.24)",
+    "$value": "oklch(66% 0.13 56 / 0.36)",
     "$type": "color"
   },
   "collab-2": {
@@ -177,7 +177,7 @@
     "$type": "color"
   },
   "collab-2-soft": {
-    "$value": "oklch(72% 0.09 291 / 0.24)",
+    "$value": "oklch(66% 0.13 291 / 0.36)",
     "$type": "color"
   },
   "collab-3": {
@@ -189,7 +189,7 @@
     "$type": "color"
   },
   "collab-3-soft": {
-    "$value": "oklch(72% 0.09 76 / 0.24)",
+    "$value": "oklch(66% 0.13 76 / 0.36)",
     "$type": "color"
   },
   "collab-4": {
@@ -201,7 +201,7 @@
     "$type": "color"
   },
   "collab-4-soft": {
-    "$value": "oklch(72% 0.09 258 / 0.24)",
+    "$value": "oklch(66% 0.13 258 / 0.36)",
     "$type": "color"
   },
   "collab-5": {
@@ -213,7 +213,7 @@
     "$type": "color"
   },
   "collab-5-soft": {
-    "$value": "oklch(72% 0.09 14 / 0.24)",
+    "$value": "oklch(66% 0.13 14 / 0.36)",
     "$type": "color"
   },
   "collab-6": {
@@ -225,7 +225,7 @@
     "$type": "color"
   },
   "collab-6-soft": {
-    "$value": "oklch(72% 0.09 162 / 0.24)",
+    "$value": "oklch(66% 0.13 162 / 0.36)",
     "$type": "color"
   },
   "collab-7": {
@@ -237,7 +237,7 @@
     "$type": "color"
   },
   "collab-7-soft": {
-    "$value": "oklch(72% 0.09 202 / 0.24)",
+    "$value": "oklch(66% 0.107 202 / 0.36)",
     "$type": "color"
   },
   "collab-8": {
@@ -249,7 +249,7 @@
     "$type": "color"
   },
   "collab-8-soft": {
-    "$value": "oklch(72% 0.09 335 / 0.24)",
+    "$value": "oklch(66% 0.13 335 / 0.36)",
     "$type": "color"
   },
   "collab-9": {
@@ -261,7 +261,7 @@
     "$type": "color"
   },
   "collab-9-soft": {
-    "$value": "oklch(72% 0.09 114 / 0.24)",
+    "$value": "oklch(66% 0.13 114 / 0.36)",
     "$type": "color"
   },
   "collab-10": {
@@ -273,7 +273,7 @@
     "$type": "color"
   },
   "collab-10-soft": {
-    "$value": "oklch(72% 0.09 153 / 0.24)",
+    "$value": "oklch(66% 0.13 153 / 0.36)",
     "$type": "color"
   },
   "shadow-0": {

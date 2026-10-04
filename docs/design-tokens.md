@@ -360,7 +360,7 @@ nothing — a case the connection limit rules out today, and the reason the labe
 is not optional.
 
 **Why these ten.** They are the house hues — the earth tones the state and
-editorial groups already use, at the same restrained chroma, never above 0.118
+editorial groups already use, at the same restrained chroma, no solid above 0.118
 — spread round the wheel and then set on three lightness tiers. The tiers are
 the part that does the work. A caret has to clear 3:1 on its ground and carry a
 label at 4.5:1, which confines every solid to a narrow band of lightness, and
@@ -391,19 +391,27 @@ four. The house rule against opacity-derived colour is a rule against a
 composite nobody measured. This one is composited by the guard onto every
 ground and measured there.
 
+The dark washes are stronger than the light ones, because a wash that lightens
+a dark ground has to work harder to be seen than one that tints a pale one:
+lightness 66%, chroma up to 0.13, at an alpha of 0.36, against 60%, 0.09 and 0.3
+in the light palettes. Sepia dark is the exception to the shared dark
+calibration and stops at an alpha of 0.3. Its `--fg-2` is the dimmest secondary
+ink of the four, and over a wash on `--bg-raised` it reaches 4.67:1 there; at
+0.36 it measured 4.22:1. The solids and inks are still shared by all four.
+
 `pnpm check:collaborators` measures all of it, in all eight palettes. The worst
 case in each:
 
 | Palette         | Label  | Caret  | Selection | Apart, typical | Apart, protanopia | Apart, deuteranopia |
 | --------------- | ------ | ------ | --------- | -------------- | ----------------- | ------------------- |
 | parchment light | 4.68:1 | 3.69:1 | 5.31:1    | 0.132          | 0.064             | 0.065               |
-| parchment dark  | 5.22:1 | 4.08:1 | 5.73:1    | 0.142          | 0.071             | 0.070               |
+| parchment dark  | 5.22:1 | 4.08:1 | 5.03:1    | 0.142          | 0.071             | 0.070               |
 | library light   | 4.68:1 | 3.96:1 | 6.54:1    | 0.132          | 0.064             | 0.065               |
-| library dark    | 5.22:1 | 4.33:1 | 5.62:1    | 0.142          | 0.071             | 0.070               |
+| library dark    | 5.22:1 | 4.33:1 | 4.89:1    | 0.142          | 0.071             | 0.070               |
 | sepia light     | 4.68:1 | 3.67:1 | 4.86:1    | 0.132          | 0.064             | 0.065               |
-| sepia dark      | 5.22:1 | 4.20:1 | 4.83:1    | 0.142          | 0.071             | 0.070               |
+| sepia dark      | 5.22:1 | 4.20:1 | 4.67:1    | 0.142          | 0.071             | 0.070               |
 | mono light      | 4.68:1 | 3.99:1 | 6.94:1    | 0.132          | 0.064             | 0.065               |
-| mono dark       | 5.22:1 | 4.72:1 | 6.24:1    | 0.142          | 0.071             | 0.070               |
+| mono dark       | 5.22:1 | 4.72:1 | 5.33:1    | 0.142          | 0.071             | 0.070               |
 
 - **Label** is `--collab-N-ink` on `--collab-N`, as text, against 4.5:1.
 - **Caret** is `--collab-N` on each of `--bg-canvas`, `--bg-surface`,

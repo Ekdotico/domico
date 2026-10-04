@@ -747,9 +747,20 @@ claiming the same version number while saying different things.
 
 ## Licence
 
-Proprietary. See [LICENSE](./LICENSE). The Ekdotico writing platform is
-separately licensed under AGPL-3.0; this package is not part of that codebase
-and is not covered by that licence.
+Copyright © 2026 Ekdotico.
 
-The three typefaces are each licensed under the SIL Open Font License 1.1. The
-package ships loading configuration, not font files.
+GNU Affero General Public License, version 3 only (`AGPL-3.0-only`). The full
+text is in [LICENSE](./LICENSE), which ships in the tarball. Versions up to and
+including 0.23.1 were published under the proprietary licence they carry, and
+stay under those terms.
+
+The licence covers copyright and grants no rights in trade marks. The Ekdotico
+name, the Ekdotico logo mark, and the Ekdotico wordmarks are trade marks of
+Ekdotico, and [TRADEMARKS.md](./TRADEMARKS.md) says what that means for the
+files under `assets/logo`.
+
+Third-party material keeps its own licence. The three typefaces are each
+licensed under the SIL Open Font License 1.1, and the package ships loading
+configuration, not font files. The icons are Lucide, vendored, under the ISC
+licence. [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) carries the
+notices.

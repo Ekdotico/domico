@@ -3,7 +3,7 @@
   "version": "0.23.1",
   "private": false,
   "description": "Domico — the Ekdotico house style: design tokens, base styles, shared components, and the Expression Guidelines with their machine-readable vocabulary and prohibited terms.",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "AGPL-3.0-only",
   "author": "Ekdotico",
   "repository": {
     "type": "git",
@@ -33,6 +33,8 @@
     "docs/*.md",
     "AGENTS.md",
     "LICENSE",
+    "TRADEMARKS.md",
+    "THIRD-PARTY-NOTICES.md",
     "README.md"
   ],
   "exports": {

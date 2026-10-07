@@ -76,6 +76,10 @@
     "./styles/on-this-page.css": "./dist/styles/on-this-page.css",
     "./styles/doc-meta.css": "./dist/styles/doc-meta.css",
     "./styles/opening-sequence.css": "./dist/styles/opening-sequence.css",
+    "./styles/button.css": "./dist/styles/button.css",
+    "./styles/form.css": "./dist/styles/form.css",
+    "./styles/dialog.css": "./dist/styles/dialog.css",
+    "./styles/tooltip.css": "./dist/styles/tooltip.css",
     "./components": {
       "types": "./dist/src/components/index.d.ts",
       "default": "./dist/src/components/index.js"

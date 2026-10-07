@@ -84,7 +84,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, and `opening-sequence.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, and `tooltip.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, and `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord |
@@ -300,6 +300,198 @@ Ctrl+K elsewhere — never both, so Ctrl+K is left to a macOS text field — and
 `shortcutLabel('k')` gives the same chord for the screen and for
 `aria-keyshortcuts`. All four read the document or the platform, so call them
 from an effect or an event handler, not during render.
+
+---
+
+## Form controls, the dialog, and the tooltip
+
+The controls an application signs a person in with, takes a message with, and
+asks for a confirmation with. Each is the platform's own element, drawn from
+tokens: a native `<input>`, `<textarea>`, `<button>`, `<fieldset>`, and
+`<dialog>`. The keyboard, the form value, and the browser's own validation are
+the platform's, and every attribute the native element takes passes through.
+
+| Component | What it is | Stylesheet |
+|---|---|---|
+| `Button` | Four variants, `primary`, `secondary`, `quiet`, and `destructive`, and a pending state | `styles/button.css` |
+| `TextField` | A single-line field with a label, a hint, and a message | `styles/form.css` |
+| `PasswordField` | A password field with a button that shows what is typed | `styles/form.css` |
+| `OneTimeCodeField` | One field for a numeric code, six digits unless told otherwise | `styles/form.css` |
+| `TextArea` | A multi-line field, with a count against a maximum | `styles/form.css` |
+| `RadioGroup` | A fieldset of native radios, named by its legend | `styles/form.css` |
+| `Checkbox` | One native checkbox, inside its label | `styles/form.css` |
+| `FormFault` | The statement of a fault at the head of a form | `styles/form.css` |
+| `Dialog` | A modal dialog, on the native element | `styles/dialog.css` |
+| `Tooltip` | An explanation shown on hover and on focus | `styles/tooltip.css` |
+
+```tsx
+import {
+  Button, Checkbox, Dialog, FormFault, OneTimeCodeField, PasswordField,
+  RadioGroup, TextArea, TextField, Tooltip,
+} from '@ekdotico/domico/components';
+import '@ekdotico/domico/styles/button.css';
+import '@ekdotico/domico/styles/form.css';
+import '@ekdotico/domico/styles/dialog.css';
+import '@ekdotico/domico/styles/tooltip.css';
+```
+
+All four entries are in `styles.css` and `styles/components.css` already. Each
+expects the reset, which draws the focus ring and supplies `.sr-only`.
+
+### A form
+
+```tsx
+<form action={signIn} noValidate>
+  {state.faults.length > 0 ? (
+    <FormFault
+      title="The form has two faults"
+      faults={state.faults}          // [{ fieldId: 'email', message: 'Enter an email address' }, …]
+      focusKey={state.attempt}
+    />
+  ) : null}
+
+  <TextField id="email" name="email" type="email" label="Email address"
+    autoComplete="username" required error={state.fault.email} />
+  <PasswordField id="password" name="password" label="Password"
+    toggleLabel="Show password" autoComplete="current-password" required
+    error={state.fault.password} />
+
+  <Button variant="primary" type="submit" pendingLabel="Signing in…">Sign in</Button>
+</form>
+```
+
+Every word is the application's. The package supplies no label for any of these
+controls, and none has a default: `label`, `toggleLabel`, `legend`,
+`closeLabel`, and the wording of the count are all passed in.
+
+A field's `error` marks it `aria-invalid`, and the field is described by its
+hint and its message through `aria-describedby`. The message is not an alert.
+`FormFault` is the one announcement a failed submission makes: it is
+`role="alert"`, it takes focus when it appears and again whenever `focusKey`
+changes, and each of its links moves focus into the field it names. Render it
+when there is a fault and not before.
+
+The package draws no asterisk and takes no placeholder. Say that a field is
+required in its label or its hint, and put an example in the hint, where it is
+still there after the first keystroke.
+
+`PasswordField` requires `autoComplete`, as `current-password` or
+`new-password`. Its toggle is a button beside the field with `aria-pressed`,
+and `toggleLabel` is its name in both states. The field goes back to hidden
+when its form is submitted.
+
+`OneTimeCodeField` is one input with `inputMode="numeric"` and
+`autoComplete="one-time-code"`, so a phone offers the code it has received.
+`digits` defaults to 6. It sets no `maxlength`, and its `pattern` allows one
+space or hyphen between each two digits, so a code copied as "123 456" is
+pasted whole and passes the browser's own check. The value arrives as typed:
+the server strips the separators before it compares.
+
+`TextArea` takes `maximum` and `remainingLabel`, a function from the number
+remaining to the words for it. The count on screen follows every keystroke; a
+polite live region follows a second after typing stops. `maximum` does not set
+`maxlength`, which would truncate a paste without saying so: past the maximum
+the field is marked invalid and the number goes negative. Because
+`remainingLabel` is a function, a counted `TextArea` is rendered from a client
+component; a Server Component cannot pass it one.
+
+`TextField`, `PasswordField`, `OneTimeCodeField`, `TextArea`, and `Checkbox`
+each hand their native element to a `ref`.
+
+```tsx
+<RadioGroup id="kind" name="kind" legend="Kind of feedback" required
+  options={[
+    { value: 'problem', label: 'Problem' },
+    { value: 'idea', label: 'Idea' },
+    { value: 'other', label: 'Other' },
+  ]} />
+<TextArea id="message" name="message" label="Message" rows={6} maximum={4000}
+  remainingLabel={(n) => (n >= 0 ? `${n} characters remaining` : `${-n} characters over the limit`)} />
+<Checkbox name="rename" label="Editors can rename the document" />
+```
+
+No radio is selected unless `defaultValue` or `value` says so. The first radio
+carries the group's `id`, so a `FormFault` link to the group lands on a control.
+
+### The button
+
+`type` defaults to `button`, so a button inside a form submits it only when it
+says `type="submit"`. A submit button reads the form's status from React 19 and,
+while the action is in flight, is marked `aria-disabled`, refuses a second
+press, and keeps focus; pass `pending` to drive it yourself. This is the
+behaviour `GateSubmitButton` has always had, and that component is now this one
+with the gate's class and its two default labels.
+
+The `destructive` variant is a danger hairline and not a filled button, because
+no ink holds on `--danger` in all eight palettes. Its label names what is
+removed.
+
+### The dialog
+
+```tsx
+const [open, setOpen] = useState(false);
+
+<Button onClick={() => setOpen(true)}>Send feedback</Button>
+<Dialog open={open} onClose={() => setOpen(false)} title="Send feedback" closeLabel="Close">
+  …
+</Dialog>
+```
+
+The native `<dialog>`, opened with `showModal()`. The platform makes the page
+behind it inert, keeps Tab inside, and returns focus to the control that opened
+it; the component adds no focus trap of its own and no `aria-modal`. It is named
+by its heading.
+
+The application holds `open`, and the dialog on screen follows it. Escape and
+the close button call `onClose`, and the dialog closes when `open` becomes
+false, so `onClose` is expected to set it. Where `open` stays true, the dialog
+stays: one the browser has closed regardless, as Chromium does on a second
+Escape, is shown again. A press outside the dialog does not close it. The
+children stay mounted while it is closed, so give a form a `key` to clear it
+once it is sent.
+
+`closeLabel` renders the close button and names it. Leave it out for a
+confirmation, and give the dialog a button of its own that calls `onClose`.
+`initialFocusRef` chooses where focus lands on opening, and `aria-describedby`
+passes through for a sentence that should be read with the dialog's name.
+
+### The tooltip
+
+```tsx
+<Tooltip content="This document was created without provenance recording and cannot be sealed.">
+  Not recorded
+</Tooltip>
+```
+
+Shown on hover and on keyboard focus, and tied to its trigger by
+`aria-describedby`. It meets WCAG 2.2 success criterion 1.4.13: Escape dismisses
+it without moving the pointer or focus, the pointer can move onto the content,
+and nothing times it out. While it is showing, Escape is the tooltip's and does
+not reach a dialog behind it.
+
+Focus shows it only where the browser would draw a focus ring, so a control
+pressed with a mouse does not keep its tooltip up after the pointer has gone.
+
+Pass one focusable element and it is described in place. Pass text and the
+package renders a button for it, so the tooltip exists for a keyboard and for a
+touch: a press on that button shows the tooltip, and a second press, or a press
+anywhere else, hides it. The content is text: a link inside a tooltip cannot be
+reached.
+
+It opens under the start edge of its trigger, or over it with
+`placement="top"`. Closed, it takes no space. Open, it is no wider than the
+viewport less a margin and is moved sideways to stay inside it, so it adds no
+horizontal scroll at a narrow width. It does not flip to the other side of its
+trigger when there is no room.
+
+### Which ink on which surface
+
+A dialog and a tooltip sit on `--bg-raised`, and three inks used as text
+elsewhere do not hold there: `--fg-3` measures 4.40:1 in sepia dark, `--accent`
+4.42:1 and `--danger` 4.27:1 in parchment dark. These controls therefore set
+text in `--fg-1` and `--fg-2`, and use `--accent` and `--danger` for boundaries
+and marks, where 3:1 is owed. A field's message is `--fg-1` on the danger wash
+inside a danger hairline. `pnpm check:contrast` measures each of those pairs.
 
 ---
 

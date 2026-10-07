@@ -2,7 +2,7 @@
 /**
  * Assemble the shipped stylesheets.
  *
- * Twenty entries, so a consumer can take as much or as little as it needs.
+ * Twenty-five entries, so a consumer can take as much or as little as it needs.
  * Tokens are separate again, so the values can be had without any of the
  * opinions.
  *
@@ -27,6 +27,10 @@
  *   styles/on-this-page.css
  *   styles/doc-meta.css
  *   styles/opening-sequence.css
+ *   styles/button.css
+ *   styles/form.css           the fields, the choices and the form fault together
+ *   styles/dialog.css
+ *   styles/tooltip.css
  *
  * The split exists because whole-stylesheet adoption is the wrong granularity
  * for an application that already has a layer of its own. deree wanted the
@@ -195,6 +199,13 @@ const COMPONENTS = [
   ['on-this-page', ['On this page'], 'the on-this-page rail'],
   ['doc-meta', ['Document meta'], 'the document version strip'],
   ['opening-sequence', ['Opening sequence'], 'the opening sequence'],
+  ['button', ['Button'], 'the button'],
+  // One entry for three sections. The fields, the choices and the fault share
+  // the label, the hint and the message, and a form that renders one of them
+  // renders the others.
+  ['form', ['Form fields', 'Choices', 'Form fault'], 'the form controls and the form fault'],
+  ['dialog', ['Dialog'], 'the dialog'],
+  ['tooltip', ['Tooltip'], 'the tooltip'],
 ];
 
 const header = (what, note) => `/**

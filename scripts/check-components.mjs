@@ -62,6 +62,7 @@ const { inertOutside, useModalSurface, isShortcut, shortcutLabel } = await impor
 const {
   Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
   AccessGate, GateSubmitButton, NavDrawer, OnThisPage, OpeningSequence, DocMeta,
+  Button, TextField, OneTimeCodeField, PasswordField, TextArea, RadioGroup, Checkbox, FormFault, Dialog, Tooltip,
 } = await import('../dist/src/components/index.js');
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
 
@@ -620,6 +621,477 @@ await it('OpeningSequence', async () => {
   assert.ok(outside.hasAttribute('inert'), 'unmounting released an inert it no longer owned');
   outside.remove();
   style.remove();
+});
+
+// --- Button ---------------------------------------------------------------------
+await it('Button', async () => {
+  let pressed = 0;
+  const view = await mount(h(Button, { onClick: () => pressed++ }, 'Cancel'));
+  const button = view.container.querySelector('button');
+  // Not the platform's default: a button dropped into a form must not submit it.
+  assert.equal(button.getAttribute('type'), 'button');
+  assert.equal(button.className, 'ekd-button');
+  assert.equal(button.getAttribute('data-variant'), 'secondary');
+  assert.ok(!button.hasAttribute('aria-live'), 'a button with no pending label is a live region');
+  await act(async () => button.click());
+  assert.equal(pressed, 1);
+
+  await view.rerender(
+    h(Button, { variant: 'primary', type: 'submit', pending: true, pendingLabel: 'Signing in…', onClick: () => pressed++ }, 'Sign in'),
+  );
+  assert.equal(button.getAttribute('data-variant'), 'primary');
+  assert.equal(button.getAttribute('type'), 'submit');
+  assert.ok(!button.disabled, 'the pending button is disabled, which drops focus');
+  assert.equal(button.getAttribute('aria-disabled'), 'true');
+  assert.equal(button.getAttribute('aria-busy'), 'true');
+  assert.equal(button.getAttribute('aria-live'), 'polite');
+  assert.equal(button.textContent, 'Signing in…');
+  const click = new window.MouseEvent('click', { bubbles: true, cancelable: true });
+  await act(async () => button.dispatchEvent(click));
+  assert.ok(click.defaultPrevented, 'a press in flight was not refused');
+  assert.equal(pressed, 1, 'a press in flight reached the handler');
+
+  // In flight with no label of its own: the label stays.
+  await view.rerender(h(Button, { pending: true }, 'Save'));
+  assert.equal(button.textContent, 'Save');
+  await view.unmount();
+});
+
+// --- The fields -------------------------------------------------------------------
+await it('TextField and OneTimeCodeField', async () => {
+  const view = await mount(
+    h('div', null,
+      h(TextField, { id: 'email', name: 'email', type: 'email', label: 'Email address', autoComplete: 'username',
+        required: true, hint: 'The address of the account.', error: 'Enter an email address.' }),
+      h(TextField, { name: 'name', label: 'Name', disabled: true }),
+      h(OneTimeCodeField, { id: 'code', name: 'code', label: 'Code' }),
+      h(OneTimeCodeField, { name: 'short', label: 'Short code', digits: 4 }),
+    ),
+  );
+  const [email, plain, code, short] = view.container.querySelectorAll('input');
+  assert.equal(document.querySelector('label[for="email"]')?.textContent, 'Email address');
+  assert.equal(email.getAttribute('type'), 'email');
+  assert.equal(email.getAttribute('autocomplete'), 'username');
+  assert.ok(email.required);
+  assert.equal(email.getAttribute('aria-invalid'), 'true');
+  // Hint first, then the message, and each id is an element on the page.
+  const described = email.getAttribute('aria-describedby').split(' ').map((id) => document.getElementById(id)?.textContent);
+  assert.deepEqual(described, ['The address of the account.', 'Enter an email address.']);
+  assert.ok(!view.container.querySelector('[role="alert"]'), 'a field message is an alert, beside the form fault');
+  assert.ok(!email.hasAttribute('placeholder'));
+
+  // Nothing to say: nothing named. And an id of its own, which its label uses.
+  assert.ok(!plain.hasAttribute('aria-describedby') && !plain.hasAttribute('aria-invalid'));
+  assert.ok(plain.id && document.querySelector(`label[for="${plain.id}"]`)?.textContent === 'Name');
+  assert.ok(plain.disabled);
+
+  assert.equal(view.container.querySelectorAll('input').length, 4, 'a code field is more than one input');
+  assert.equal(code.getAttribute('inputmode'), 'numeric');
+  assert.equal(code.getAttribute('autocomplete'), 'one-time-code');
+  // No length limit, which would cut the last digit off a code pasted in two
+  // groups. The pattern is tried the way the platform tries it: anchored, and
+  // compiled with the `v` flag, under which an unescaped hyphen in a class is
+  // a syntax error and the attribute is silently ignored.
+  assert.ok(!code.hasAttribute('maxlength'), 'a pasted "123 456" is truncated');
+  const accepts = (input, value) => new RegExp(`^(?:${input.getAttribute('pattern')})$`, 'v').test(value);
+  for (const value of ['123456', '123 456', '123-456', '1 2 3 4 5 6']) {
+    assert.ok(accepts(code, value), `the code pattern refuses "${value}"`);
+  }
+  for (const value of ['12345', '1234567', '123  456', '12345a', ' 123456', '123456 ']) {
+    assert.ok(!accepts(code, value), `the code pattern accepts "${value}"`);
+  }
+  assert.ok(accepts(short, '12 34') && !accepts(short, '123456'), 'digits did not set the length');
+  await view.unmount();
+});
+
+await it('the fields hand their element to a ref', async () => {
+  const refs = { text: React.createRef(), code: React.createRef(), area: React.createRef(), box: React.createRef() };
+  let password = null;
+  const view = await mount(
+    h('form', null,
+      h(TextField, { ref: refs.text, name: 'a', label: 'A' }),
+      h(OneTimeCodeField, { ref: refs.code, name: 'b', label: 'B' }),
+      h(TextArea, { ref: refs.area, name: 'c', label: 'C' }),
+      h(Checkbox, { ref: refs.box, name: 'd', label: 'D' }),
+      // A callback ref, the other form a ref takes. The field keeps a ref of
+      // its own to this input, and must not keep it instead of this one.
+      h(PasswordField, { ref: (el) => { password = el; }, name: 'e', label: 'E', toggleLabel: 'Show password',
+        autoComplete: 'new-password' }),
+    ),
+  );
+  const named = (name) => view.container.querySelector(`[name="${name}"]`);
+  assert.ok(refs.text.current === named('a'), 'TextField dropped its ref');
+  assert.ok(refs.code.current === named('b'), 'OneTimeCodeField dropped its ref');
+  assert.ok(refs.area.current === named('c'), 'TextArea dropped its ref');
+  assert.ok(refs.box.current === named('d'), 'Checkbox dropped its ref');
+  assert.ok(password === named('e'), 'PasswordField dropped its ref');
+  // And still has its own: submitting hides the password again.
+  await act(async () => view.container.querySelector('button').click());
+  assert.equal(password.getAttribute('type'), 'text');
+  await act(async () => {
+    view.container.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+  });
+  assert.equal(password.getAttribute('type'), 'password', 'the field lost its own ref to the consumer’s');
+  await view.unmount();
+  assert.ok(password === null && refs.text.current === null, 'a ref was not released on unmount');
+});
+
+await it('PasswordField shows and hides what is typed', async () => {
+  const view = await mount(
+    h('form', null,
+      h(PasswordField, { id: 'password', name: 'password', label: 'Password', toggleLabel: 'Show password',
+        autoComplete: 'current-password' })),
+  );
+  const input = view.container.querySelector('input');
+  const toggle = view.container.querySelector('button');
+  assert.equal(input.getAttribute('type'), 'password');
+  assert.equal(input.getAttribute('autocomplete'), 'current-password');
+  // A real button that cannot submit the form, named, with its state.
+  assert.equal(toggle.getAttribute('type'), 'button');
+  assert.equal(toggle.textContent, 'Show password');
+  assert.equal(toggle.getAttribute('aria-pressed'), 'false');
+  assert.equal(toggle.getAttribute('aria-controls'), 'password');
+
+  await act(async () => toggle.click());
+  assert.equal(input.getAttribute('type'), 'text', 'the toggle did not show the password');
+  assert.equal(toggle.getAttribute('aria-pressed'), 'true');
+  assert.equal(toggle.textContent, 'Show password', 'the name changed with the state');
+  assert.ok(document.getElementById('password') === input, 'the field was replaced, and lost what was typed');
+
+  // Submitting hides it again.
+  await act(async () => {
+    view.container.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+  });
+  assert.equal(input.getAttribute('type'), 'password', 'the password went to the form as plain text');
+  assert.equal(toggle.getAttribute('aria-pressed'), 'false');
+  await view.unmount();
+});
+
+await it('TextArea counts against a maximum, and announces after typing stops', async () => {
+  const remaining = (n) => (n >= 0 ? `${n} characters remaining` : `${-n} characters over the limit`);
+  const view = await mount(
+    h(TextArea, { id: 'message', name: 'message', label: 'Message', maximum: 10, remainingLabel: remaining }),
+  );
+  const area = view.container.querySelector('textarea');
+  const shown = view.container.querySelector('.ekd-field-count');
+  const live = document.getElementById('message-count');
+  const type = (text) =>
+    act(async () => {
+      Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set.call(area, text);
+      area.dispatchEvent(new window.Event('input', { bubbles: true }));
+    });
+
+  assert.equal(shown.textContent, '10 characters remaining');
+  assert.equal(shown.getAttribute('aria-hidden'), 'true');
+  assert.equal(live.getAttribute('aria-live'), 'polite');
+  assert.ok(area.getAttribute('aria-describedby').split(' ').includes('message-count'));
+  // maxlength truncates a paste in silence.
+  assert.ok(!area.hasAttribute('maxlength'));
+
+  await type('abcd');
+  assert.equal(shown.textContent, '6 characters remaining');
+  assert.equal(live.textContent, '10 characters remaining', 'the count was announced on the keystroke');
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 1100)));
+  assert.equal(live.textContent, '6 characters remaining', 'the count was never announced');
+
+  await type('abcdefghijkl');
+  assert.equal(shown.textContent, '2 characters over the limit');
+  assert.ok(shown.hasAttribute('data-over'));
+  assert.equal(area.getAttribute('aria-invalid'), 'true', 'a message over the maximum is not marked');
+  await view.unmount();
+
+  // Without a maximum there is no count and no live region.
+  const plain = await mount(h(TextArea, { name: 'note', label: 'Note' }));
+  assert.ok(!plain.container.querySelector('[aria-live]') && !plain.container.querySelector('.ekd-field-count'));
+  await plain.unmount();
+});
+
+await it('RadioGroup and Checkbox', async () => {
+  const options = [
+    { value: 'problem', label: 'Problem' },
+    { value: 'idea', label: 'Idea' },
+    { value: 'other', label: 'Other' },
+  ];
+  const chosen = [];
+  const view = await mount(
+    h('div', null,
+      h(RadioGroup, { id: 'kind', name: 'kind', legend: 'Kind of feedback', options, required: true,
+        error: 'Choose a kind.', onChange: (v) => chosen.push(v) }),
+      h(RadioGroup, { name: 'other', legend: 'Other', options, defaultValue: 'idea' }),
+      h(Checkbox, { id: 'rename', name: 'rename', label: 'Editors can rename the document', error: 'Not available.' }),
+    ),
+  );
+  const [group, preset] = view.container.querySelectorAll('fieldset');
+  assert.equal(group.querySelector('legend')?.textContent, 'Kind of feedback');
+  const radios = [...group.querySelectorAll('input[type="radio"]')];
+  assert.equal(radios.length, 3);
+  assert.ok(radios.every((r) => !r.checked), 'an answer was chosen for the reader');
+  assert.ok(radios.every((r) => r.name === 'kind' && r.required));
+  // The group's id is on a control that can take focus, for the form fault's link.
+  assert.ok(document.getElementById('kind') === radios[0]);
+  assert.equal(new Set(radios.map((r) => r.id)).size, 3);
+  assert.ok(radios.every((r) => r.closest('label')?.textContent), 'a radio has no label');
+  assert.equal(document.getElementById(group.getAttribute('aria-describedby'))?.textContent, 'Choose a kind.');
+  assert.ok(group.hasAttribute('data-invalid'));
+  await act(async () => radios[1].click());
+  assert.deepEqual(chosen, ['idea']);
+  assert.ok(radios[1].checked);
+
+  assert.deepEqual([...preset.querySelectorAll('input')].map((r) => r.checked), [false, true, false]);
+  assert.ok(!preset.hasAttribute('aria-describedby') && !preset.hasAttribute('data-invalid'));
+
+  const box = document.getElementById('rename');
+  assert.equal(box.getAttribute('type'), 'checkbox');
+  assert.equal(box.closest('label')?.textContent, 'Editors can rename the document');
+  assert.equal(box.getAttribute('aria-invalid'), 'true');
+  assert.equal(document.getElementById(box.getAttribute('aria-describedby'))?.textContent, 'Not available.');
+  await view.unmount();
+});
+
+// --- FormFault ------------------------------------------------------------------
+await it('FormFault takes focus, and its links move focus to the field', async () => {
+  const page = (attempt) =>
+    h('div', null,
+      h(FormFault, { title: 'The form has one fault', focusKey: attempt,
+        faults: [{ fieldId: 'fault-email', message: 'Enter an email address' }] }),
+      h(TextField, { id: 'fault-email', name: 'email', label: 'Email address' }),
+    );
+  const view = await mount(page(1));
+  const fault = view.container.querySelector('.ekd-fault');
+  assert.equal(fault.getAttribute('role'), 'alert');
+  assert.equal(fault.getAttribute('tabindex'), '-1');
+  const heading = document.getElementById(fault.getAttribute('aria-labelledby'));
+  assert.equal(heading?.textContent, 'The form has one fault');
+  assert.equal(heading?.tagName, 'H2');
+  assert.ok(document.activeElement === fault, 'focus did not move to the statement');
+
+  const link = fault.querySelector('a');
+  assert.equal(link.getAttribute('href'), '#fault-email');
+  const click = new window.MouseEvent('click', { bubbles: true, cancelable: true });
+  await act(async () => link.dispatchEvent(click));
+  assert.ok(document.activeElement === document.getElementById('fault-email'), 'the link left focus behind');
+  assert.ok(click.defaultPrevented);
+
+  // A second failed attempt is met from the statement again.
+  await view.rerender(page(2));
+  assert.ok(document.activeElement === fault, 'a new focusKey did not return focus to the statement');
+  await view.unmount();
+
+  // A fault that is about no one field: no list, and focus left alone on request.
+  const general = await mount(h(FormFault, { title: 'The request failed', autoFocus: false, headingLevel: 3 }, h('p', null, 'Try again.')));
+  assert.ok(!general.container.querySelector('ul'));
+  assert.ok(general.container.querySelector('h3'));
+  assert.ok(document.activeElement !== general.container.querySelector('.ekd-fault'));
+  await general.unmount();
+});
+
+// --- Dialog ---------------------------------------------------------------------
+// jsdom has no showModal() and no close(). The two below are the least that
+// stands in for them, so what this case asserts is the component's own half:
+// that it calls them when `open` changes, that Escape asks the application
+// rather than closing, and that focus is put back. The platform's half — the
+// top layer, the inert page, the Tab cycle — is the browser's and is not
+// something a DOM without layout can show.
+await it('Dialog opens, asks before it closes, and returns focus', async () => {
+  const proto = window.HTMLDialogElement.prototype;
+  proto.showModal = function showModal() {
+    this.setAttribute('open', '');
+    this.querySelector('button, input, textarea, select, a[href]')?.focus();
+  };
+  // The event is queued, as the platform queues it: it lands after whatever
+  // called close() has finished, and after any effect that ran in between.
+  // A stub that fires it inside close() hides exactly the fault this guards.
+  proto.close = function close() {
+    if (!this.hasAttribute('open')) return;
+    this.removeAttribute('open');
+    setTimeout(() => this.dispatchEvent(new window.Event('close')), 0);
+  };
+  const settle = () => act(async () => new Promise((resolve) => setTimeout(resolve, 20)));
+
+  let asked = 0;
+  const page = (open, extra) =>
+    h('div', null,
+      h('button', { id: 'opener' }, 'Send feedback'),
+      h(Dialog, { open, onClose: () => asked++, title: 'Send feedback', closeLabel: 'Close', ...extra },
+        h('input', { id: 'dialog-field' })),
+    );
+  const view = await mount(page(false));
+  const dialog = view.container.querySelector('dialog');
+  const opener = document.getElementById('opener');
+  assert.ok(!dialog.open);
+  assert.ok(!dialog.hasAttribute('aria-modal') && !dialog.hasAttribute('role'), 'the native element restated its role');
+  assert.equal(document.getElementById(dialog.getAttribute('aria-labelledby'))?.textContent, 'Send feedback');
+  assert.equal(dialog.querySelector('.ekd-dialog-close')?.getAttribute('aria-label'), 'Close');
+
+  opener.focus();
+  await view.rerender(page(true));
+  assert.ok(dialog.open, 'open did not call showModal()');
+  assert.ok(dialog.contains(document.activeElement), 'focus did not move into the dialog');
+
+  // Escape: the application is asked, and the dialog waits for its answer.
+  const cancel = new window.Event('cancel', { cancelable: true });
+  await act(async () => dialog.dispatchEvent(cancel));
+  assert.ok(cancel.defaultPrevented, 'Escape closed the dialog without asking');
+  assert.equal(asked, 1, 'Escape did not call onClose');
+  assert.ok(dialog.open);
+
+  await act(async () => dialog.querySelector('.ekd-dialog-close').click());
+  assert.equal(asked, 2, 'the close button did not call onClose');
+
+  // A cancel that bubbled up from inside — a file input's picker, a nested
+  // dialog — is not this dialog's Escape.
+  const inner = new window.Event('cancel', { bubbles: true, cancelable: true });
+  await act(async () => document.getElementById('dialog-field').dispatchEvent(inner));
+  assert.ok(!inner.defaultPrevented && asked === 2, 'a cancel from inside the dialog was taken for its own');
+
+  await view.rerender(page(false));
+  await settle();
+  assert.ok(!dialog.open, 'closing did not call close()');
+  assert.ok(document.activeElement === opener, 'focus did not return to the opener');
+  assert.equal(asked, 2, 'closing from the application called onClose again');
+
+  // The platform closing it on its own is reported. The application did not
+  // answer, so `open` is still true, and the dialog is shown again: a dialog
+  // that is closed while its owner says open could never be opened.
+  await view.rerender(page(true));
+  await act(async () => dialog.close());
+  await settle();
+  assert.equal(asked, 3, 'a close the application did not make went unreported');
+  assert.ok(dialog.open, 'the dialog stayed closed while `open` was true');
+
+  // Where the application says focus goes, it goes. The ref is a new object on
+  // every render here, which must not close and reopen the dialog.
+  await view.rerender(page(false));
+  await settle();
+  const target = document.getElementById('dialog-field');
+  await view.rerender(page(true, { initialFocusRef: { current: target }, closeLabel: undefined }));
+  assert.ok(document.activeElement === target, 'initialFocusRef was ignored');
+  assert.ok(!dialog.querySelector('.ekd-dialog-close'), 'a close button with no name rendered');
+  await view.rerender(page(true, { initialFocusRef: { current: target }, closeLabel: undefined }));
+  await settle();
+  assert.ok(dialog.open && asked === 3, 'a new ref object closed the dialog');
+  await view.unmount();
+
+  // Mounted already open, under StrictMode, which runs the effect, its
+  // cleanup, and the effect again. The cleanup's close() queues an event that
+  // arrives after the second run; it is the component's own and says nothing.
+  let strict = 0;
+  const mounted = await mount(
+    h(React.StrictMode, null, h(Dialog, { open: true, onClose: () => strict++, title: 'Delete account' }, h('button', null, 'Cancel'))),
+  );
+  await settle();
+  assert.equal(strict, 0, 'a dialog mounted open asked to be closed');
+  assert.ok(mounted.container.querySelector('dialog').open, 'a dialog mounted open is closed');
+  await mounted.unmount();
+  delete proto.showModal;
+  delete proto.close;
+});
+
+// --- Tooltip --------------------------------------------------------------------
+await it('Tooltip shows on hover and on focus, and Escape dismisses it', async () => {
+  const view = await mount(
+    h('div', null,
+      h(Tooltip, { id: 'tip', content: 'Created without provenance recording.' }, 'Not recorded'),
+      h(Tooltip, { content: 'Opens the list of past versions' }, h(Button, { 'aria-describedby': 'other' }, 'History')),
+      h('button', { id: 'elsewhere' }, 'Elsewhere'),
+    ),
+  );
+  const [wrapper, wrapped] = view.container.querySelectorAll('.ekd-tooltip');
+  const trigger = wrapper.querySelector('button');
+  const tip = document.getElementById('tip');
+  const isOpen = () => wrapper.hasAttribute('data-open');
+  const mouse = (type, relatedTarget) =>
+    act(async () => wrapper.dispatchEvent(new window.MouseEvent(type, { bubbles: true, relatedTarget })));
+  const escape = async () => {
+    let event;
+    await act(async () => {
+      event = key(document.activeElement ?? document.body, { key: 'Escape' });
+    });
+    return event;
+  };
+
+  // Text alone gets a trigger that takes focus, described by the tooltip.
+  assert.equal(trigger.getAttribute('type'), 'button');
+  assert.equal(trigger.textContent, 'Not recorded');
+  assert.equal(trigger.getAttribute('aria-describedby'), 'tip');
+  assert.equal(tip.getAttribute('role'), 'tooltip');
+  assert.ok(wrapper.contains(tip), 'the content is outside the element the pointer is tracked on');
+  // An element is described in place, and keeps the description it had.
+  const history = wrapped.querySelector('button');
+  assert.equal(wrapped.querySelectorAll('button').length, 1, 'a control was wrapped in a second control');
+  assert.equal(history.getAttribute('aria-describedby'), `other ${wrapped.querySelector('[role="tooltip"]').id}`);
+
+  // Closed: Escape is not the tooltip's, and is left for whatever encloses it.
+  assert.ok(!isOpen());
+  assert.ok(!(await escape()).defaultPrevented, 'a closed tooltip took Escape');
+
+  // Hover, then Escape with the pointer still there.
+  await mouse('mouseover', document.body);
+  assert.ok(isOpen(), 'hover did not show the tooltip');
+  assert.ok((await escape()).defaultPrevented, 'Escape reached the dialog behind an open tooltip');
+  assert.ok(!isOpen(), 'Escape did not dismiss the tooltip');
+  // It stays dismissed until the pointer arrives again.
+  await mouse('mouseout', document.body);
+  await mouse('mouseover', document.body);
+  assert.ok(isOpen(), 'a dismissed tooltip never came back');
+  await mouse('mouseout', document.body);
+  assert.ok(!isOpen(), 'the tooltip outlived the hover');
+
+  // jsdom answers false to :focus-visible for every element, having no input
+  // modality to judge by. This stands in for it: focus is "visible" while the
+  // case says the keyboard moved it.
+  let keyboard = true;
+  const matches = window.Element.prototype.matches;
+  window.Element.prototype.matches = function patched(selector) {
+    if (selector === ':focus-visible') return keyboard && document.activeElement === this;
+    return matches.call(this, selector);
+  };
+  const elsewhere = document.getElementById('elsewhere');
+
+  // Keyboard focus, then Escape with focus still there.
+  await act(async () => trigger.focus());
+  assert.ok(isOpen(), 'keyboard focus did not show the tooltip');
+  await escape();
+  assert.ok(!isOpen() && document.activeElement === trigger, 'Escape moved focus, or left the tooltip up');
+  await act(async () => elsewhere.focus());
+  await act(async () => trigger.focus());
+  assert.ok(isOpen());
+  await act(async () => elsewhere.focus());
+  assert.ok(!isOpen(), 'the tooltip outlived the focus');
+
+  // The focus a mouse press leaves behind is not a reason to show it: on the
+  // application's own control the tooltip goes when the pointer does.
+  keyboard = false;
+  const historyWrapper = wrapped;
+  const over = (type) =>
+    act(async () => historyWrapper.dispatchEvent(new window.MouseEvent(type, { bubbles: true, relatedTarget: document.body })));
+  await over('mouseover');
+  await act(async () => { history.focus(); history.click(); });
+  assert.ok(historyWrapper.hasAttribute('data-open'));
+  await over('mouseout');
+  assert.ok(document.activeElement === history, 'the case lost the focus it is about');
+  assert.ok(!historyWrapper.hasAttribute('data-open'), 'the tooltip stayed up on the focus a mouse press left');
+
+  // The package's own trigger, pressed with no hover and no keyboard: a touch
+  // in an engine that sends neither. The press shows it, the next hides it.
+  await act(async () => elsewhere.focus());
+  await act(async () => trigger.click());
+  assert.ok(isOpen(), 'a press on the trigger did not show the tooltip');
+  await act(async () => trigger.click());
+  assert.ok(!isOpen(), 'a second press did not hide it');
+  // A touch that does send a hover sends it just before the press, and that
+  // press must not close what the hover opened.
+  await mouse('mouseover', document.body);
+  await act(async () => trigger.click());
+  assert.ok(isOpen(), 'the tap that opened the tooltip closed it');
+  // A press anywhere else releases it, once the sticky hover has gone too.
+  await mouse('mouseout', document.body);
+  assert.ok(isOpen(), 'a pinned tooltip left with the pointer');
+  await act(async () => elsewhere.dispatchEvent(new window.Event('pointerdown', { bubbles: true })));
+  assert.ok(!isOpen(), 'a press elsewhere left the tooltip up');
+
+  window.Element.prototype.matches = matches;
+  await view.unmount();
 });
 
 console.log(`check:components — ${cases} cases: the a11y helpers, and the components' names, roles and focus, against jsdom`);

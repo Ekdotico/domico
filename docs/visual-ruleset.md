@@ -206,7 +206,10 @@ Each component with styles of its own ships a stylesheet **export entry** —
 `styles/badge.css`, `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`,
 `primitives.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, and
 for the application chrome `access-gate.css`, `nav-drawer.css`,
-`on-this-page.css`, `doc-meta.css`, and `opening-sequence.css`. They are build outputs sliced
+`on-this-page.css`, `doc-meta.css`, and `opening-sequence.css`, and for the
+controls `button.css`, `dialog.css`, `tooltip.css`, and `form.css`, which is one
+entry for the fields, the radio group, the checkbox, and the form fault, since
+they share a label, a hint, and a message. They are build outputs sliced
 from one source stylesheet; there is no per-component source file, so do not
 cite one. `styles/components.css` remains the whole set, and `build-styles.mjs`
 is where the list lives, so read it there rather than counting it here.
@@ -215,7 +218,15 @@ Three components need no entry of their own. `SkipLink` is styled by the
 reset's `.skip-link`, which every application takes, `StickyTableHead` — the
 viewport mirror of a table header at narrow widths — by `table.css`, beside the
 table it mirrors, and `GateSubmitButton` by `access-gate.css`, beside the gate
-it submits.
+it submits. That last one is `Button` with the gate's class: the behaviour is
+shared and the stylesheet is not, so an application that takes the gate's entry
+alone still gets its button.
+
+The controls are the platform's own elements — `<input>`, `<textarea>`,
+`<button>`, `<fieldset>`, `<dialog>` — drawn from tokens. A dialog and a tooltip
+sit on `--bg-raised`, where `--fg-3`, `--accent` and `--danger` each fall under
+4.5:1 as text in one palette, so on these controls text is `--fg-1` or `--fg-2`
+and the other two are boundaries and marks. `check:contrast` holds the pairs.
 
 The chrome is shared for the same reason the components are. The passcode page,
 the navigation drawer, the on-this-page rail, and the opening sequence were each

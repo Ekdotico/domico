@@ -55,6 +55,23 @@ const PAIRS = [
   ['rule-control', 'bg-surface-2', 3],
   ['rule-control', 'bg-inset', 3],
   ['rule-control', 'bg-raised', 3],
+  // The form controls, the dialog and the tooltip, added at 0.25.0. A dialog
+  // and a tooltip sit on --bg-raised, which no pair here had measured, and
+  // three inks the rest of the system uses as text do not hold there: --fg-3
+  // is 4.40:1 in sepia dark, --accent 4.42:1 and --danger 4.27:1 in parchment
+  // dark. So the controls draw text on it in --fg-1 and --fg-2 alone, and use
+  // --accent and --danger there as boundaries and marks, which owe 3:1. The
+  // pairs are listed so that choice stays measured rather than remembered.
+  ['fg-1', 'bg-raised', 4.5],
+  ['fg-2', 'bg-raised', 4.5],
+  ['accent', 'bg-raised', 3],
+  ['danger', 'bg-raised', 3],
+  // The hint under a label, on a card. On the canvas it is already listed.
+  ['fg-2', 'bg-surface', 4.5],
+  // The field message and the form fault: --fg-1 on the danger wash.
+  ['fg-1', 'danger-soft', 4.5],
+  // A hovered secondary button and the dialog's close button.
+  ['fg-1', 'bg-surface-2', 4.5],
   ['accent', 'bg-canvas', 4.5],
   ['accent-ink', 'accent', 4.5],
   ['gilt', 'bg-canvas', 4.5],

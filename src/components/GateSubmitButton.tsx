@@ -1,7 +1,7 @@
 'use client';
 
-import * as ReactDOM from 'react-dom';
 import type { ReactNode } from 'react';
+import { PendingButton } from './Button.js';
 
 /**
  * The submit button of an `AccessGate`, which reports its own in-flight state.
@@ -14,39 +14,17 @@ import type { ReactNode } from 'react';
  * in progress — the check, not the unlock, which is what happens if the check
  * passes — and the button refuses a second press.
  *
- * `aria-disabled` and a click guard rather than `disabled`, from praktico's
- * gate. The button holds focus at the moment it is pressed, and disabling a
- * focused element drops focus to <body> in every engine: the reader lost their
- * place, and met the refusal message from the top of the document (WCAG 2.4.3).
- * The documentation site and deree used `disabled` and patched the announcement
- * back with a live region; keeping focus where it was makes the patch a
- * reinforcement rather than the only thing speaking. The click guard also
- * catches implicit submission: Enter in the field dispatches a click on this
- * button, and the guard cancels it.
- *
- * `aria-live="polite"` stays, from the public sites. A label changing on the
- * focused control is not reliably announced on its own.
- *
- * `pending` is read from `useFormStatus` where the installed React has it (19
- * and later), which covers a server action and a `useActionState` dispatch
- * alike. Pass `pending` to override it — for a form the button is not inside,
- * or under React 18, where the hook does not exist and the button otherwise
- * never reports a pending state.
+ * The behaviour is `Button`'s, which was generalised from this one: the
+ * `aria-disabled` click guard that keeps focus where it was, the polite live
+ * label, and `pending` read from `useFormStatus` under React 19 or passed in.
+ * `Button` records the reasons. What stays here is the gate's: the class
+ * `access-gate.css` styles, so an application that imports the gate's
+ * stylesheet alone still gets its button, and the two default labels.
  */
-
-type FormStatus = { pending: boolean };
-
-// Read once, at module scope, so every render calls the same hook — or none.
-// `import * as` rather than a named import: under React 18 the name is absent,
-// and a named import of a missing binding is an error in a strict ES module.
-const useFormStatus: () => FormStatus =
-  (ReactDOM as unknown as { useFormStatus?: () => FormStatus }).useFormStatus ??
-  (() => ({ pending: false }));
-
 export function GateSubmitButton({
   children = 'Unlock',
   pendingLabel = 'Checking the code…',
-  pending: pendingOverride,
+  pending,
   className,
 }: {
   /** The label at rest. */
@@ -57,20 +35,14 @@ export function GateSubmitButton({
   pending?: boolean;
   className?: string;
 }) {
-  const status = useFormStatus();
-  const pending = pendingOverride ?? status.pending;
   return (
-    <button
+    <PendingButton
       type="submit"
       className={['unlock-button', className].filter(Boolean).join(' ')}
-      aria-disabled={pending || undefined}
-      aria-busy={pending || undefined}
-      aria-live="polite"
-      onClick={(event) => {
-        if (pending) event.preventDefault();
-      }}
+      pendingLabel={pendingLabel}
+      pending={pending}
     >
-      {pending ? pendingLabel : children}
-    </button>
+      {children}
+    </PendingButton>
   );
 }

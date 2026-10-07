@@ -52,6 +52,18 @@ export {
 export { StickyTableHead } from './StickyTableHead.js';
 export { Tab, Tabs } from './Tabs.js';
 
+// Form controls, the dialog and the tooltip. The application signs a person in,
+// takes feedback and asks for confirmation with these; none replaces a local
+// component, because no application had drawn one yet.
+export { Button, type ButtonVariant } from './Button.js';
+export { TextField, OneTimeCodeField, type TextFieldProps } from './TextField.js';
+export { PasswordField } from './PasswordField.js';
+export { TextArea } from './TextArea.js';
+export { Checkbox, RadioGroup, type RadioOption } from './Choice.js';
+export { FormFault, type FormFaultItem } from './FormFault.js';
+export { Dialog } from './Dialog.js';
+export { Tooltip } from './Tooltip.js';
+
 /** @supersedes UnlockScreen, ResearchUnlockScreen */
 export { AccessGate } from './AccessGate.js';
 /** @supersedes UnlockSubmitButton */

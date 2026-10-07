@@ -1214,3 +1214,471 @@
 @media print {
   .opening-sequence { display: none; }
 }
+
+/* --- Button -------------------------------------------------------------- */
+/* Button's four variants. The `ekd-` prefix, as on the layout primitives: a
+   class called `button` or `dialog` is one an application may already own, and
+   these arrive in the aggregate stylesheet whether it renders them or not.
+
+   The base rule is the secondary button: a hairline at control contrast on
+   whatever surface it sits on. Every label is --fg-1 except the primary's,
+   and that is deliberate. --accent and --danger as text both fall under 4.5:1
+   on --bg-raised in parchment dark (4.42:1 and 4.27:1), which is the surface a
+   dialog's buttons sit on, so neither is used as an ink here; each is a
+   boundary, where 3:1 is what is owed. */
+.ekd-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  background: transparent;
+  color: var(--fg-1);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semi);
+  line-height: var(--lh-normal);
+  letter-spacing: var(--tr-wide);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-soft),
+    border-color var(--dur-fast) var(--ease-soft);
+}
+.ekd-button:hover { background: var(--bg-surface-2); }
+.ekd-button[data-variant="primary"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.ekd-button[data-variant="primary"]:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+/* No boundary at rest. The transparent border keeps it the height of its
+   neighbours in a row. */
+.ekd-button[data-variant="quiet"] { border-color: transparent; }
+/* The danger hairline, and its wash on hover. Not a filled button: there is no
+   ink token for a --danger ground, and white on it fails in the dark palettes. */
+.ekd-button[data-variant="destructive"] { border-color: var(--danger); }
+.ekd-button[data-variant="destructive"]:hover { background: var(--danger-soft); }
+/* In flight or unavailable, as the gate's button: the sunken surface step, not
+   --bg-inset, which would read as an empty field. After the variants and at
+   their specificity, so it holds over each one's hover. */
+.ekd-button[data-variant][aria-disabled="true"],
+.ekd-button[data-variant][aria-busy="true"],
+.ekd-button[data-variant]:disabled {
+  background: var(--bg-surface-2);
+  color: var(--fg-3);
+  border-color: var(--rule);
+}
+.ekd-button[data-variant][aria-busy="true"] { cursor: progress; }
+.ekd-button[data-variant]:disabled { cursor: not-allowed; }
+@media (forced-colors: active) {
+  .ekd-button[data-variant][aria-disabled="true"],
+  .ekd-button[data-variant]:disabled {
+    color: GrayText;
+    border-color: GrayText;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ekd-button { transition: none; }
+}
+
+/* --- Form fields --------------------------------------------------------- */
+/* TextField, PasswordField, OneTimeCodeField and TextArea, and the label, hint
+   and message RadioGroup and Checkbox share with them.
+
+   The inks are chosen for the worst surface a form sits on, which is a dialog's
+   --bg-raised. The hint is --fg-2: --fg-3 measures 4.40:1 there in sepia dark.
+   The message is --fg-1 on the danger wash inside a danger hairline, the house
+   treatment for a toned surface, and not --danger text, which measures 4.27:1
+   on --bg-raised in parchment dark. Ground, hairline and words carry the fault
+   between them, so it does not rest on hue. */
+.ekd-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.ekd-field-label,
+.ekd-choice-legend {
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+}
+.ekd-field-hint {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+  color: var(--fg-2);
+}
+.ekd-field-input {
+  width: 100%;
+  background: var(--bg-inset);
+  /* The field's only visible boundary, which owes 3:1 against the surface
+     (WCAG 1.4.11). */
+  border: 1px solid var(--rule-control);
+  border-radius: var(--radius-md);
+  padding: var(--sp-2) var(--sp-3);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+  /* No `outline: none`. The focus ring is the reset's; the border tint below
+     reinforces it. */
+  transition: border-color var(--dur-fast) var(--ease-soft);
+}
+.ekd-field-input:focus-visible { border-color: var(--accent); }
+.ekd-field-input[aria-invalid="true"] { border-color: var(--danger); }
+/* Unavailable is the sunken surface step. --bg-inset means editable and empty. */
+.ekd-field-input:disabled {
+  background: var(--bg-surface-2);
+  color: var(--fg-3);
+  cursor: not-allowed;
+}
+textarea.ekd-field-input {
+  display: block;
+  resize: vertical;
+}
+/* A code is an identifier, so it is set in the mono and opened up, as the
+   gate's is. Start-aligned here: this field sits in a column of others. */
+.ekd-field-input[data-code] {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  letter-spacing: var(--tr-widest);
+}
+.ekd-field-row {
+  display: flex;
+  gap: var(--sp-2);
+}
+.ekd-field-row > .ekd-field-input {
+  flex: 1;
+  min-inline-size: 0;
+}
+/* The show-and-hide toggle. Beside the field rather than inside it, so it
+   never covers what is typed and its target is the field's full height. */
+.ekd-field-toggle {
+  flex: none;
+  padding: var(--sp-1) var(--sp-3);
+  background: transparent;
+  color: var(--fg-1);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-soft),
+    border-color var(--dur-fast) var(--ease-soft);
+}
+.ekd-field-toggle:hover { background: var(--bg-surface-2); }
+.ekd-field-toggle[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.ekd-field-error {
+  margin: 0;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+}
+.ekd-field-count {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  color: var(--fg-2);
+}
+/* Over the maximum: weight and the primary ink, with the field's own danger
+   boundary. The words say which way the number runs. */
+.ekd-field-count[data-over] {
+  font-weight: var(--fw-semi);
+  color: var(--fg-1);
+}
+@media (forced-colors: active) {
+  /* The tints are flattened to system colours, so the invalid field and the
+     pressed toggle each keep a signal that is not colour. */
+  .ekd-field-input[aria-invalid="true"],
+  .ekd-field-toggle[aria-pressed="true"] { border-width: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ekd-field-input,
+  .ekd-field-toggle { transition: none; }
+}
+
+/* --- Choices ------------------------------------------------------------- */
+/* RadioGroup and Checkbox. The native inputs, with `appearance: none` so the
+   box and the mark come from tokens in all eight palettes; the keyboard, the
+   checked state and the form value stay the platform's.
+
+   The box is sized in `em`, so it follows the label's type size and a reader's
+   own font size. The target is the whole label, which is never shorter than
+   24px (WCAG 2.5.8). */
+.ekd-choice-group {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.ekd-choice-legend { padding: 0; }
+/* Margins, not a flex gap: a legend is not laid out as a flex item. */
+.ekd-choice-group > * + *,
+.ekd-choice-field > * + * { margin-block-start: var(--sp-1); }
+.ekd-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  min-block-size: var(--sp-6);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+  cursor: pointer;
+}
+.ekd-choice-input {
+  appearance: none;
+  flex: none;
+  display: grid;
+  place-content: center;
+  inline-size: 1.25em;
+  block-size: 1.25em;
+  /* Centres the box on the first line of a label that wraps. */
+  margin: 0.125em 0 0;
+  background: var(--bg-inset);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+}
+.ekd-choice-input[type="radio"] { border-radius: var(--radius-pill); }
+/* The mark: a dot, or a tick cut from a square. Present and hidden, rather
+   than scaled in, because nothing already on screen moves. */
+.ekd-choice-input::before {
+  content: "";
+  inline-size: 0.5em;
+  block-size: 0.5em;
+  background: var(--accent-ink);
+  border-radius: var(--radius-pill);
+  visibility: hidden;
+}
+.ekd-choice-input[type="checkbox"]::before {
+  inline-size: 0.75em;
+  block-size: 0.75em;
+  border-radius: 0;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+}
+.ekd-choice-input:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ekd-choice-input:checked::before { visibility: visible; }
+.ekd-choice-input[aria-invalid="true"],
+.ekd-choice-group[data-invalid] .ekd-choice-input { border-color: var(--danger); }
+/* The boundary stays at control contrast: an unavailable box is still a box. */
+.ekd-choice-input:disabled {
+  background: var(--bg-surface-2);
+  cursor: not-allowed;
+}
+.ekd-choice:has(.ekd-choice-input:disabled) {
+  color: var(--fg-3);
+  cursor: not-allowed;
+}
+@media (forced-colors: active) {
+  /* The drawn box is background colours, which this mode removes. The
+     platform's own control is the one it knows how to paint. */
+  .ekd-choice-input { appearance: auto; }
+  .ekd-choice-input::before { display: none; }
+}
+
+/* --- Form fault ---------------------------------------------------------- */
+/* FormFault, the statement at the head of a form. The danger callout's
+   treatment — the wash, a full hairline, no edge stripe — with every word in
+   --fg-1, so the list reads as text and not as a block of red. */
+.ekd-fault {
+  padding: var(--sp-4);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+}
+.ekd-fault-title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semi);
+  line-height: var(--lh-snug);
+}
+.ekd-fault-body { margin-block-start: var(--sp-2); }
+.ekd-fault-body > :first-child { margin-block-start: 0; }
+.ekd-fault-body > :last-child { margin-block-end: 0; }
+.ekd-fault-list {
+  margin: var(--sp-2) 0 0;
+  padding-inline-start: var(--sp-5);
+}
+.ekd-fault-list li + li { margin-block-start: var(--sp-1); }
+/* Stated here as well as in the reset, which underlines an unclassed anchor:
+   on a tinted ground the underline is the only thing that says link. */
+.ekd-fault-list a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+/* --- Dialog -------------------------------------------------------------- */
+/* Dialog: the native element, so the top layer, the inert page and the
+   centring are the platform's. `display` is left alone, because setting it
+   would show a closed dialog.
+
+   --bg-raised carries --fg-1 and --fg-2 as text. Not --fg-3, --accent or
+   --danger: see the notes on the button and the fields. */
+.ekd-dialog {
+  inline-size: 30rem;
+  max-inline-size: calc(100% - 2 * var(--sp-4));
+  max-block-size: calc(100% - 2 * var(--sp-4));
+  padding: var(--sp-6);
+  overflow: auto;
+  /* A scroll that reaches the end of the dialog stops there. */
+  overscroll-behavior: contain;
+  background: var(--bg-raised);
+  color: var(--fg-1);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+}
+/* The backdrop inherits from the dialog, so the token resolves in whichever
+   palette the document is in. */
+.ekd-dialog::backdrop { background: var(--overlay-scrim); }
+.ekd-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-block-end: var(--sp-4);
+}
+.ekd-dialog-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semi);
+  line-height: var(--lh-snug);
+  color: var(--fg-1);
+}
+.ekd-dialog-close {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  padding: var(--sp-2);
+  background: transparent;
+  color: var(--fg-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.ekd-dialog-close:hover {
+  background: var(--bg-surface-2);
+  color: var(--fg-1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ekd-dialog-close { transition: none; }
+}
+
+/* --- Tooltip ------------------------------------------------------------- */
+/* Tooltip. Shown from `data-open`, which the component sets on hover and on
+   focus and clears on Escape; the content stays in the document either way,
+   because the trigger is described by it.
+
+   A fade and nothing else: the tooltip does not enter the viewport, so it does
+   not move. `visibility` flips with no duration of its own, delayed on the way
+   out by the length of the fade (rule 12).
+
+   ponytail: placed under or over the trigger's start edge, with no collision
+   handling, so one at the end of a line can run past the viewport and one
+   inside a scrolling dialog is clipped by it. CSS anchor positioning with
+   `position-try` is the upgrade once every supported engine has it. */
+.ekd-tooltip {
+  position: relative;
+  display: inline-block;
+}
+/* The trigger the package renders for a mark that is not otherwise a control.
+   The dotted underline says there is more; the cursor does not change, since
+   nothing happens on a press. */
+.ekd-tooltip-trigger {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--sp-6);
+  padding: 0;
+  background: none;
+  border: 0;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+  cursor: help;
+}
+.ekd-tooltip-content {
+  position: absolute;
+  z-index: 1000;
+  inset-block-start: calc(100% + var(--sp-1));
+  inset-inline-start: 0;
+  inline-size: max-content;
+  max-inline-size: 20rem;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-raised);
+  color: var(--fg-1);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-normal);
+  letter-spacing: var(--tr-normal);
+  text-align: start;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--dur-fast) var(--ease-soft),
+    visibility 0s linear var(--dur-fast);
+}
+/* Bridges the gap to the trigger, so the pointer can cross onto the content
+   without leaving the element it is tracked on (WCAG 1.4.13, hoverable). */
+.ekd-tooltip-content::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 100%;
+  block-size: var(--sp-1);
+}
+.ekd-tooltip[data-placement="top"] > .ekd-tooltip-content {
+  inset-block-start: auto;
+  inset-block-end: calc(100% + var(--sp-1));
+}
+.ekd-tooltip[data-placement="top"] > .ekd-tooltip-content::before {
+  inset-block-end: auto;
+  inset-block-start: 100%;
+}
+.ekd-tooltip[data-open] > .ekd-tooltip-content {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--dur-fast) var(--ease-soft),
+    visibility 0s linear 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ekd-tooltip-content,
+  .ekd-tooltip[data-open] > .ekd-tooltip-content { transition: none; }
+}

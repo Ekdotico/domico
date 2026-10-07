@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { forwardRef, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { FieldShell, describedBy, errorId, hintId } from './Field.js';
 import type { TextFieldProps } from './TextField.js';
 
@@ -28,25 +28,24 @@ import type { TextFieldProps } from './TextField.js';
  *
  * The field goes back to hidden when its form is submitted, so a browser does
  * not keep a password it met as plain text among its remembered entries.
+ *
+ * `ref` reaches the input, as on `TextField`.
  */
-export function PasswordField({
-  label,
-  hint,
-  error,
-  id,
-  className,
-  toggleLabel,
-  'aria-describedby': describedby,
-  ...input
-}: Omit<TextFieldProps, 'type' | 'autoComplete'> & {
-  /** The toggle's name, such as "Show password". The same in both states. */
-  toggleLabel: ReactNode;
-  autoComplete: 'current-password' | 'new-password';
-}) {
+export const PasswordField = forwardRef<
+  HTMLInputElement,
+  Omit<TextFieldProps, 'type' | 'autoComplete'> & {
+    /** The toggle's name, such as "Show password". The same in both states. */
+    toggleLabel: ReactNode;
+    autoComplete: 'current-password' | 'new-password';
+  }
+>(function PasswordField(
+  { label, hint, error, id, className, toggleLabel, 'aria-describedby': describedby, ...input },
+  ref,
+) {
   const ownId = useId();
   const fieldId = id ?? ownId;
   const [shown, setShown] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const form = inputRef.current?.form;
@@ -63,7 +62,13 @@ export function PasswordField({
           spellCheck={false}
           autoCapitalize="none"
           {...input}
-          ref={inputRef}
+          // One element, two holders: the field needs it to find its form, and
+          // the application may have asked for it too.
+          ref={(element) => {
+            inputRef.current = element;
+            if (typeof ref === 'function') ref(element);
+            else if (ref) ref.current = element;
+          }}
           id={fieldId}
           type={shown ? 'text' : 'password'}
           className="ekd-field-input"
@@ -86,4 +91,4 @@ export function PasswordField({
       </div>
     </FieldShell>
   );
-}
+});

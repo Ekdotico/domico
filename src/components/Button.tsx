@@ -81,11 +81,12 @@ export function PendingButton({
   const pending = pendingOverride ?? (type === 'submit' && status.pending);
   return (
     <button
+      // Before the spread, so an `aria-live` the application sets is kept.
+      aria-live={pendingLabel != null ? 'polite' : undefined}
       {...button}
       type={type}
       aria-disabled={pending || undefined}
       aria-busy={pending || undefined}
-      aria-live={pendingLabel != null ? 'polite' : undefined}
       onClick={(event) => {
         if (pending) {
           event.preventDefault();

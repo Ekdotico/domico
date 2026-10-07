@@ -381,14 +381,22 @@ and `toggleLabel` is its name in both states. The field goes back to hidden
 when its form is submitted.
 
 `OneTimeCodeField` is one input with `inputMode="numeric"` and
-`autoComplete="one-time-code"`, so a phone offers the code it has received and a
-paste lands whole. `digits` defaults to 6.
+`autoComplete="one-time-code"`, so a phone offers the code it has received.
+`digits` defaults to 6. It sets no `maxlength`, and its `pattern` allows one
+space or hyphen between each two digits, so a code copied as "123 456" is
+pasted whole and passes the browser's own check. The value arrives as typed:
+the server strips the separators before it compares.
 
 `TextArea` takes `maximum` and `remainingLabel`, a function from the number
 remaining to the words for it. The count on screen follows every keystroke; a
 polite live region follows a second after typing stops. `maximum` does not set
 `maxlength`, which would truncate a paste without saying so: past the maximum
-the field is marked invalid and the number goes negative.
+the field is marked invalid and the number goes negative. Because
+`remainingLabel` is a function, a counted `TextArea` is rendered from a client
+component; a Server Component cannot pass it one.
+
+`TextField`, `PasswordField`, `OneTimeCodeField`, `TextArea`, and `Checkbox`
+each hand their native element to a `ref`.
 
 ```tsx
 <RadioGroup id="kind" name="kind" legend="Kind of feedback" required
@@ -434,14 +442,18 @@ behind it inert, keeps Tab inside, and returns focus to the control that opened
 it; the component adds no focus trap of its own and no `aria-modal`. It is named
 by its heading.
 
-The application holds `open`. Escape and the close button call `onClose` and
-close nothing themselves, so a dialog that holds unsent work can ask first. A
-press outside the dialog does not close it. The children stay mounted while it
-is closed, so give a form a `key` to clear it once it is sent.
+The application holds `open`, and the dialog on screen follows it. Escape and
+the close button call `onClose`, and the dialog closes when `open` becomes
+false, so `onClose` is expected to set it. Where `open` stays true, the dialog
+stays: one the browser has closed regardless, as Chromium does on a second
+Escape, is shown again. A press outside the dialog does not close it. The
+children stay mounted while it is closed, so give a form a `key` to clear it
+once it is sent.
 
 `closeLabel` renders the close button and names it. Leave it out for a
 confirmation, and give the dialog a button of its own that calls `onClose`.
-`initialFocusRef` chooses where focus lands on opening.
+`initialFocusRef` chooses where focus lands on opening, and `aria-describedby`
+passes through for a sentence that should be read with the dialog's name.
 
 ### The tooltip
 
@@ -457,12 +469,20 @@ it without moving the pointer or focus, the pointer can move onto the content,
 and nothing times it out. While it is showing, Escape is the tooltip's and does
 not reach a dialog behind it.
 
+Focus shows it only where the browser would draw a focus ring, so a control
+pressed with a mouse does not keep its tooltip up after the pointer has gone.
+
 Pass one focusable element and it is described in place. Pass text and the
 package renders a button for it, so the tooltip exists for a keyboard and for a
-touch. The content is text: a link inside a tooltip cannot be reached.
+touch: a press on that button shows the tooltip, and a second press, or a press
+anywhere else, hides it. The content is text: a link inside a tooltip cannot be
+reached.
 
 It opens under the start edge of its trigger, or over it with
-`placement="top"`, and does not reposition at the edge of the viewport.
+`placement="top"`. Closed, it takes no space. Open, it is no wider than the
+viewport less a margin and is moved sideways to stay inside it, so it adds no
+horizontal scroll at a narrow width. It does not flip to the other side of its
+trigger when there is no room.
 
 ### Which ink on which surface
 

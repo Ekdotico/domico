@@ -1,4 +1,10 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
+import {
+  forwardRef,
+  useId,
+  type FieldsetHTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from 'react';
 import { describedBy, errorId, hintId, type FieldProps } from './Field.js';
 
 /**
@@ -61,7 +67,10 @@ export function RadioGroup({
   disabled,
   id,
   className,
-}: Omit<FieldProps, 'label'> & {
+  'aria-describedby': describedby,
+  ...fieldset
+}: Omit<FieldProps, 'label'> &
+  Omit<FieldsetHTMLAttributes<HTMLFieldSetElement>, 'onChange' | 'defaultValue' | 'children' | 'name'> & {
   /** The question. It names the group. */
   legend: ReactNode;
   /** The name the chosen value is submitted under. */
@@ -82,9 +91,14 @@ export function RadioGroup({
   const groupId = id ?? ownId;
   return (
     <fieldset
+      {...fieldset}
       className={['ekd-choice-group', className].filter(Boolean).join(' ')}
       data-invalid={error != null || undefined}
-      aria-describedby={describedBy(hint != null && hintId(groupId), error != null && errorId(groupId))}
+      aria-describedby={describedBy(
+        hint != null && hintId(groupId),
+        error != null && errorId(groupId),
+        describedby,
+      )}
     >
       <legend className="ekd-choice-legend">{legend}</legend>
       {hint != null ? (
@@ -124,17 +138,13 @@ export function RadioGroup({
  *
  * A native `<input type="checkbox">`; its attributes pass through. The hint
  * and the message sit under the label and are named by `aria-describedby`;
- * `error` marks the box `aria-invalid`, which a checkbox does take.
+ * `error` marks the box `aria-invalid`, which a checkbox does take. `ref`
+ * reaches the input.
  */
-export function Checkbox({
-  label,
-  hint,
-  error,
-  id,
-  className,
-  'aria-describedby': describedby,
-  ...input
-}: FieldProps & Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'placeholder' | 'aria-invalid' | 'children'>) {
+export const Checkbox = forwardRef<
+  HTMLInputElement,
+  FieldProps & Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'placeholder' | 'aria-invalid' | 'children'>
+>(function Checkbox({ label, hint, error, id, className, 'aria-describedby': describedby, ...input }, ref) {
   const ownId = useId();
   const fieldId = id ?? ownId;
   return (
@@ -142,6 +152,7 @@ export function Checkbox({
       <label className="ekd-choice">
         <input
           {...input}
+          ref={ref}
           type="checkbox"
           id={fieldId}
           className="ekd-choice-input"
@@ -166,4 +177,4 @@ export function Checkbox({
       ) : null}
     </div>
   );
-}
+});

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { forwardRef, useEffect, useId, useState, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import { FieldShell, describedBy, errorId, hintId, type FieldProps } from './Field.js';
 
 /**
@@ -31,6 +31,13 @@ import { FieldShell, describedBy, errorId, hintId, type FieldProps } from './Fie
  * the maximum the field is marked invalid and the count goes negative; the
  * application's `error` says what to do, and its server refuses the excess.
  *
+ * **A counted field needs a client parent.** `remainingLabel` is a function,
+ * and a Server Component cannot pass a function to a client one: render a
+ * `TextArea` with `maximum` from a file that is itself `'use client'`. Without
+ * `maximum` it takes nothing but serialisable props and renders from either.
+ *
+ * `ref` reaches the textarea.
+ *
  * The count is the length of the value as the browser holds it. A server that
  * trims, or counts a line break as two characters, can differ by a few at the
  * boundary, and is the authority when it does.
@@ -47,20 +54,26 @@ type CountProps =
 /** How long typing has to stop before the count is announced. */
 const ANNOUNCE_AFTER_MS = 1000;
 
-export function TextArea({
-  label,
-  hint,
-  error,
-  id,
-  className,
-  maximum,
-  remainingLabel,
-  onChange,
-  'aria-describedby': describedby,
-  ...textarea
-}: FieldProps &
-  CountProps &
-  Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'placeholder' | 'aria-invalid' | 'children' | 'maxLength'>) {
+export const TextArea = forwardRef<
+  HTMLTextAreaElement,
+  FieldProps &
+    CountProps &
+    Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'placeholder' | 'aria-invalid' | 'children' | 'maxLength'>
+>(function TextArea(
+  {
+    label,
+    hint,
+    error,
+    id,
+    className,
+    maximum,
+    remainingLabel,
+    onChange,
+    'aria-describedby': describedby,
+    ...textarea
+  },
+  ref,
+) {
   const ownId = useId();
   const fieldId = id ?? ownId;
   const countId = `${fieldId}-count`;
@@ -82,6 +95,7 @@ export function TextArea({
     <FieldShell id={fieldId} label={label} hint={hint} error={error} className={className}>
       <textarea
         {...textarea}
+        ref={ref}
         id={fieldId}
         className="ekd-field-input"
         aria-invalid={error != null || over || undefined}
@@ -108,4 +122,4 @@ export function TextArea({
       ) : null}
     </FieldShell>
   );
-}
+});

@@ -5,6 +5,7 @@ import {
   isValidElement,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactElement,
@@ -37,6 +38,11 @@ import { describedBy } from './Field.js';
  * - Persistent. It stays until the pointer leaves, focus leaves, or Escape.
  *   Nothing times it out.
  *
+ * Focus opens it only where the browser would draw a focus ring, which is to
+ * say for a keyboard. A control that is pressed with a mouse keeps focus
+ * afterwards, and a tooltip that opened on that focus would sit over the page
+ * until the reader pressed somewhere else.
+ *
  * The content is tied to the trigger by `aria-describedby`, so it is read with
  * the control whether or not it is showing, and it is `role="tooltip"`. It is
  * text: a link or a button inside it could not be reached by the keyboard, and
@@ -46,14 +52,30 @@ import { describedBy } from './Field.js';
  * The trigger has to take focus, or the tooltip does not exist for a keyboard.
  * Pass one element that does — a `Button`, a link — and it is described in
  * place. Pass text and the package renders the trigger: a button, because a
- * mark such as "Not recorded" is not otherwise a Tab stop, and on a phone a
- * press on it is the only hover there is.
+ * mark such as "Not recorded" is not otherwise a Tab stop. A press on that
+ * button shows the tooltip and a second press hides it, which is what a touch
+ * has in place of a hover; a press anywhere else hides it too. An element of
+ * the application's own keeps its own press and is not given this one.
  *
  * Mouse events rather than pointer events: a touch ends its pointer the moment
  * the finger lifts, which would close the tooltip as it opened.
  *
+ * Closed, the content is not laid out, so it widens nothing. Open, it is never
+ * wider than the viewport less a margin, and it is moved sideways by as much
+ * as keeps it inside: a page must not scroll in two directions at 320 CSS
+ * pixels because an explanation opened (SC 1.4.10).
+ *
  * Styles ship in `@ekdotico/domico/styles/tooltip.css`.
  */
+
+/** The least distance kept between the tooltip and the viewport's edge, in CSS pixels. `--sp-4`. */
+const EDGE_MARGIN_PX = 16;
+
+// The layout effect, so the box is moved before it is painted and the page is
+// never one frame too wide. On the server there is no layout and React 18
+// warns about the hook there, so the plain effect stands in, and does nothing.
+const useBeforePaint = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
 export function Tooltip({
   content,
   children,
@@ -72,17 +94,20 @@ export function Tooltip({
 }) {
   const ownId = useId();
   const tipId = id ?? ownId;
+  const wrapperRef = useRef<HTMLSpanElement>(null);
+  const contentRef = useRef<HTMLSpanElement>(null);
 
-  const held = useRef({ hover: false, focus: false });
+  // Three ways it is held open, and one way it is put away.
+  const held = useRef({ hover: false, focus: false, pinned: false });
   const [active, setActive] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const open = active && !dismissed;
 
-  const hold = (patch: { hover?: boolean; focus?: boolean }) => {
+  const hold = (patch: Partial<typeof held.current>) => {
     Object.assign(held.current, patch);
-    setActive(held.current.hover || held.current.focus);
-    // Arriving again, by either route, is what brings a dismissed tooltip back.
-    if (patch.hover || patch.focus) setDismissed(false);
+    setActive(held.current.hover || held.current.focus || held.current.pinned);
+    // Arriving again, by any route, is what brings a dismissed tooltip back.
+    if (patch.hover || patch.focus || patch.pinned) setDismissed(false);
   };
 
   useEffect(() => {
@@ -90,11 +115,44 @@ export function Tooltip({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
+      held.current.pinned = false;
       setDismissed(true);
     };
+    // A press elsewhere releases a pinned tooltip. A touch leaves no hover to
+    // end and, in some engines, moves no focus, so nothing else would.
+    const onPointerDown = (event: Event) => {
+      if (event.target instanceof Node && wrapperRef.current?.contains(event.target)) return;
+      hold({ pinned: false });
+    };
     document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('pointerdown', onPointerDown);
+    };
+    // `hold` reads a ref and sets state, so the one from this render does not go stale.
   }, [open]);
+
+  // Keep it inside the viewport. Measured where the stylesheet puts it, at the
+  // trigger's inline-start edge, then moved by the overhang. The offset is
+  // written to the same inset the stylesheet sets, and not to a transform: a
+  // transformed box still counts where it would have been towards the page's
+  // scrollable width, so the scrollbar this exists to prevent would remain.
+  useBeforePaint(() => {
+    const box = contentRef.current;
+    if (!open || !box) return;
+    box.style.insetInlineStart = '';
+    const rect = box.getBoundingClientRect();
+    const view = box.ownerDocument.defaultView;
+    const width = box.ownerDocument.documentElement.clientWidth;
+    let shift = 0;
+    if (rect.right > width - EDGE_MARGIN_PX) shift = width - EDGE_MARGIN_PX - rect.right;
+    if (rect.left + shift < EDGE_MARGIN_PX) shift = EDGE_MARGIN_PX - rect.left;
+    if (shift === 0) return;
+    // The inline-start edge is the right-hand one in a right-to-left line.
+    const rtl = view?.getComputedStyle(box).direction === 'rtl';
+    box.style.insetInlineStart = `${rtl ? -shift : shift}px`;
+  }, [open, content]);
 
   const trigger = isValidElement(children) ? (
     cloneElement(children as ReactElement<{ 'aria-describedby'?: string }>, {
@@ -104,23 +162,43 @@ export function Tooltip({
       ),
     })
   ) : (
-    <button type="button" className="ekd-tooltip-trigger" aria-describedby={tipId}>
+    <button
+      type="button"
+      className="ekd-tooltip-trigger"
+      aria-describedby={tipId}
+      onClick={() => {
+        // The first press pins it open and the second puts it away, as Escape
+        // does. Decided on the pin and not on whether it is showing: a touch
+        // sends a hover just before its press, so by the time the press
+        // arrives the tooltip is already up, and a press that closed whatever
+        // was showing would close it on the tap that opened it.
+        if (held.current.pinned) {
+          held.current.pinned = false;
+          setDismissed(true);
+        } else {
+          hold({ pinned: true });
+        }
+      }}
+    >
       {children}
     </button>
   );
 
   return (
     <span
+      ref={wrapperRef}
       className={['ekd-tooltip', className].filter(Boolean).join(' ')}
       data-open={open || undefined}
       data-placement={placement}
       onMouseEnter={() => hold({ hover: true })}
       onMouseLeave={() => hold({ hover: false })}
-      onFocus={() => hold({ focus: true })}
-      onBlur={() => hold({ focus: false })}
+      onFocus={(event) => {
+        if (event.target.matches(':focus-visible')) hold({ focus: true });
+      }}
+      onBlur={() => hold({ focus: false, pinned: false })}
     >
       {trigger}
-      <span id={tipId} role="tooltip" className="ekd-tooltip-content">
+      <span ref={contentRef} id={tipId} role="tooltip" className="ekd-tooltip-content">
         {content}
       </span>
     </span>

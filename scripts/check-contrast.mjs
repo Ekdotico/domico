@@ -41,6 +41,10 @@ const PAIRS = [
   // Unlisted, sepia light shipped it at 4.32:1. Its --fg-3 now sits at the
   // lightness that first clears 4.6:1 there, a hue- and chroma-preserving move
   // of 1.6 points, and the other seven palettes already cleared 4.7:1.
+  //
+  // Also the mark of a checked checkbox or radio that is disabled, since
+  // 0.25.0. A graphical object, which owes 3:1, held here at the stricter
+  // figure the pair already carried.
   ['fg-3', 'bg-surface-2', 4.5],
   ['fg-1', 'accent-soft', 4.5],
   ['danger', 'bg-surface', 4.5],

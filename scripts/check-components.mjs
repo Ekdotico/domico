@@ -688,10 +688,52 @@ await it('TextField and OneTimeCodeField', async () => {
   assert.equal(view.container.querySelectorAll('input').length, 4, 'a code field is more than one input');
   assert.equal(code.getAttribute('inputmode'), 'numeric');
   assert.equal(code.getAttribute('autocomplete'), 'one-time-code');
-  assert.equal(code.getAttribute('pattern'), '[0-9]{6}', 'the default is not six digits');
-  assert.equal(code.getAttribute('maxlength'), '6');
-  assert.equal(short.getAttribute('pattern'), '[0-9]{4}');
+  // No length limit, which would cut the last digit off a code pasted in two
+  // groups. The pattern is tried the way the platform tries it: anchored, and
+  // compiled with the `v` flag, under which an unescaped hyphen in a class is
+  // a syntax error and the attribute is silently ignored.
+  assert.ok(!code.hasAttribute('maxlength'), 'a pasted "123 456" is truncated');
+  const accepts = (input, value) => new RegExp(`^(?:${input.getAttribute('pattern')})$`, 'v').test(value);
+  for (const value of ['123456', '123 456', '123-456', '1 2 3 4 5 6']) {
+    assert.ok(accepts(code, value), `the code pattern refuses "${value}"`);
+  }
+  for (const value of ['12345', '1234567', '123  456', '12345a', ' 123456', '123456 ']) {
+    assert.ok(!accepts(code, value), `the code pattern accepts "${value}"`);
+  }
+  assert.ok(accepts(short, '12 34') && !accepts(short, '123456'), 'digits did not set the length');
   await view.unmount();
+});
+
+await it('the fields hand their element to a ref', async () => {
+  const refs = { text: React.createRef(), code: React.createRef(), area: React.createRef(), box: React.createRef() };
+  let password = null;
+  const view = await mount(
+    h('form', null,
+      h(TextField, { ref: refs.text, name: 'a', label: 'A' }),
+      h(OneTimeCodeField, { ref: refs.code, name: 'b', label: 'B' }),
+      h(TextArea, { ref: refs.area, name: 'c', label: 'C' }),
+      h(Checkbox, { ref: refs.box, name: 'd', label: 'D' }),
+      // A callback ref, the other form a ref takes. The field keeps a ref of
+      // its own to this input, and must not keep it instead of this one.
+      h(PasswordField, { ref: (el) => { password = el; }, name: 'e', label: 'E', toggleLabel: 'Show password',
+        autoComplete: 'new-password' }),
+    ),
+  );
+  const named = (name) => view.container.querySelector(`[name="${name}"]`);
+  assert.ok(refs.text.current === named('a'), 'TextField dropped its ref');
+  assert.ok(refs.code.current === named('b'), 'OneTimeCodeField dropped its ref');
+  assert.ok(refs.area.current === named('c'), 'TextArea dropped its ref');
+  assert.ok(refs.box.current === named('d'), 'Checkbox dropped its ref');
+  assert.ok(password === named('e'), 'PasswordField dropped its ref');
+  // And still has its own: submitting hides the password again.
+  await act(async () => view.container.querySelector('button').click());
+  assert.equal(password.getAttribute('type'), 'text');
+  await act(async () => {
+    view.container.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+  });
+  assert.equal(password.getAttribute('type'), 'password', 'the field lost its own ref to the consumer’s');
+  await view.unmount();
+  assert.ok(password === null && refs.text.current === null, 'a ref was not released on unmount');
 });
 
 await it('PasswordField shows and hides what is typed', async () => {
@@ -856,10 +898,15 @@ await it('Dialog opens, asks before it closes, and returns focus', async () => {
     this.setAttribute('open', '');
     this.querySelector('button, input, textarea, select, a[href]')?.focus();
   };
+  // The event is queued, as the platform queues it: it lands after whatever
+  // called close() has finished, and after any effect that ran in between.
+  // A stub that fires it inside close() hides exactly the fault this guards.
   proto.close = function close() {
+    if (!this.hasAttribute('open')) return;
     this.removeAttribute('open');
-    this.dispatchEvent(new window.Event('close'));
+    setTimeout(() => this.dispatchEvent(new window.Event('close')), 0);
   };
+  const settle = () => act(async () => new Promise((resolve) => setTimeout(resolve, 20)));
 
   let asked = 0;
   const page = (open, extra) =>
@@ -891,26 +938,51 @@ await it('Dialog opens, asks before it closes, and returns focus', async () => {
   await act(async () => dialog.querySelector('.ekd-dialog-close').click());
   assert.equal(asked, 2, 'the close button did not call onClose');
 
+  // A cancel that bubbled up from inside — a file input's picker, a nested
+  // dialog — is not this dialog's Escape.
+  const inner = new window.Event('cancel', { bubbles: true, cancelable: true });
+  await act(async () => document.getElementById('dialog-field').dispatchEvent(inner));
+  assert.ok(!inner.defaultPrevented && asked === 2, 'a cancel from inside the dialog was taken for its own');
+
   await view.rerender(page(false));
+  await settle();
   assert.ok(!dialog.open, 'closing did not call close()');
   assert.ok(document.activeElement === opener, 'focus did not return to the opener');
   assert.equal(asked, 2, 'closing from the application called onClose again');
 
-  // The platform closing it on its own is followed.
+  // The platform closing it on its own is reported. The application did not
+  // answer, so `open` is still true, and the dialog is shown again: a dialog
+  // that is closed while its owner says open could never be opened.
   await view.rerender(page(true));
   await act(async () => dialog.close());
+  await settle();
   assert.equal(asked, 3, 'a close the application did not make went unreported');
+  assert.ok(dialog.open, 'the dialog stayed closed while `open` was true');
 
-  // Where the application says focus goes, it goes.
+  // Where the application says focus goes, it goes. The ref is a new object on
+  // every render here, which must not close and reopen the dialog.
   await view.rerender(page(false));
-  const field = { current: document.getElementById('dialog-field') };
-  await view.rerender(page(true, { initialFocusRef: field, closeLabel: undefined }));
-  assert.ok(document.activeElement === field.current, 'initialFocusRef was ignored');
+  await settle();
+  const target = document.getElementById('dialog-field');
+  await view.rerender(page(true, { initialFocusRef: { current: target }, closeLabel: undefined }));
+  assert.ok(document.activeElement === target, 'initialFocusRef was ignored');
   assert.ok(!dialog.querySelector('.ekd-dialog-close'), 'a close button with no name rendered');
-
-  // Unmounted while open: focus is not left on nothing.
+  await view.rerender(page(true, { initialFocusRef: { current: target }, closeLabel: undefined }));
+  await settle();
+  assert.ok(dialog.open && asked === 3, 'a new ref object closed the dialog');
   await view.unmount();
-  assert.ok(document.activeElement === opener || !opener.isConnected);
+
+  // Mounted already open, under StrictMode, which runs the effect, its
+  // cleanup, and the effect again. The cleanup's close() queues an event that
+  // arrives after the second run; it is the component's own and says nothing.
+  let strict = 0;
+  const mounted = await mount(
+    h(React.StrictMode, null, h(Dialog, { open: true, onClose: () => strict++, title: 'Delete account' }, h('button', null, 'Cancel'))),
+  );
+  await settle();
+  assert.equal(strict, 0, 'a dialog mounted open asked to be closed');
+  assert.ok(mounted.container.querySelector('dialog').open, 'a dialog mounted open is closed');
+  await mounted.unmount();
   delete proto.showModal;
   delete proto.close;
 });
@@ -965,16 +1037,60 @@ await it('Tooltip shows on hover and on focus, and Escape dismisses it', async (
   await mouse('mouseout', document.body);
   assert.ok(!isOpen(), 'the tooltip outlived the hover');
 
-  // Focus, then Escape with focus still there.
+  // jsdom answers false to :focus-visible for every element, having no input
+  // modality to judge by. This stands in for it: focus is "visible" while the
+  // case says the keyboard moved it.
+  let keyboard = true;
+  const matches = window.Element.prototype.matches;
+  window.Element.prototype.matches = function patched(selector) {
+    if (selector === ':focus-visible') return keyboard && document.activeElement === this;
+    return matches.call(this, selector);
+  };
+  const elsewhere = document.getElementById('elsewhere');
+
+  // Keyboard focus, then Escape with focus still there.
   await act(async () => trigger.focus());
   assert.ok(isOpen(), 'keyboard focus did not show the tooltip');
   await escape();
   assert.ok(!isOpen() && document.activeElement === trigger, 'Escape moved focus, or left the tooltip up');
-  await act(async () => document.getElementById('elsewhere').focus());
+  await act(async () => elsewhere.focus());
   await act(async () => trigger.focus());
   assert.ok(isOpen());
-  await act(async () => document.getElementById('elsewhere').focus());
+  await act(async () => elsewhere.focus());
   assert.ok(!isOpen(), 'the tooltip outlived the focus');
+
+  // The focus a mouse press leaves behind is not a reason to show it: on the
+  // application's own control the tooltip goes when the pointer does.
+  keyboard = false;
+  const historyWrapper = wrapped;
+  const over = (type) =>
+    act(async () => historyWrapper.dispatchEvent(new window.MouseEvent(type, { bubbles: true, relatedTarget: document.body })));
+  await over('mouseover');
+  await act(async () => { history.focus(); history.click(); });
+  assert.ok(historyWrapper.hasAttribute('data-open'));
+  await over('mouseout');
+  assert.ok(document.activeElement === history, 'the case lost the focus it is about');
+  assert.ok(!historyWrapper.hasAttribute('data-open'), 'the tooltip stayed up on the focus a mouse press left');
+
+  // The package's own trigger, pressed with no hover and no keyboard: a touch
+  // in an engine that sends neither. The press shows it, the next hides it.
+  await act(async () => elsewhere.focus());
+  await act(async () => trigger.click());
+  assert.ok(isOpen(), 'a press on the trigger did not show the tooltip');
+  await act(async () => trigger.click());
+  assert.ok(!isOpen(), 'a second press did not hide it');
+  // A touch that does send a hover sends it just before the press, and that
+  // press must not close what the hover opened.
+  await mouse('mouseover', document.body);
+  await act(async () => trigger.click());
+  assert.ok(isOpen(), 'the tap that opened the tooltip closed it');
+  // A press anywhere else releases it, once the sticky hover has gone too.
+  await mouse('mouseout', document.body);
+  assert.ok(isOpen(), 'a pinned tooltip left with the pointer');
+  await act(async () => elsewhere.dispatchEvent(new window.Event('pointerdown', { bubbles: true })));
+  assert.ok(!isOpen(), 'a press elsewhere left the tooltip up');
+
+  window.Element.prototype.matches = matches;
   await view.unmount();
 });
 

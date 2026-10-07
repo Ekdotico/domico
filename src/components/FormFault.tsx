@@ -96,15 +96,18 @@ export function FormFault({
       {children != null ? <div className="ekd-fault-body">{children}</div> : null}
       {faults != null && faults.length > 0 ? (
         <ul className="ekd-fault-list">
-          {faults.map((fault) => (
-            <li key={fault.fieldId}>
+          {faults.map((fault, index) => (
+            // One field can have two faults, so its id alone is not a key.
+            <li key={`${index}-${fault.fieldId}`}>
               <a
                 href={`#${fault.fieldId}`}
                 onClick={(event) => {
                   const field = document.getElementById(fault.fieldId);
                   if (!field) return;
-                  event.preventDefault();
                   field.focus();
+                  // Where the target could not take focus, the fragment still
+                  // scrolls to it, which is better than a link that does nothing.
+                  if (field.ownerDocument.activeElement === field) event.preventDefault();
                 }}
               >
                 {fault.message}

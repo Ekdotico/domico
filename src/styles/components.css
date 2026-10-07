@@ -1490,6 +1490,13 @@ textarea.ekd-field-input {
   background: var(--bg-surface-2);
   cursor: not-allowed;
 }
+/* Unavailable and checked is still checked, and has to look it: the answer is
+   information even where it cannot be changed. --accent-ink on this ground is
+   1.1:1, so the mark takes --fg-3, which the contrast guard holds at 4.5:1 on
+   --bg-surface-2. The box keeps the sunken ground rather than the accent, so
+   it does not read as one that can be pressed. */
+.ekd-choice-input:checked:disabled { border-color: var(--rule-control); }
+.ekd-choice-input:checked:disabled::before { background: var(--fg-3); }
 .ekd-choice:has(.ekd-choice-input:disabled) {
   color: var(--fg-3);
   cursor: not-allowed;
@@ -1598,25 +1605,32 @@ textarea.ekd-field-input {
 }
 
 /* --- Tooltip ------------------------------------------------------------- */
-/* Tooltip. Shown from `data-open`, which the component sets on hover and on
-   focus and clears on Escape; the content stays in the document either way,
-   because the trigger is described by it.
+/* Tooltip. Shown from `data-open`, which the component sets on hover, on
+   keyboard focus and on a press of its own trigger, and clears on Escape.
 
-   A fade and nothing else: the tooltip does not enter the viewport, so it does
-   not move. `visibility` flips with no duration of its own, delayed on the way
-   out by the length of the fade (rule 12).
+   Closed, the content is `display: none`, and that is the point of it: a box
+   that is only invisible is still laid out, and an absolutely placed one at
+   the end of a line widens the page it is hidden on, which is a horizontal
+   scrollbar at 320 CSS pixels (WCAG 1.4.10). The trigger is still described by
+   it: `aria-describedby` reads a referenced element whether or not it is
+   rendered.
 
-   ponytail: placed under or over the trigger's start edge, with no collision
-   handling, so one at the end of a line can run past the viewport and one
-   inside a scrolling dialog is clipped by it. CSS anchor positioning with
+   A fade in and nothing else. The tooltip does not enter the viewport, so it
+   does not move; and it leaves without a fade, because a fade out would need
+   the box kept laid out for its length. An engine without `@starting-style`
+   shows it at once.
+
+   ponytail: the component shifts the box sideways to keep it in the viewport,
+   and that is all the collision handling there is. It does not flip to the
+   other side when there is no room under the trigger, and one inside a
+   scrolling dialog is clipped by it. CSS anchor positioning with
    `position-try` is the upgrade once every supported engine has it. */
 .ekd-tooltip {
   position: relative;
   display: inline-block;
 }
 /* The trigger the package renders for a mark that is not otherwise a control.
-   The dotted underline says there is more; the cursor does not change, since
-   nothing happens on a press. */
+   The dotted underline says there is more, and the cursor says what kind. */
 .ekd-tooltip-trigger {
   display: inline-flex;
   align-items: center;
@@ -1629,12 +1643,15 @@ textarea.ekd-field-input {
   cursor: help;
 }
 .ekd-tooltip-content {
+  display: none;
   position: absolute;
   z-index: 1000;
   inset-block-start: calc(100% + var(--sp-1));
   inset-inline-start: 0;
   inline-size: max-content;
-  max-inline-size: 20rem;
+  /* Never wider than the viewport less a margin each side, so the component's
+     sideways shift always has somewhere to put it. */
+  max-inline-size: min(20rem, calc(100vw - 2 * var(--sp-4)));
   padding: var(--sp-2) var(--sp-3);
   background: var(--bg-raised);
   color: var(--fg-1);
@@ -1648,11 +1665,7 @@ textarea.ekd-field-input {
   letter-spacing: var(--tr-normal);
   text-align: start;
   white-space: normal;
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity var(--dur-fast) var(--ease-soft),
-    visibility 0s linear var(--dur-fast);
+  transition: opacity var(--dur-fast) var(--ease-soft);
 }
 /* Bridges the gap to the trigger, so the pointer can cross onto the content
    without leaving the element it is tracked on (WCAG 1.4.13, hoverable). */
@@ -1671,14 +1684,10 @@ textarea.ekd-field-input {
   inset-block-end: auto;
   inset-block-start: 100%;
 }
-.ekd-tooltip[data-open] > .ekd-tooltip-content {
-  opacity: 1;
-  visibility: visible;
-  transition:
-    opacity var(--dur-fast) var(--ease-soft),
-    visibility 0s linear 0s;
+.ekd-tooltip[data-open] > .ekd-tooltip-content { display: block; }
+@starting-style {
+  .ekd-tooltip[data-open] > .ekd-tooltip-content { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ekd-tooltip-content,
-  .ekd-tooltip[data-open] > .ekd-tooltip-content { transition: none; }
+  .ekd-tooltip-content { transition: none; }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { ElementRef } from '../a11y/useModalSurface.js';
 import { XIcon } from './icons.js';
 
@@ -22,15 +22,17 @@ import { XIcon } from './icons.js';
  * because two focus traps on one surface is one too many. No `aria-modal`
  * either: `showModal()` already says it.
  *
- * The application owns `open`. Escape, the close button, and a
- * `<form method="dialog">` inside all call `onClose` and close nothing
- * themselves, so a dialog holding unsent work can decline — or ask first — by
- * leaving `open` as it is. An engine that closes the dialog regardless (a
- * second Escape in a row, in Chromium) is followed: `onClose` is called then
- * too.
+ * The application owns `open`, and the dialog on screen follows it. Escape,
+ * the close button, and a `<form method="dialog">` inside all call `onClose`;
+ * the dialog closes when `open` becomes false. `onClose` is expected to do
+ * that. Where it does not — a dialog that asks before discarding unsent work —
+ * the dialog stays, and one the platform has already closed is shown again,
+ * because an engine may close on a second Escape whatever a page says, and a
+ * dialog that is closed while its owner says open could never be opened.
  *
  * It is named by its heading, through `aria-labelledby`. The heading is an
- * `h2` unless `headingLevel` says otherwise.
+ * `h2` unless `headingLevel` says otherwise. `aria-describedby` passes through,
+ * for a confirmation whose one sentence should be read with the name.
  *
  * On opening, focus goes where the platform puts it: the first control inside.
  * Pass `initialFocusRef` to choose — the first field of a form, or the least
@@ -64,10 +66,11 @@ export function Dialog({
   initialFocusRef,
   id,
   className,
+  'aria-describedby': describedby,
 }: {
   /** Whether the dialog is open. The application holds this. */
   open: boolean;
-  /** Called when the reader asks to close: Escape, the close button, a `method="dialog"` form. */
+  /** Called when the reader asks to close: Escape, the close button, a `method="dialog"` form. Set `open` to false in it. */
   onClose: () => void;
   /** The heading. It names the dialog. */
   title: ReactNode;
@@ -79,10 +82,30 @@ export function Dialog({
   initialFocusRef?: ElementRef<HTMLElement>;
   id?: string;
   className?: string;
+  /** The id of an element inside that describes the dialog. */
+  'aria-describedby'?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const Heading = `h${headingLevel}` as 'h2';
+
+  // Read when the dialog opens, not listed as a dependency: a ref written
+  // inline is a new object every render, and re-running the effect for it
+  // would close the dialog and open it again.
+  const focusRef = useRef(initialFocusRef);
+  useEffect(() => {
+    focusRef.current = initialFocusRef;
+  });
+
+  // close() fires its `close` event from a queued task, so the event arrives
+  // after the code that called it has moved on — after React has run the
+  // effect again under StrictMode, with `open` true once more. Counting the
+  // closes this component made is how the handler tells its own from the
+  // platform's. A count and not a flag: two can be queued at once.
+  const ownCloses = useRef(0);
+  // Bumped when the platform closed a dialog whose owner still says open, to
+  // run the effect again and show it.
+  const [shown, setShown] = useState(0);
 
   useEffect(() => {
     const dialog = ref.current;
@@ -91,15 +114,18 @@ export function Dialog({
     // Captured before showModal() moves focus, so it is the element the reader left.
     const opener = doc.activeElement instanceof HTMLElement ? doc.activeElement : null;
     if (!dialog.open) dialog.showModal();
-    initialFocusRef?.current?.focus();
+    focusRef.current?.current?.focus();
 
     return () => {
-      if (dialog.open) dialog.close();
+      if (dialog.open) {
+        ownCloses.current++;
+        dialog.close();
+      }
       const active = doc.activeElement;
       const stranded = !active || active === doc.body || dialog.contains(active);
       if (stranded && opener?.isConnected) opener.focus();
     };
-  }, [open, initialFocusRef]);
+  }, [open, shown]);
 
   return (
     <dialog
@@ -107,14 +133,26 @@ export function Dialog({
       id={id}
       className={['ekd-dialog', className].filter(Boolean).join(' ')}
       aria-labelledby={titleId}
+      aria-describedby={describedby}
       onCancel={(event) => {
-        // Escape. The application decides, so the platform's own close waits.
+        // `cancel` bubbles in some engines, from a file picker or a dialog
+        // nested inside. Only this dialog's own is its Escape.
+        if (event.target !== event.currentTarget) return;
+        // The application decides, so the platform's own close waits.
         event.preventDefault();
         onClose();
       }}
-      onClose={() => {
-        // The platform closed it anyway. `open` still says otherwise, so ask.
-        if (open) onClose();
+      onClose={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (ownCloses.current > 0) {
+          ownCloses.current--;
+          return;
+        }
+        if (!open) return;
+        // The platform closed it. Ask, and then follow `open` whatever the
+        // answer: if it is still true after this, the effect shows the dialog.
+        onClose();
+        setShown((count) => count + 1);
       }}
     >
       <div className="ekd-dialog-header">

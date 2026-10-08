@@ -86,6 +86,43 @@ const PAIRS = [
   ['accent', 'bg-surface', 3],
   ['accent', 'bg-surface-2', 3],
   ['danger', 'bg-surface-2', 3],
+  // The editor, added at 0.27.0.
+  //
+  // A writer's highlight is a wash behind body text, and the reader's own
+  // selection is another. --accent is not listed on --hl-mark and is not used
+  // there: it measures 3.79:1 in parchment dark, so a link inside a highlight
+  // takes the ink of the text and keeps its underline.
+  ['fg-1', 'hl-mark', 4.5],
+  // A highlight inside a quotation, which is set in --fg-2.
+  ['fg-2', 'hl-mark', 4.5],
+  ['fg-1', 'hl-quote', 4.5],
+  // A code block sits on --bg-inset. The six syntax tokens are aliases of inks
+  // that were measured on the canvas and never on this ground, where --fg-3
+  // already falls to 4.36:1 in sepia light, which is why a comment is --fg-2.
+  // Listed by the alias, so the pair is still held on the day one of them is
+  // given a value of its own. `resolve` below follows the alias.
+  ['syntax-keyword', 'bg-inset', 4.5],
+  ['syntax-string', 'bg-inset', 4.5],
+  ['syntax-number', 'bg-inset', 4.5],
+  ['syntax-title', 'bg-inset', 4.5],
+  ['syntax-attr', 'bg-inset', 4.5],
+  ['syntax-comment', 'bg-inset', 4.5],
+  // The chevron of a select, and the language name in a code block's header.
+  ['fg-2', 'bg-inset', 4.5],
+  // An added line in a diff, beside the removed line's --fg-1 on --danger-soft.
+  ['fg-1', 'ok-soft', 4.5],
+  // The icon and the title of a callout, each on its own wash. The titles have
+  // been drawn this way since the callout shipped and were never listed. All
+  // five hold as text, so they are held at the text threshold.
+  ['info', 'info-soft', 4.5],
+  ['ok', 'ok-soft', 4.5],
+  ['warn', 'warn-soft', 4.5],
+  ['danger', 'danger-soft', 4.5],
+  ['burgundy', 'burgundy-soft', 4.5],
+  // The mark of the synced state, where the indicator sits on a card or is
+  // hovered as a button. A graphical object beside its words, so 3:1.
+  ['ok', 'bg-surface', 3],
+  ['ok', 'bg-surface-2', 3],
   ['accent', 'bg-canvas', 4.5],
   ['accent-ink', 'accent', 4.5],
   ['gilt', 'bg-canvas', 4.5],
@@ -147,6 +184,21 @@ function layer(theme, mode) {
 
 const toHex = (value) => (value?.startsWith('oklch') ? oklchToHex(value) : value);
 
+/**
+ * A token's value in one palette, following an alias to the token it names.
+ *
+ * `--syntax-keyword` is `var(--burgundy)`. Read raw, that string is not a
+ * colour, its contrast is not a number, and `NaN < 4.5` is false: an alias
+ * would pass every pair it was listed in without being measured.
+ */
+function resolve(tokens, name, seen = new Set()) {
+  const value = tokens[name]?.$value;
+  const alias = /^var\(--([\w-]+)\)$/.exec(value ?? '');
+  if (!alias) return value;
+  if (seen.has(name)) throw new Error(`check:contrast — --${name} is an alias of itself`);
+  return resolve(tokens, alias[1], seen.add(name));
+}
+
 const failures = [];
 let checked = 0;
 
@@ -154,15 +206,17 @@ for (const theme of THEMES) {
   for (const mode of MODES) {
     const tokens = layer(theme, mode);
     for (const [fg, bg, threshold] of PAIRS) {
-      const fgValue = tokens[fg]?.$value;
-      const bgValue = tokens[bg]?.$value;
+      const fgValue = resolve(tokens, fg);
+      const bgValue = resolve(tokens, bg);
       // A token absent from every layer is not a contrast failure; the
       // generated-artefact check is what covers missing tokens.
       if (!fgValue || !bgValue) continue;
 
       const ratio = contrast(toHex(fgValue), toHex(bgValue));
       checked++;
-      if (ratio < threshold) {
+      // Not `ratio < threshold` alone: a value that is not a colour measures
+      // NaN, and NaN is below nothing.
+      if (!(ratio >= threshold)) {
         failures.push(
           `${theme}/${mode}: --${fg} on --${bg} is ${ratio.toFixed(2)}:1, below ${threshold}:1 ` +
             `(${toHex(fgValue)} on ${toHex(bgValue)})`,

@@ -40,15 +40,15 @@ and forest under library.
 | Mode, explicit      | `[data-theme=…][data-mode="dark"]`                                        | The reader chose dark.                                              |
 | Mode, automatic     | `@media (prefers-color-scheme: dark)` + `[data-theme=…]:not([data-mode])` | The reader chose Auto, or has never chosen.                         |
 
-**75 tokens resolve under all eight palettes** — 69 colours, five shadow
+**82 tokens resolve under all eight palettes** — 76 colours, five shadow
 composites, and the overlay scrim. Each of the twelve theme blocks declares the
-complete set of 75 rather than inheriting part of it from another theme.
+complete set of 82 rather than inheriting part of it from another theme.
 
-**72 tokens are theme-invariant scales**, declared once under `:root`: the type
+**74 tokens are theme-invariant scales**, declared once under `:root`: the type
 scale, spacing, radius, optical offsets, motion, layout geometry, three named
 shadows, and the four brand values. They take no theme or mode override.
 
-That is **147 tokens** in total, and every one of them is in a table below.
+That is **156 tokens** in total, and every one of them is in a table below.
 
 ### Auto is the absence of `data-mode`, not a value of it
 
@@ -318,17 +318,81 @@ one is decoration, and a reader learning the interface learns the difference.
 | `--hl-warn`     | Caution wash under text.                                |
 | `--hl-danger`   | Error wash under text.                                  |
 | `--hl-ai`       | Machine-generated or machine-assisted content.          |
+| `--hl-mark`     | The highlight a writer applies to a passage of their own text. |
 
 These are the only colours calibrated to sit **behind body text** and stay
 readable. They are desaturated for that reason, and they are the answer whenever
 a passage of prose needs a tone.
+
+**`--hl-mark` is the one a person applies, and the other five are applied for
+them.** Quote, citation, warn, danger, and ai each say what a passage is, and
+the system decides it. A writer's highlight says only that the writer marked
+the passage, so it cannot borrow one of those five without borrowing its
+meaning: a highlighted sentence drawn in `--hl-warn` would read as a caution,
+and one drawn in `--hl-quote` would vanish under the reader's own selection,
+which is the same wash. It is a muted straw yellow, at hue 96, and it carries
+more chroma than the others, 0.07 in the light palettes and 0.055 in the dark,
+because it has to be told from the selection that crosses it. One value serves
+the four light palettes and one the four dark, the way the state colours are
+shared: a highlight is the same highlight in every theme.
+
+`--fg-1` and `--fg-2` are measured on it at 4.5:1 in all eight palettes.
+`--accent` is not, and does not hold: it measures 3.79:1 on the highlight in
+parchment dark. A link inside a highlight therefore takes the ink of the text
+around it and keeps its underline. `styles/editor.css` does this; a consumer
+drawing a highlight of its own owes the same.
 
 **When not to.** Do not use a highlight as a surface for a whole component; they
 are washes over the canvas, not grounds in the surface stack. Do not use a
 `-soft` state value where a `--hl-*` belongs, or the reverse: the state washes
 are calibrated behind a hairline, the highlight washes behind running text. Do
 not stack two highlights on overlapping ranges — they composite into a third
-colour that is in no palette.
+colour that is in no palette. Do not use `--hl-mark` for anything the system
+applies: a search match, a changed passage, a suggestion. Each of those is a
+meaning, and a meaning needs its own token.
+
+## Syntax
+
+Six inks for code, drawn on `--bg-inset`, the surface of a code block.
+
+| Token              | Role                                                | Alias of     |
+| ------------------ | --------------------------------------------------- | ------------ |
+| `--syntax-keyword` | A keyword, the name of a tag.                       | `--burgundy` |
+| `--syntax-string`  | A string, a regular expression.                     | `--ok`       |
+| `--syntax-number`  | A number, a literal, a symbol.                      | `--warn`     |
+| `--syntax-title`   | The name of a function, a class, or a section.      | `--info`     |
+| `--syntax-attr`    | An attribute, a variable, a type, a built-in.       | `--accent`   |
+| `--syntax-comment` | A comment, and metadata such as a shebang line.     | `--fg-2`     |
+
+**Every one is an alias, and that is the decision to know about.** Each is
+declared as `var()` of an ink the palettes already hold, so this group adds six
+names and no colour. The names are the point. A stylesheet that coloured a
+string with `--ok` would be saying a string is a success, and the catalogue
+would have no place to give code a colour of its own later; with the alias, a
+syntax palette can be calibrated in `tokens/source` and nothing that reads
+these names changes.
+
+The aliases were chosen by measurement on `--bg-inset`, which no pair had
+covered: all six hold 4.5:1 there in the eight palettes, the lowest being
+`--ok` at 4.64:1 in sepia light. `--fg-3` does not, at 4.36:1 in the same
+palette, which is why a comment is `--fg-2`. `pnpm check:contrast` lists the
+six by their own names and follows each alias to its value.
+
+Two consequences of borrowing. `--accent` changes hue with the theme, so an
+attribute is plum under parchment, forest under library, where it sits close to
+a string, burnt orange under sepia, and plain ink under mono. And `--burgundy`
+and `--danger` share a hue, so a keyword is the colour of a fault. Neither is a
+defect of contrast, and both are reasons a calibrated palette may be wanted.
+
+**Hue is never the only carrier.** `styles/code.css` sets a keyword a step
+heavier and a comment in italic. The other four roles differ by hue alone,
+which is all a syntax colour is; nothing a reader must act on depends on
+telling them apart.
+
+**When not to.** These are for code on `--bg-inset` and nothing else. Do not use
+one as a text colour in prose, as a state, or on another surface: none is
+measured anywhere but there. Do not colour code with the tokens they alias, or
+the alias has bought nothing.
 
 ## Collaborator
 
@@ -523,6 +587,17 @@ arrives on demand. The cost is a possible flash on first paint, not a
 substituted face. Where Greek is more than an incidental gloss, add it to that
 family's subsets so it preloads with the Latin.
 
+Set in the sans beside the serif, a Greek run also stands taller than the
+letters round it, because the two faces differ in size at one font size.
+`--serif-fit`, under [Optical](#optical), is the size that corrects it.
+
+A document a person writes is the case this rule does not yet reach.
+`styles/editor.css` sets a document in the reading serif, and a writer's text
+cannot be wrapped run by run. A document or a block marked `lang="el"` is set
+in the sans throughout. A Greek phrase inside a document in another language
+is not caught, and is drawn in the substituted face. Closing that needs a
+decision about the faces, which is the core team's.
+
 **When not to.** Do not use mono as decoration — it marks a string as an
 identifier, and using it for emphasis makes every real identifier ambiguous. Do
 not set body prose in sans, and do not set a heading in sans to make it "feel
@@ -667,14 +742,30 @@ lost. Do not mix two radii on one element's corners.
 | ------------------ | -------- | ------------------------------------------------------- |
 | `--badge-cap-rise` | `-0.3em` | Vertical lift for an inline badge beside heading text.  |
 | `--badge-cap-gap`  | `0.4em`  | Left margin between the heading word and the badge.     |
+| `--serif-fit`      | `0.84em` | Font size of a run of `--font-sans` or `--font-mono` set inside a line of `--font-serif`. |
 
-Both are `em`-relative, so they track the parent heading's font size rather than
+All three are `em`-relative, so they track the parent's font size rather than
 needing a value per step. That is the whole reason they are not spacing tokens.
 
-**When not to.** These are for a badge inside a heading and nothing else. An
-inline badge in body text sits on the baseline already and needs neither. Do not
-reuse them as a general optical nudge; a one-off alignment problem is usually a
-layout problem.
+`--serif-fit` exists because the three faces are not the same size at one font
+size. Read from the faces themselves, the lowercase of Crimson Pro stands 0.43
+of its size, of Commissioner 0.51, and of Fira Code 0.53. A Greek run in a
+serif heading, which rule 4 sets in the sans, and a code span in a serif
+paragraph therefore stand a fifth to a quarter taller than the letters beside
+them, and read as a larger word dropped into the line. At `0.84em` the Greek
+lowercase is the height of the serif's. It is fitted to the lowercase, because
+that is most of a line: a Greek capital still stands 5% over a serif capital,
+against 24% unscaled, and the mono's lowercase 5% over the serif's.
+`PageHeading` applies it to its Greek runs, and `styles/editor.css` to inline
+code.
+
+**When not to.** The two badge tokens are for a badge inside a heading and
+nothing else. An inline badge in body text sits on the baseline already and
+needs neither. Do not reuse them as a general optical nudge; a one-off
+alignment problem is usually a layout problem. `--serif-fit` is for a run
+inside a serif line, where two faces meet on one baseline. It is not a size
+step: do not use it to make sans or mono text smaller where no serif is beside
+it, and do not use it on a whole block.
 
 ## Motion
 
@@ -735,6 +826,7 @@ Theme-invariant structural geometry. Takes no theme or mode override.
 | `--content-w`           | `760px`  | The content column.                                        |
 | `--measure`             | `72ch`   | Prose line-length cap, 72 characters.                      |
 | `--gutter`              | `24px`   | Horizontal inset between the content column and the viewport edge at narrow widths. |
+| `--form-w`              | `28rem`  | The widest a column of form fields runs.                   |
 | `--sidebar-w`           | `260px`  | Navigation rail width. A default.                          |
 | `--topbar-h`            | `56px`   | Fixed top bar height. A default.                           |
 | `--table-sticky-offset` | `0px`    | How far below the viewport top a sticky table header parks. A default. |
@@ -753,6 +845,15 @@ along.
 full-width content has somewhere to go. Do not narrow it to match `--measure`;
 they are two different constraints and collapsing them removes the one that lets
 tables breathe.
+
+**`--form-w` is `28rem`**, the cap on a column of fields: a sign-in form, a
+settings form. Set it as `max-inline-size`, so the column is narrower wherever
+the viewport is. It is the one layout token in `rem`, and on purpose. A label
+and its field are text, and a reader who has raised their font size needs the
+column to widen with the type, or every label wraps sooner for exactly that
+reader. A page of prose does not have this problem, because `--measure` is in
+`ch` and already follows the type. At a 16px root it is 448px, a little under
+the `30rem` a `Dialog` is drawn at, so a form fits a dialog with its padding.
 
 **Three of these are consumer-overridable defaults, and they are the only
 exception to the no-app-declares-a-token rule.** `--sidebar-w`, `--topbar-h`,
@@ -775,8 +876,10 @@ not licence to introduce a name.
 
 **When not to.** Do not use `--gutter` as a spacing step or a spacing step as
 the gutter — it is a structural inset that happens to equal `--sp-6`, and the
-two drift the moment either is retuned. Do not override `--page-w`,
-`--content-w`, `--measure`, or `--gutter`; those are house reading geometry, and
+two drift the moment either is retuned. Do not use `--form-w` for prose, which
+is `--measure`, or for a dialog, which sets its own width. Do not override
+`--page-w`, `--content-w`, `--measure`, `--gutter`, or `--form-w`; those are
+house reading geometry, and
 `--measure` in particular is an accessibility obligation. Where a single surface
 needs a sticky header to park somewhere unusual, set the offset on that surface
 rather than editing the token.

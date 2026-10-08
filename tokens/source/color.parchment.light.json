@@ -147,6 +147,11 @@
     "$value": "oklch(92.128% 0.0185 306.65)",
     "$type": "color"
   },
+  "hl-mark": {
+    "$value": "oklch(90.5% 0.07 96)",
+    "$type": "color",
+    "$description": "The highlight a writer applies to a passage. One value in the four light palettes and one in the four dark. Links inside it take the ink of the text: --accent does not hold on it in the dark palettes."
+  },
   "accent-xref": {
     "$value": "oklch(47.759% 0.0819 253.15)",
     "$type": "color"
@@ -154,6 +159,36 @@
   "fg-xref": {
     "$value": "oklch(41.7% 0.0729 253.07)",
     "$type": "color"
+  },
+  "syntax-keyword": {
+    "$value": "var(--burgundy)",
+    "$type": "color",
+    "$description": "Syntax colour, on --bg-inset. A keyword, a tag name. Set at --fw-medium as well, so it is not carried by hue alone. An alias of --burgundy."
+  },
+  "syntax-string": {
+    "$value": "var(--ok)",
+    "$type": "color",
+    "$description": "Syntax colour, on --bg-inset. A string, a regular expression. An alias of --ok."
+  },
+  "syntax-number": {
+    "$value": "var(--warn)",
+    "$type": "color",
+    "$description": "Syntax colour, on --bg-inset. A number, a literal, a symbol. An alias of --warn."
+  },
+  "syntax-title": {
+    "$value": "var(--info)",
+    "$type": "color",
+    "$description": "Syntax colour, on --bg-inset. The name of a function, a class or a section. An alias of --info."
+  },
+  "syntax-attr": {
+    "$value": "var(--accent)",
+    "$type": "color",
+    "$description": "Syntax colour, on --bg-inset. An attribute, a variable, a type, a built-in. An alias of --accent."
+  },
+  "syntax-comment": {
+    "$value": "var(--fg-2)",
+    "$type": "color",
+    "$description": "Syntax colour, on --bg-inset. A comment. Set in italic as well. Not --fg-3, which is 4.36:1 on --bg-inset in sepia light. An alias of --fg-2."
   },
   "collab-1": {
     "$value": "oklch(37.5% 0.115 38)",

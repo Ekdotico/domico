@@ -20,6 +20,11 @@
     "$type": "dimension",
     "$description": "Horizontal breathing room between the content column and the viewport edge at narrow widths. Equal to --sp-6."
   },
+  "form-w": {
+    "$value": "28rem",
+    "$type": "dimension",
+    "$description": "The widest a column of form fields runs: a sign-in form, a settings form. In rem, so the column widens with the reader's own font size and a label does not wrap sooner for the person who raised it. A cap, set as max-inline-size; the column is narrower wherever the viewport is."
+  },
   "sidebar-w": {
     "$value": "260px",
     "$type": "dimension",

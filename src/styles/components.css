@@ -1215,6 +1215,23 @@
   .opening-sequence { display: none; }
 }
 
+/* --- Page heading -------------------------------------------------------- */
+/* PageHeading, the heading of an application page. The access gate's title
+   without its margin: the reading serif at --fs-2xl, so a page an application
+   builds and the gate in front of it open at one size. The space under it is
+   the layout's, as it is for every block here. */
+.ekd-page-heading {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-semi);
+  line-height: var(--lh-snug);
+  color: var(--fg-1);
+}
+/* Rule 4: the serif has no Greek, so a Greek run takes the sans. The component
+   wraps the run; nothing else uses this class. */
+.ekd-page-heading-greek { font-family: var(--font-sans); }
+
 /* --- Button -------------------------------------------------------------- */
 /* Button's four variants. The `ekd-` prefix, as on the layout primitives: a
    class called `button` or `dialog` is one an application may already own, and
@@ -1334,6 +1351,18 @@
 }
 .ekd-field-input:focus-visible { border-color: var(--accent); }
 .ekd-field-input[aria-invalid="true"] { border-color: var(--danger); }
+/* Read-only: a value to read and copy, not one to type. It gives up the inset
+   ground, which means editable, and sits on whatever surface the form is on;
+   the boundary stays at control contrast and is dashed, so the state has a
+   shape and does not rest on the ground's tint alone (WCAG 1.4.1), and it
+   survives forced colours, where the ground does not. The ink stays --fg-1:
+   the value is there to be read, and the field is still focused, selected and
+   submitted. The attribute and not `:read-only`, which also matches a disabled
+   field; a field that is both is drawn as disabled. */
+.ekd-field-input[readonly]:not(:disabled) {
+  background: transparent;
+  border-style: dashed;
+}
 /* Unavailable is the sunken surface step. --bg-inset means editable and empty. */
 .ekd-field-input:disabled {
   background: var(--bg-surface-2);

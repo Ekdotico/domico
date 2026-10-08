@@ -84,7 +84,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, and `tooltip.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, and `page-heading.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, and `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord |
@@ -306,7 +306,8 @@ from an effect or an event handler, not during render.
 ## Form controls, the dialog, and the tooltip
 
 The controls an application signs a person in with, takes a message with, and
-asks for a confirmation with. Each is the platform's own element, drawn from
+asks for a confirmation with, and the heading of the page they sit on. Each is
+the platform's own element, drawn from
 tokens: a native `<input>`, `<textarea>`, `<button>`, `<fieldset>`, and
 `<dialog>`. The keyboard, the form value, and the browser's own validation are
 the platform's, and every attribute the native element takes passes through.
@@ -320,22 +321,24 @@ the platform's, and every attribute the native element takes passes through.
 | `TextArea` | A multi-line field, with a count against a maximum | `styles/form.css` |
 | `RadioGroup` | A fieldset of native radios, named by its legend | `styles/form.css` |
 | `Checkbox` | One native checkbox, inside its label | `styles/form.css` |
-| `FormFault` | The statement of a fault at the head of a form | `styles/form.css` |
+| `FormFault` | The statement of a fault, at the head of a form or anywhere else on a page | `styles/form.css` |
 | `Dialog` | A modal dialog, on the native element | `styles/dialog.css` |
 | `Tooltip` | An explanation shown on hover and on focus | `styles/tooltip.css` |
+| `PageHeading` | The heading of an application page, an `h1` unless told otherwise | `styles/page-heading.css` |
 
 ```tsx
 import {
-  Button, Checkbox, Dialog, FormFault, OneTimeCodeField, PasswordField,
-  RadioGroup, TextArea, TextField, Tooltip,
+  Button, Checkbox, Dialog, FormFault, OneTimeCodeField, PageHeading,
+  PasswordField, RadioGroup, TextArea, TextField, Tooltip,
 } from '@ekdotico/domico/components';
 import '@ekdotico/domico/styles/button.css';
 import '@ekdotico/domico/styles/form.css';
 import '@ekdotico/domico/styles/dialog.css';
 import '@ekdotico/domico/styles/tooltip.css';
+import '@ekdotico/domico/styles/page-heading.css';
 ```
 
-All four entries are in `styles.css` and `styles/components.css` already. Each
+All five entries are in `styles.css` and `styles/components.css` already. Each
 expects the reset, which draws the focus ring and supplies `.sr-only`.
 
 ### A form
@@ -369,7 +372,8 @@ hint and its message through `aria-describedby`. The message is not an alert.
 `FormFault` is the one announcement a failed submission makes: it is
 `role="alert"`, it takes focus when it appears and again whenever `focusKey`
 changes, and each of its links moves focus into the field it names. Render it
-when there is a fault and not before.
+when there is a fault and not before. It also states a fault where there is no
+form, as described under "A fault outside a form".
 
 The package draws no asterisk and takes no placeholder. Say that a field is
 required in its label or its hint, and put an example in the hint, where it is
@@ -412,6 +416,90 @@ each hand their native element to a `ref`.
 
 No radio is selected unless `defaultValue` or `value` says so. The first radio
 carries the group's `id`, so a `FormFault` link to the group lands on a control.
+
+### A read-only field
+
+```tsx
+<TextField id="email" type="email" label="Email address"
+  hint="The invitation was sent to this address. It cannot be changed here."
+  autoComplete="username" value={email} readOnly />
+```
+
+`readOnly` is the native attribute, and the field has a presentation for it: a
+value to read and copy, not one to type. The field gives up the inset ground,
+which means "type here", and takes the surface the form sits on; its boundary
+stays at control contrast and is dashed. The value stays in `--fg-1`. The field
+stays in the Tab order, its text can be selected, and it is submitted with the
+form. A screen reader states the read-only state from the attribute.
+
+It is not `disabled`. A disabled field leaves the Tab order and the submitted
+form, and is drawn on the sunken surface in `--fg-3`. Use `readOnly` for a
+value the person needs and cannot change here, and say why in the hint.
+`PasswordField`, `OneTimeCodeField`, and `TextArea` draw the state the same
+way. A field that is both read-only and disabled is drawn as disabled.
+
+### A fault outside a form
+
+`FormFault` is the control for any stated fault, with a form or without one:
+a sign-out that did not complete, an acknowledgement that was refused, a page
+that states one fixed fault in place of its form. Outside a form it takes
+`children` and no list.
+
+```tsx
+{fault ? (
+  <FormFault title="Sign-out did not complete" autoFocus={false}>
+    <p>You are still signed in. Select Sign out again.</p>
+  </FormFault>
+) : null}
+
+<FormFault announce="off" title="This invitation is not open">
+  <p>Ask the Ekdotico team for a new one.</p>
+</FormFault>
+```
+
+`announce` sets how a screen reader comes to hear the statement.
+
+| `announce` | Role | Use it for |
+|---|---|---|
+| `assertive`, the default | `role="alert"` | A fault that follows an action the person took. Render it when the fault occurs and not before |
+| `polite` | `role="status"` | A fault the person did not ask about and need not act on at once, such as a save in the background that did not complete |
+| `off` | none | A statement that is part of the page as it was served. It is read in its place and found by its heading |
+
+A statement that is on the page from the first render takes `announce="off"`.
+An alert that is present from the first paint announces nothing in most screen
+readers, and a page should not open by interrupting its own title. Where the
+same statement replaces a form after a submission, leave `announce` at its
+default, so that it is announced.
+
+Focus moves to an assertive statement when it appears. A polite statement and
+one that is not announced leave focus where it is. `autoFocus` overrides either
+default: pass `autoFocus={false}` for a fault stated beside a button that keeps
+focus.
+
+### The page heading
+
+```tsx
+<PageHeading>Account settings</PageHeading>
+<PageHeading ref={heading} tabIndex={-1}>{notice.title}</PageHeading>
+```
+
+`PageHeading` is the heading of an application page: an `h1` in the reading
+serif at `--fs-2xl`, the size of the `AccessGate` title. `level` takes `1`, `2`,
+or `3` and changes the element and not the size. It is not `.display`, which is
+the title of a document or a landing page.
+
+A Greek run in the heading is set in `--font-sans` by the component. The
+reading serif has no Greek (rule 4), so the component wraps each run of Greek
+letters in a span that takes the sans. Pass the title as a plain string, and
+add no span and no class for it. The component also reads the text inside an
+HTML element passed as a child. It does not read the text that a component of
+the application renders.
+
+The span sets the face and nothing else. A title in Greek still takes `lang`,
+which passes through to the heading with every other attribute. `ref` reaches
+the heading, for a page that moves focus to its title when it is shown. The
+component holds no state, so a server component renders it. The heading has no
+margin: the space under it is the layout's.
 
 ### The button
 
@@ -491,7 +579,10 @@ elsewhere do not hold there: `--fg-3` measures 4.40:1 in sepia dark, `--accent`
 4.42:1 and `--danger` 4.27:1 in parchment dark. These controls therefore set
 text in `--fg-1` and `--fg-2`, and use `--accent` and `--danger` for boundaries
 and marks, where 3:1 is owed. A field's message is `--fg-1` on the danger wash
-inside a danger hairline. `pnpm check:contrast` measures each of those pairs.
+inside a danger hairline. A read-only field has no ground of its own, so its
+value is `--fg-1` and its boundary `--rule-control` on whichever of
+`--bg-canvas`, `--bg-surface`, `--bg-surface-2`, and `--bg-raised` the form
+sits on. `pnpm check:contrast` measures each of those pairs.
 
 ---
 

@@ -63,6 +63,7 @@ const {
   Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
   AccessGate, GateSubmitButton, NavDrawer, OnThisPage, OpeningSequence, DocMeta,
   Button, TextField, OneTimeCodeField, PasswordField, TextArea, RadioGroup, Checkbox, FormFault, Dialog, Tooltip,
+  PageHeading,
 } = await import('../dist/src/components/index.js');
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
 
@@ -736,6 +737,54 @@ await it('the fields hand their element to a ref', async () => {
   assert.ok(password === null && refs.text.current === null, 'a ref was not released on unmount');
 });
 
+await it('a read-only field keeps its value, its focus and its place in the form', async () => {
+  const view = await mount(
+    h('form', null,
+      h(TextField, { id: 'ro-email', name: 'email', type: 'email', label: 'Email address', value: 'reader@example.org',
+        readOnly: true, hint: 'It cannot be changed here.' }),
+      h(PasswordField, { name: 'secret', label: 'Password', toggleLabel: 'Show password', autoComplete: 'current-password',
+        defaultValue: 'x', readOnly: true }),
+      h(TextArea, { name: 'note', label: 'Note', defaultValue: 'y', readOnly: true }),
+      h(TextField, { name: 'both', label: 'Both', defaultValue: 'z', readOnly: true, disabled: true }),
+    ),
+  );
+  const email = document.getElementById('ro-email');
+  // The native attribute, which is what the stylesheet reads and what a screen
+  // reader states. Not `disabled`, and not `aria-disabled` standing in for it.
+  assert.ok(email.readOnly && email.hasAttribute('readonly'), 'readOnly did not reach the input');
+  assert.ok(!email.disabled && !email.hasAttribute('aria-disabled'), 'a read-only field was disabled');
+  assert.ok(!email.hasAttribute('aria-readonly'), 'aria-readonly restates the native attribute');
+  assert.ok(!email.hasAttribute('tabindex'), 'a read-only field was taken out of the Tab order');
+  assert.ok(email.classList.contains('ekd-field-input'));
+  assert.equal(document.getElementById(email.getAttribute('aria-describedby'))?.textContent, 'It cannot be changed here.');
+  email.focus();
+  assert.ok(document.activeElement === email, 'a read-only field did not take focus');
+  // Submitted with the form, which a disabled field is not.
+  const sent = new window.FormData(view.container.querySelector('form'));
+  assert.equal(sent.get('email'), 'reader@example.org');
+  assert.ok(!sent.has('both'), 'a disabled field was submitted');
+  // The same class and the same attribute on the other fields, so one rule draws all of them.
+  for (const name of ['secret', 'note']) {
+    const field = view.container.querySelector(`[name="${name}"]`);
+    assert.ok(field.readOnly && field.classList.contains('ekd-field-input'), `${name} lost readOnly or its class`);
+  }
+  await view.unmount();
+});
+
+// The state is drawn by one rule, and the rule is read here because jsdom
+// applies no stylesheet: the attribute and not `:read-only`, which a disabled
+// field also matches; no ground of its own; and a boundary with a shape.
+await it('the read-only rule is the attribute, without the inset ground, with a dashed boundary', async () => {
+  const { readFileSync } = await import('node:fs');
+  const css = readFileSync(new URL('../dist/styles/form.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const rule = /\.ekd-field-input\[readonly\]:not\(:disabled\)\s*\{([^}]*)\}/.exec(css);
+  assert.ok(rule, 'form.css has no read-only rule');
+  assert.match(rule[1], /background:\s*transparent/);
+  assert.match(rule[1], /border-style:\s*dashed/);
+  assert.ok(!/(^|[;\s])color:|border-color:|opacity:/.test(rule[1]), 'the read-only rule changes an ink or fades the field');
+  assert.ok(!/:read-only/.test(css), ':read-only also matches a disabled field');
+});
+
 await it('PasswordField shows and hides what is typed', async () => {
   const view = await mount(
     h('form', null,
@@ -883,6 +932,113 @@ await it('FormFault takes focus, and its links move focus to the field', async (
   assert.ok(general.container.querySelector('h3'));
   assert.ok(document.activeElement !== general.container.querySelector('.ekd-fault'));
   await general.unmount();
+});
+
+await it('FormFault outside a form: the role follows announce, and only an alert takes focus', async () => {
+  const before = document.createElement('button');
+  document.body.appendChild(before);
+  const state = async (props) => {
+    before.focus();
+    const view = await mount(h(FormFault, { title: 'This invitation is not open', ...props }, h('p', null, 'Ask for a new one.')));
+    const fault = view.container.querySelector('.ekd-fault');
+    return { view, fault, focused: document.activeElement === fault };
+  };
+
+  // Inserted after an action, with nothing said about it: an alert, focused.
+  const alert = await state({});
+  assert.equal(alert.fault.getAttribute('role'), 'alert');
+  assert.ok(alert.focused, 'an alert outside a form did not take focus');
+  await alert.view.unmount();
+
+  // Beside a button that keeps focus: still an alert, and focus is left alone.
+  const beside = await state({ autoFocus: false });
+  assert.equal(beside.fault.getAttribute('role'), 'alert');
+  assert.ok(!beside.focused);
+  await beside.view.unmount();
+
+  // Polite: a status, named by its heading, and no move of focus.
+  const status = await state({ announce: 'polite' });
+  assert.equal(status.fault.getAttribute('role'), 'status');
+  assert.equal(document.getElementById(status.fault.getAttribute('aria-labelledby'))?.textContent, 'This invitation is not open');
+  assert.ok(!status.focused, 'a polite statement moved focus, which is an interruption');
+  assert.ok(!status.fault.hasAttribute('aria-live'), 'aria-live restates the role');
+  await status.view.unmount();
+
+  // Part of the page as served: no live region, so no role, and so no name,
+  // which a block without a role may not take. The heading is how it is found.
+  const fixed = await state({ announce: 'off' });
+  assert.ok(!fixed.fault.hasAttribute('role') && !fixed.fault.hasAttribute('aria-live'), 'a static statement is a live region');
+  assert.ok(!fixed.fault.hasAttribute('aria-labelledby'), 'a block with no role was given a name');
+  assert.equal(fixed.fault.querySelector('h2')?.textContent, 'This invitation is not open');
+  assert.ok(!fixed.focused, 'a static statement took focus on load');
+  assert.ok(!fixed.view.container.querySelector('ul'));
+  await fixed.view.unmount();
+
+  // Either default gives way to what was asked for.
+  const sent = await state({ announce: 'off', autoFocus: true });
+  assert.ok(sent.focused, 'autoFocus was ignored on a statement that is not announced');
+  assert.equal(sent.fault.getAttribute('tabindex'), '-1');
+  await sent.view.unmount();
+  before.remove();
+});
+
+// --- PageHeading ----------------------------------------------------------------
+// The Greek is written as escapes, as it is in the component: a Greek character
+// in a source file is read by check:discipline as text that needs a face.
+await it('PageHeading is an h1, and sets a Greek run in the sans by itself', async () => {
+  const ALPHA = 'α';
+  const WORDS = 'Κλειστό α';
+  const TONOS = 'ά';
+  const ref = React.createRef();
+  const runs = (root) => [...root.querySelectorAll('.ekd-page-heading-greek')].map((span) => span.textContent);
+
+  const view = await mount(h(PageHeading, { ref, id: 'title', tabIndex: -1, className: 'mine' }, 'Account settings'));
+  const heading = view.container.querySelector('h1');
+  assert.ok(heading && ref.current === heading, 'PageHeading dropped its ref');
+  assert.equal(heading.className, 'ekd-page-heading mine');
+  assert.equal(heading.id, 'title');
+  assert.equal(heading.getAttribute('tabindex'), '-1');
+  assert.equal(heading.childElementCount, 0, 'a heading with no Greek was given a span');
+  heading.focus();
+  assert.ok(document.activeElement === heading, 'the heading could not be sent focus');
+
+  // One letter in a Latin title: one span, and the text is what was passed.
+  await view.rerender(h(PageHeading, null, `Closed ${ALPHA}`));
+  assert.deepEqual(runs(view.container), [ALPHA]);
+  assert.equal(view.container.querySelector('h1').textContent, `Closed ${ALPHA}`);
+
+  // Two Greek words are one run, with the space between them; Latin either
+  // side stays out. A separate accent stays with its letter.
+  await view.rerender(h(PageHeading, null, `The ${WORDS} notice, ${TONOS}.`));
+  assert.deepEqual(runs(view.container), [WORDS, TONOS]);
+  assert.equal(view.container.querySelector('h1').textContent, `The ${WORDS} notice, ${TONOS}.`);
+
+  // Several children, and text inside an element the application passed:
+  // the element is kept, with its attributes, and its text is read.
+  await view.rerender(
+    h(PageHeading, { level: 2 }, 'Closed ', ALPHA, ' ', h('span', { lang: 'el', id: 'marked' }, WORDS), 7),
+  );
+  const second = view.container.querySelector('h2');
+  assert.ok(second && !view.container.querySelector('h1'), 'level did not change the element');
+  assert.equal(second.className, 'ekd-page-heading', 'level changed the class, and so the size');
+  assert.deepEqual(runs(second), [ALPHA, WORDS]);
+  const marked = document.getElementById('marked');
+  assert.equal(marked?.getAttribute('lang'), 'el');
+  assert.ok(marked.querySelector('.ekd-page-heading-greek'), 'Greek inside a passed element was left in the serif');
+  assert.equal(second.textContent, `Closed ${ALPHA} ${WORDS}7`);
+
+  // A component's own markup is its own: it is rendered and not rewritten.
+  const Own = () => h('em', null, ALPHA);
+  await view.rerender(h(PageHeading, null, h(Own)));
+  assert.equal(view.container.querySelector('h1 em')?.textContent, ALPHA);
+  assert.deepEqual(runs(view.container), []);
+  await view.unmount();
+
+  // The class the span carries sets the sans and the heading sets the serif.
+  const { readFileSync } = await import('node:fs');
+  const css = readFileSync(new URL('../dist/styles/page-heading.css', import.meta.url), 'utf8');
+  assert.match(css, /\.ekd-page-heading-greek\s*\{\s*font-family:\s*var\(--font-sans\);?\s*\}/);
+  assert.match(css, /\.ekd-page-heading\s*\{[^}]*font-family:\s*var\(--font-serif\)/);
 });
 
 // --- Dialog ---------------------------------------------------------------------

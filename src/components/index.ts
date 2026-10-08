@@ -14,6 +14,10 @@
  * had already drifted apart, and neither knows a route: an application passes
  * its route as a key, so nothing here imports a router.
  *
+ * "Page headers" there means the same: what a header holds, such as a trail, a
+ * status and the actions of one page. `PageHeading` is none of that. It is the
+ * type of a page's `h1` and takes its words from the application.
+ *
  * `@supersedes` names the local component an export replaced, where the name
  * changed on the way in. `ekdotico-check discipline` reads it from this file,
  * so a copy left behind under its old name is reported as a reimplementation
@@ -60,9 +64,12 @@ export { TextField, OneTimeCodeField, type TextFieldProps } from './TextField.js
 export { PasswordField } from './PasswordField.js';
 export { TextArea } from './TextArea.js';
 export { Checkbox, RadioGroup, type RadioOption } from './Choice.js';
-export { FormFault, type FormFaultItem } from './FormFault.js';
+export { FormFault, type FormFaultAnnounce, type FormFaultItem } from './FormFault.js';
 export { Dialog } from './Dialog.js';
 export { Tooltip } from './Tooltip.js';
+// The heading of an application page. The application had composed one from
+// tokens, with a class of its own to set a Greek letter in the sans.
+export { PageHeading, type PageHeadingProps } from './PageHeading.js';
 
 /** @supersedes UnlockScreen, ResearchUnlockScreen */
 export { AccessGate } from './AccessGate.js';

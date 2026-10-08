@@ -80,6 +80,7 @@
     "./styles/form.css": "./dist/styles/form.css",
     "./styles/dialog.css": "./dist/styles/dialog.css",
     "./styles/tooltip.css": "./dist/styles/tooltip.css",
+    "./styles/page-heading.css": "./dist/styles/page-heading.css",
     "./components": {
       "types": "./dist/src/components/index.d.ts",
       "default": "./dist/src/components/index.js"

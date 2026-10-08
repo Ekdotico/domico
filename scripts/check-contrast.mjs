@@ -76,6 +76,16 @@ const PAIRS = [
   ['fg-1', 'danger-soft', 4.5],
   // A hovered secondary button and the dialog's close button.
   ['fg-1', 'bg-surface-2', 4.5],
+  // The read-only field, added at 0.26.0. It has no ground of its own, so
+  // its value and its boundary are drawn on whichever surface the form sits
+  // on. The value is --fg-1 and the boundary --rule-control, and each is
+  // listed above against --bg-canvas, --bg-surface, --bg-surface-2 and
+  // --bg-raised. What that leaves is the boundary of a read-only field that
+  // has focus or is invalid, on the two surfaces where --accent and --danger
+  // had not been measured as boundaries. Graphical objects, so 3:1.
+  ['accent', 'bg-surface', 3],
+  ['accent', 'bg-surface-2', 3],
+  ['danger', 'bg-surface-2', 3],
   ['accent', 'bg-canvas', 4.5],
   ['accent-ink', 'accent', 4.5],
   ['gilt', 'bg-canvas', 4.5],

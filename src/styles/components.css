@@ -472,8 +472,11 @@
 .callout[data-type="tip"]    { background: var(--ok-soft);     border-color: var(--ok); }
 .callout[data-type="tip"] .callout-title    { color: var(--ok); }
 
-.callout[data-type="warn"]   { background: var(--warn-soft);   border-color: var(--warn); }
-.callout[data-type="warn"] .callout-title   { color: var(--warn); }
+/* `warning` is the same type under the name the editor's requirement gives it
+   (FR-ED-04: note, warning, tip). Both are kept: `warn` is what every callout
+   written before 0.27.0 says. */
+.callout:is([data-type="warn"], [data-type="warning"]) { background: var(--warn-soft);   border-color: var(--warn); }
+.callout:is([data-type="warn"], [data-type="warning"]) .callout-title { color: var(--warn); }
 
 .callout[data-type="danger"] { background: var(--danger-soft); border-color: var(--danger); }
 .callout[data-type="danger"] .callout-title { color: var(--danger); }
@@ -482,6 +485,35 @@
 .callout[data-type="quote"] .callout-title  { color: var(--burgundy); }
 .callout[data-type="quote"] .callout-body,
 .content-inner .callout[data-type="quote"] .callout-body p { font-style: italic; }
+
+/* The icon, for a callout that is asked for one (`data-icon`). It says the
+   type a second time, in a shape, so the type does not rest on the wash and
+   the hairline: three washes are three near-neutral tints to a reader who
+   cannot tell their hues apart, and one tint in forced colours. The icon sits
+   in a column of its own, beside the title and the body, and is centred on the
+   first line of the body. Its ink is the type's own, which holds 4.5:1 on its
+   wash in every palette; the neutral note takes --fg-3. */
+.callout[data-icon] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--sp-3);
+}
+.callout-icon {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  display: flex;
+  align-items: center;
+  /* One line of the text the callout sits in, which is the body's line in an
+     editor and within a pixel of it elsewhere. */
+  block-size: 1lh;
+  color: var(--fg-3);
+}
+.callout[data-icon] > :is(.callout-title, .callout-body) { grid-column: 2; }
+.callout[data-type="info"] .callout-icon   { color: var(--info); }
+.callout[data-type="tip"] .callout-icon    { color: var(--ok); }
+.callout:is([data-type="warn"], [data-type="warning"]) .callout-icon { color: var(--warn); }
+.callout[data-type="danger"] .callout-icon { color: var(--danger); }
+.callout[data-type="quote"] .callout-icon  { color: var(--burgundy); }
 
 @media (max-width: 760px) {
   .callout { padding: 12px 14px; }
@@ -1229,8 +1261,17 @@
   color: var(--fg-1);
 }
 /* Rule 4: the serif has no Greek, so a Greek run takes the sans. The component
-   wraps the run; nothing else uses this class. */
-.ekd-page-heading-greek { font-family: var(--font-sans); }
+   wraps the run; nothing else uses this class.
+
+   The sans is the larger face at one size: its lowercase stands 0.51 of the
+   font size against the serif's 0.43, so at the heading's own size "Closed α"
+   read as a word and a larger letter. --serif-fit brings the run to the
+   serif's height. The weight is the heading's, inherited: at the reduced size
+   a semibold sans stem is as heavy as the semibold serif stem beside it. */
+.ekd-page-heading-greek {
+  font-family: var(--font-sans);
+  font-size: var(--serif-fit);
+}
 
 /* --- Button -------------------------------------------------------------- */
 /* Button's four variants. The `ekd-` prefix, as on the layout primitives: a
@@ -1373,6 +1414,39 @@ textarea.ekd-field-input {
   display: block;
   resize: vertical;
 }
+/* Select: the native element, so the list, the keyboard and the type-ahead are
+   the platform's, on every device. `appearance: none` leaves the closed
+   control to the tokens, as it does for the choices; the chevron is the icon
+   the component renders beside it, and takes no press of its own. */
+.ekd-select {
+  position: relative;
+  display: block;
+}
+.ekd-select > .ekd-field-input {
+  appearance: none;
+  padding-inline-end: var(--sp-7);
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.ekd-select > .ekd-field-input:disabled { cursor: not-allowed; }
+.ekd-select-mark {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: var(--sp-3);
+  display: flex;
+  align-items: center;
+  color: var(--fg-2);
+  pointer-events: none;
+}
+/* The small size, for a select in the header of a block: a code block's
+   language. One step down in type and half the padding, and still 24px tall
+   (WCAG 2.5.8). */
+.ekd-field[data-size="small"] .ekd-field-input {
+  padding-block: var(--sp-1);
+  padding-inline-start: var(--sp-2);
+  font-size: var(--fs-sm);
+}
+.ekd-field[data-size="small"] .ekd-select-mark { inset-inline-end: var(--sp-2); }
 /* A code is an identifier, so it is set in the mono and opened up, as the
    gate's is. Start-aligned here: this field sits in a column of others. */
 .ekd-field-input[data-code] {
@@ -1441,6 +1515,10 @@ textarea.ekd-field-input {
      pressed toggle each keep a signal that is not colour. */
   .ekd-field-input[aria-invalid="true"],
   .ekd-field-toggle[aria-pressed="true"] { border-width: 2px; }
+  /* The platform's own select is the one this mode knows how to paint, arrow
+     included. */
+  .ekd-select > .ekd-field-input { appearance: auto; }
+  .ekd-select-mark { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ekd-field-input,
@@ -1559,8 +1637,19 @@ textarea.ekd-field-input {
   line-height: var(--lh-snug);
 }
 .ekd-fault-body { margin-block-start: var(--sp-2); }
+/* One statement and no title: the body is the first thing in the block, and
+   there is nothing above it to stand clear of. */
+.ekd-fault-body:first-child { margin-block-start: 0; }
 .ekd-fault-body > :first-child { margin-block-start: 0; }
 .ekd-fault-body > :last-child { margin-block-end: 0; }
+/* The neutral tone: a statement that is part of a page and is not a fault,
+   such as "This invitation has been used". The note callout's ground and a
+   hairline in the rule colour, so nothing about it says danger. The words are
+   --fg-1 as before. */
+.ekd-fault[data-tone="neutral"] {
+  background: var(--bg-surface-2);
+  border-color: var(--rule);
+}
 .ekd-fault-list {
   margin: var(--sp-2) 0 0;
   padding-inline-start: var(--sp-5);
@@ -1720,3 +1809,599 @@ textarea.ekd-field-input {
 @media (prefers-reduced-motion: reduce) {
   .ekd-tooltip-content { transition: none; }
 }
+
+/* --- Toolbar ------------------------------------------------------------- */
+/* Toolbar, ToolbarSeparator and ToggleButton.
+
+   A toolbar is a row of controls with one Tab stop. Inline, in the header of a
+   block, it has no surface of its own and sits on the block's. `data-floating`
+   is the same row as a surface: the raised ground, a hairline and the lifted
+   shadow, for the toolbar an application places over a selection. Where it
+   goes is the application's; nothing here positions it.
+
+   The row wraps. Nine toggles are 320px wide with their gaps, which is the
+   whole of the narrowest viewport, so a toolbar that could not wrap would
+   widen the page it floats over (WCAG 1.4.10). */
+.ekd-toolbar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1);
+  max-inline-size: 100%;
+}
+.ekd-toolbar[data-floating] {
+  padding: var(--sp-1);
+  background: var(--bg-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+}
+.ekd-toolbar-separator {
+  align-self: stretch;
+  inline-size: 1px;
+  margin-inline: var(--sp-1);
+  background: var(--rule);
+}
+/* The toggle: a square of 32px, which clears the 24px a target owes (WCAG
+   2.5.8), holding one icon or a short word. Its ink is --fg-1 on every
+   surface, the raised one included.
+
+   Pressed is two things, and neither is the hue. The boundary appears, in
+   --accent, which holds 3:1 against each surface a toolbar sits on; and the
+   ground takes the accent wash. A reader who cannot tell the wash from the
+   surface still has an outlined square beside squares with no outline. */
+.ekd-toggle {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: var(--sp-7);
+  min-block-size: var(--sp-7);
+  padding: var(--sp-1);
+  background: transparent;
+  color: var(--fg-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-normal);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-soft),
+    border-color var(--dur-fast) var(--ease-soft);
+}
+.ekd-toggle:hover { background: var(--bg-surface-2); }
+.ekd-toggle[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+/* Unavailable, as the button: after the pressed rule, so it holds over it. */
+.ekd-toggle:disabled,
+.ekd-toggle[aria-disabled="true"] {
+  background: transparent;
+  color: var(--fg-3);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+@media (forced-colors: active) {
+  /* Every border is drawn in a system colour here, the transparent one too,
+     so the pressed toggle is the one with the heavier boundary. */
+  .ekd-toggle[aria-pressed="true"] { border-width: 2px; }
+  .ekd-toggle:disabled,
+  .ekd-toggle[aria-disabled="true"] { color: GrayText; }
+  .ekd-toolbar-separator { background: CanvasText; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ekd-toggle { transition: none; }
+}
+
+/* --- Menu button --------------------------------------------------------- */
+/* MenuButton: a button that opens a list of actions. The button is `Button`
+   and takes its styles from button.css; this is the list.
+
+   The list is the tooltip's surface, and is closed the way the tooltip is:
+   `display: none`, not hidden, so a closed menu at the end of a line widens
+   nothing. Open, it is no wider than the viewport less a margin, and the
+   component moves it sideways to stay inside.
+
+   ponytail: it opens under its button and does not flip above it where there
+   is no room below. CSS anchor positioning with `position-try` is the upgrade,
+   as it is for the tooltip. */
+.ekd-menu {
+  position: relative;
+  display: inline-block;
+}
+.ekd-menu-list {
+  display: none;
+  position: absolute;
+  z-index: 1000;
+  inset-block-start: calc(100% + var(--sp-1));
+  inset-inline-start: 0;
+  inline-size: max-content;
+  min-inline-size: 100%;
+  max-inline-size: min(20rem, calc(100vw - 2 * var(--sp-4)));
+  padding: var(--sp-1);
+  background: var(--bg-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+}
+.ekd-menu[data-open] > .ekd-menu-list { display: block; }
+.ekd-menu-item {
+  display: flex;
+  align-items: center;
+  inline-size: 100%;
+  min-block-size: var(--sp-7);
+  padding: var(--sp-1) var(--sp-3);
+  background: transparent;
+  color: var(--fg-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-normal);
+  letter-spacing: var(--tr-normal);
+  text-align: start;
+  cursor: pointer;
+}
+.ekd-menu-item:hover,
+.ekd-menu-item:focus-visible { background: var(--bg-surface-2); }
+/* The ring is the reset's, drawn inside the item so the list's edge does not
+   cut it. */
+.ekd-menu-item:focus-visible { outline-offset: -2px; }
+/* An action that does not apply now: "Split cell" with no merged cell. It
+   stays in the list and takes focus, so the list is the same list each time
+   and a screen reader hears that the action exists; `aria-disabled` says it is
+   unavailable. --fg-3 is 4.40:1 on --bg-raised in sepia dark. That is under
+   the text threshold, and it is the one place these controls use it there: an
+   unavailable control is exempt (WCAG 1.4.3), and this one must read as
+   quieter than the items beside it. */
+.ekd-menu-item[aria-disabled="true"] {
+  background: transparent;
+  color: var(--fg-3);
+  cursor: not-allowed;
+}
+.ekd-menu-separator {
+  block-size: 1px;
+  margin: var(--sp-1) 0;
+  background: var(--rule);
+}
+@media (forced-colors: active) {
+  .ekd-menu-item[aria-disabled="true"] { color: GrayText; }
+  .ekd-menu-separator { background: CanvasText; }
+}
+
+/* --- Sync status --------------------------------------------------------- */
+/* SyncStatus: whether the document on screen is the document on the server.
+   Three states, and each is a mark and words together. The words are the
+   application's and say the state; the mark's shape says it again; the hue is
+   the third carrier and never the only one.
+
+   The control is a span, or a button where the application gives it something
+   to do. As a button it is the quiet button: no boundary at rest, the sunken
+   step on hover.
+
+   Syncing pulses the mark, and the pulse is a fade: nothing on screen moves
+   (rule 10), so the arrows do not turn. Its length is proportioned from
+   --dur-slow, as the opening sequence's are, because no duration in the
+   catalogue is as long as a breath. A reader who asks for no motion gets the
+   mark at rest. */
+.ekd-sync { display: inline-flex; }
+.ekd-sync-control {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-block-size: var(--sp-7);
+  padding: var(--sp-1) var(--sp-2);
+  background: transparent;
+  color: var(--fg-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+  text-align: start;
+}
+button.ekd-sync-control {
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+button.ekd-sync-control:hover {
+  background: var(--bg-surface-2);
+  color: var(--fg-1);
+}
+.ekd-sync-mark {
+  flex: none;
+  display: inline-flex;
+}
+.ekd-sync[data-state="synced"] .ekd-sync-mark { color: var(--ok); }
+.ekd-sync[data-state="syncing"] .ekd-sync-mark {
+  animation: ekd-sync-pulse calc(var(--dur-slow) * 3) var(--ease-crisp) infinite alternate;
+}
+/* The error is the one state a reader must not miss, so its words take the
+   primary ink and a weight as well as the mark taking --danger. */
+.ekd-sync[data-state="error"] .ekd-sync-control {
+  color: var(--fg-1);
+  font-weight: var(--fw-medium);
+}
+.ekd-sync[data-state="error"] .ekd-sync-mark { color: var(--danger); }
+@keyframes ekd-sync-pulse {
+  from { opacity: 1; }
+  to { opacity: 0.4; }
+}
+/* The announcement: present for a screen reader and absent from the page, the
+   technique of .sr-only in the reset, restated so this entry holds alone. */
+.ekd-sync-announce {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  button.ekd-sync-control { transition: none; }
+  .ekd-sync[data-state="syncing"] .ekd-sync-mark { animation: none; }
+}
+
+/* --- Editor -------------------------------------------------------------- */
+/* The surface a document is written on. Not a component: a stylesheet for
+   markup the application's editor produces. `ekd-editor` goes on the editable
+   root, and everything under it is styled by element, by the three block
+   classes below, and by a few attributes the editor sets. The contract is in
+   the README, as a table.
+
+   The package knows no editor. Where a rule below also answers to a class
+   such as `selectedCell`, that is the name a widely used table plugin writes
+   and gives an application no way to change; the package's own name comes
+   first and is the one to prefer.
+
+   Type. The reading serif at --fs-md with the prose leading, and --measure on
+   the running text alone: a table, a code block and a callout take the width
+   of the column the application gives the editor. Every element selector is
+   inside `:where()`, so each rule is as specific as one class and a block's
+   own stylesheet (the callout's, the code block's) is not outranked by a rule
+   about paragraphs.
+
+   Rule 4, as far as a stylesheet can keep it. The serif has no Greek, and a
+   writer's text cannot be wrapped run by run the way a heading's is. A
+   document whose language is Greek, said with `lang="el"` on the root or on
+   any block, is set in the sans throughout. A Greek phrase inside a document
+   in another language is not caught by that, and is drawn in whatever face
+   the operating system substitutes. */
+.ekd-editor {
+  font-family: var(--font-serif);
+  font-size: var(--fs-md);
+  line-height: var(--lh-prose);
+  color: var(--fg-1);
+  /* The reader's own caret, as the catalogue has it. A collaborator's is
+     --collab-N, drawn by the application. */
+  caret-color: var(--fg-1);
+  /* An address with no break in it wraps and does not widen the page. */
+  overflow-wrap: break-word;
+}
+/* The root, and any element that states the language itself. Not every
+   descendant of a Greek document, which `:lang()` alone would match: the face
+   is inherited from here, and code inside keeps the mono. */
+.ekd-editor:lang(el),
+.ekd-editor [lang|="el"] { font-family: var(--font-sans); }
+
+/* Flow. No block carries a margin of its own; the space is between two
+   blocks, and one rule sets it wherever blocks follow each other. */
+.ekd-editor :where(p, h1, h2, h3, ul, ol, li, blockquote, hr, figure, pre, table) { margin: 0; }
+.ekd-editor :where(.callout, .ekd-code, .ekd-toc, .ekd-page-break) { margin: 0; }
+.ekd-editor > * + *,
+.ekd-editor :where(blockquote, .callout-body) > * + * { margin-block-start: var(--sp-4); }
+.ekd-editor :where(li, td, th) > * + * { margin-block-start: var(--sp-1); }
+.ekd-editor :where(li) + :where(li) { margin-block-start: var(--sp-1); }
+.ekd-editor > * + :where(h1, h2, h3) { margin-block-start: var(--sp-7); }
+.ekd-editor > :where(h1, h2, h3) + * { margin-block-start: var(--sp-3); }
+.ekd-editor > :where(p, h1, h2, h3, ul, ol, blockquote) { max-inline-size: var(--measure); }
+
+.ekd-editor :where(h1, h2, h3) {
+  /* No family: a heading takes the document's, which is the sans in Greek. */
+  font-weight: var(--fw-semi);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tr-tight);
+  color: var(--fg-1);
+}
+.ekd-editor :where(h1) { font-size: var(--fs-2xl); }
+.ekd-editor :where(h2) { font-size: var(--fs-xl); }
+.ekd-editor :where(h3) { font-size: var(--fs-lg); }
+
+.ekd-editor :where(ul, ol) { padding-inline-start: var(--sp-6); }
+.ekd-editor :where(ul) { list-style: disc; }
+.ekd-editor :where(ul ul) { list-style: circle; }
+.ekd-editor :where(ul ul ul) { list-style: square; }
+.ekd-editor :where(ol) { list-style: decimal; }
+.ekd-editor :where(ol ol) { list-style: lower-alpha; }
+.ekd-editor :where(ol ol ol) { list-style: lower-roman; }
+.ekd-editor :where(li)::marker { color: var(--fg-3); }
+
+/* A quotation from a source: the bare rule in the margin that rule 13 permits,
+   with no ground, no radius and no shadow. */
+.ekd-editor :where(blockquote) {
+  padding-inline-start: var(--sp-4);
+  border-inline-start: 2px solid var(--gilt);
+  color: var(--fg-2);
+}
+.ekd-editor :where(hr) {
+  border: 0;
+  border-block-start: 1px solid var(--rule-strong);
+}
+
+/* The nine marks. Bold, italic, underline, strikethrough, superscript and
+   subscript are the elements' own, with the weight from the scale and the two
+   scripts kept from opening the line they sit in. */
+.ekd-editor :where(strong, b) { font-weight: var(--fw-bold); }
+.ekd-editor :where(sup, sub) { line-height: 0; }
+/* A link is the accent, underlined, and a step heavier. The weight is for the
+   underline mark: underlined text and a link would otherwise differ by hue
+   alone, and in the mono palettes, where the accent is the ink, by nothing. */
+.ekd-editor :where(a) {
+  color: var(--accent);
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+/* Inline code: the mono, brought to the height of the serif beside it, on the
+   surface the catalogue names for it. */
+.ekd-editor :where(code) {
+  padding: 0 var(--sp-1);
+  background: var(--bg-elevated);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: var(--serif-fit);
+}
+/* The writer's highlight. A link inside one takes the ink of the text and
+   keeps its underline and its weight: --accent does not hold on the highlight
+   in the dark palettes. */
+.ekd-editor :where(mark) {
+  background: var(--hl-mark);
+  color: inherit;
+  border-radius: var(--radius-xs);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.ekd-editor :where(mark a) { color: inherit; }
+.ekd-editor :where(a mark) { color: var(--fg-1); }
+/* The selection is the reset's, --fg-1 on --hl-quote. Over a highlight that
+   would be one wash on another, a step apart, so there the selection is the
+   accent and its ink. */
+.ekd-editor mark::selection,
+.ekd-editor mark ::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* The prompt in an empty block. The editor sets `data-placeholder` on a block
+   while it is empty and removes it at the first character. --fg-3, the
+   quietest ink that is text. Floated and of no height, so the caret sits at
+   the start of the line and the prompt takes no press. */
+.ekd-editor [data-placeholder]::before {
+  content: attr(data-placeholder);
+  float: inline-start;
+  block-size: 0;
+  color: var(--fg-3);
+  pointer-events: none;
+}
+/* A block selected as a whole: a rule, a page break, a table of contents. */
+.ekd-editor :is([data-node-selected], .ProseMirror-selectednode) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* A table. It scrolls inside its own wrapper at every width and never widens
+   the page: a document table has as many columns as its writer gave it. Not
+   table.css, which draws a card with a sticky header from `thead` and
+   `tbody`; an editor's table has header cells in any row and any column, and
+   needs every cell edged so a selection has edges to follow. The vocabulary is
+   shared: the sans, the sunken step for a header, and --rule. */
+.ekd-editor :is(.ekd-table-wrap, .tableWrapper) {
+  max-inline-size: 100%;
+  overflow-x: auto;
+}
+.ekd-editor :where(table) {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+}
+.ekd-editor :where(th, td) {
+  position: relative;
+  /* The least a column is squeezed to before the wrapper scrolls. */
+  min-inline-size: var(--sp-11);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--rule);
+  vertical-align: top;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+.ekd-editor :where(th) {
+  background: var(--bg-surface-2);
+  font-weight: var(--fw-semi);
+}
+/* A selected cell, and each cell of a selected range: the accent wash, and an
+   edge in the accent inside the cell's own, so the selection has a shape. */
+.ekd-editor :is(th, td):is([data-cell-selected], .selectedCell) {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+/* The handle on the edge of the column being resized. */
+.ekd-editor :is(.ekd-column-resize, .column-resize-handle) {
+  position: absolute;
+  z-index: 1;
+  inset-block: -1px;
+  inset-inline-end: -2px;
+  inline-size: 3px;
+  background: var(--accent);
+  pointer-events: none;
+}
+.ekd-editor:is([data-column-resizing], .resize-cursor) { cursor: col-resize; }
+.ekd-table-caption {
+  margin-block-start: var(--sp-2);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+  color: var(--fg-2);
+  text-align: start;
+}
+
+/* A callout in the document reads at the document's size, in its face. */
+.ekd-editor .callout-body { font: inherit; }
+
+/* A page break: where the exported page ends. A dashed line with its name in
+   the middle, so it is not taken for the solid rule a writer inserts. The
+   dashes are at control contrast: the marker is information and not
+   decoration. The words are the application's, as the element's text. */
+.ekd-page-break {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tr-wide);
+  line-height: var(--lh-normal);
+  color: var(--fg-3);
+  user-select: none;
+}
+.ekd-page-break::before,
+.ekd-page-break::after {
+  content: "";
+  flex: 1;
+  border-block-start: 1px dashed var(--rule-control);
+}
+
+/* The table of contents: a titled list of links, at three depths. A flat
+   list with the depth on each entry, which is how it is generated from the
+   headings. Every link is a line of at least 24px (WCAG 2.5.8). */
+.ekd-toc {
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--bg-surface);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+}
+.ekd-toc-title {
+  margin: 0 0 var(--sp-2);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--tr-normal);
+  color: var(--fg-1);
+}
+.ekd-toc-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ekd-toc-list [data-level="2"] { padding-inline-start: var(--sp-4); }
+.ekd-toc-list [data-level="3"] { padding-inline-start: var(--sp-7); }
+.ekd-toc-list a {
+  display: inline-block;
+  min-block-size: var(--sp-6);
+  color: var(--fg-2);
+  font-weight: var(--fw-regular);
+  text-decoration: none;
+}
+.ekd-toc-list [data-level="1"] a { color: var(--fg-1); }
+.ekd-toc-list a:hover {
+  color: var(--fg-1);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+@media (forced-colors: active) {
+  /* The wash and the inset edge are both removed, so the selection is drawn as
+     an outline in the system's selection colour. */
+  .ekd-editor :is(th, td):is([data-cell-selected], .selectedCell) {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  .ekd-editor :where(mark) {
+    background: Mark;
+    color: MarkText;
+  }
+}
+
+/* --- Code block ---------------------------------------------------------- */
+/* A block of code: a header row and the code under it, on the recessed
+   surface. A class of its own, so a page that shows code outside an editor
+   draws it the same way.
+
+   The header holds what the application puts in it: in the editor, a small
+   `Select` for the language and a quiet `Button` to copy.
+
+   The colours are for the class names highlight.js writes, which lowlight
+   writes too. Six inks, each a token, each held at 4.5:1 on --bg-inset in the
+   eight palettes. Two of the roles carry a second cue, because hue is all a
+   syntax colour otherwise is: a keyword is a step heavier and a comment is
+   italic. In the mono palettes the accent is the ink, so an attribute there is
+   drawn as plain code; the other five keep their hues, as the state colours
+   do. */
+.ekd-code {
+  background: var(--bg-inset);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+}
+.ekd-code-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-block-end: 1px solid var(--rule);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  color: var(--fg-2);
+}
+.ekd-code pre {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+  tab-size: 2;
+}
+/* The code inside is the block's, not inline code: it takes none of the
+   surface an editor gives a code span. */
+.ekd-code pre code {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  font: inherit;
+}
+.ekd-code :is(.hljs-keyword, .hljs-selector-tag, .hljs-name, .hljs-doctag, .hljs-variable.language_) {
+  color: var(--syntax-keyword);
+  font-weight: var(--fw-medium);
+}
+.ekd-code :is(.hljs-string, .hljs-regexp) { color: var(--syntax-string); }
+.ekd-code :is(.hljs-number, .hljs-literal, .hljs-symbol, .hljs-bullet, .hljs-char.escape_) { color: var(--syntax-number); }
+.ekd-code :is(.hljs-title, .hljs-section, .hljs-selector-id, .hljs-selector-class) { color: var(--syntax-title); }
+.ekd-code :is(.hljs-attr, .hljs-attribute, .hljs-variable, .hljs-template-variable, .hljs-template-tag, .hljs-type, .hljs-built_in, .hljs-property, .hljs-selector-attr, .hljs-selector-pseudo) {
+  color: var(--syntax-attr);
+}
+.ekd-code :is(.hljs-comment, .hljs-quote) {
+  color: var(--syntax-comment);
+  font-style: italic;
+}
+.ekd-code .hljs-meta { color: var(--syntax-comment); }
+.ekd-code .hljs-emphasis { font-style: italic; }
+.ekd-code .hljs-strong { font-weight: var(--fw-bold); }
+.ekd-code .hljs-link { text-decoration: underline; }
+/* A diff. The line's own + or - is in the text, so the wash is the second
+   carrier and not the first. */
+.ekd-code .hljs-addition { background: var(--ok-soft); }
+.ekd-code .hljs-deletion { background: var(--danger-soft); }

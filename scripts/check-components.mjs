@@ -63,7 +63,7 @@ const {
   Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
   AccessGate, GateSubmitButton, NavDrawer, OnThisPage, OpeningSequence, DocMeta,
   Button, TextField, OneTimeCodeField, PasswordField, TextArea, RadioGroup, Checkbox, FormFault, Dialog, Tooltip,
-  PageHeading,
+  PageHeading, Select, Toolbar, ToolbarSeparator, ToggleButton, MenuButton, SyncStatus, QrCode,
 } = await import('../dist/src/components/index.js');
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
 
@@ -1034,10 +1034,11 @@ await it('PageHeading is an h1, and sets a Greek run in the sans by itself', asy
   assert.deepEqual(runs(view.container), []);
   await view.unmount();
 
-  // The class the span carries sets the sans and the heading sets the serif.
+  // The class the span carries sets the sans, at the size that brings it to
+  // the serif's height, and the heading sets the serif.
   const { readFileSync } = await import('node:fs');
   const css = readFileSync(new URL('../dist/styles/page-heading.css', import.meta.url), 'utf8');
-  assert.match(css, /\.ekd-page-heading-greek\s*\{\s*font-family:\s*var\(--font-sans\);?\s*\}/);
+  assert.match(css, /\.ekd-page-heading-greek\s*\{\s*font-family:\s*var\(--font-sans\);\s*font-size:\s*var\(--serif-fit\);?\s*\}/);
   assert.match(css, /\.ekd-page-heading\s*\{[^}]*font-family:\s*var\(--font-serif\)/);
 });
 
@@ -1248,6 +1249,491 @@ await it('Tooltip shows on hover and on focus, and Escape dismisses it', async (
 
   window.Element.prototype.matches = matches;
   await view.unmount();
+});
+
+// --- The editor's controls ------------------------------------------------------
+await it('Callout draws its type as an icon, and the label says it in words', async () => {
+  const view = await mount(
+    h('div', null,
+      h(Callout, { type: 'warning', icon: true, label: 'Warning' }, 'Body'),
+      h(Callout, { type: 'tip', icon: true, label: 'Tip', title: 'Before you start' }, 'Body'),
+      h(Callout, { type: 'note' }, 'Body'),
+    ),
+  );
+  const [warning, titled, plain] = view.container.querySelectorAll('.callout');
+  // The editor's name for the type is kept on the attribute the stylesheet reads.
+  assert.equal(warning.getAttribute('data-type'), 'warning');
+  assert.ok(warning.hasAttribute('data-icon'));
+  // No title: the label names the note, and the icon is decoration beside it.
+  assert.equal(warning.getAttribute('aria-label'), 'Warning');
+  assert.equal(warning.querySelector('.callout-icon svg')?.getAttribute('aria-hidden'), 'true');
+  // A title names the note, and the label is then the icon's text alternative.
+  assert.ok(titled.hasAttribute('aria-labelledby') && !titled.hasAttribute('aria-label'));
+  const icon = titled.querySelector('.callout-icon svg');
+  assert.equal(icon?.getAttribute('role'), 'img');
+  assert.equal(icon?.getAttribute('aria-label'), 'Tip');
+  // Three types, three shapes: the icon is not one glyph in three colours.
+  const shape = (callout) => callout.querySelector('.callout-icon svg')?.innerHTML;
+  const note = await mount(h(Callout, { type: 'note', icon: true, label: 'Note' }, 'Body'));
+  assert.equal(new Set([shape(warning), shape(titled), shape(note.container)]).size, 3);
+  await note.unmount();
+  // Asked for neither, a callout is what it was at 0.26.0.
+  assert.ok(!plain.hasAttribute('data-icon') && !plain.hasAttribute('aria-label') && !plain.querySelector('.callout-icon'));
+  await view.unmount();
+
+  const { readFileSync } = await import('node:fs');
+  const css = readFileSync(new URL('../dist/styles/callout.css', import.meta.url), 'utf8');
+  assert.match(css, /\[data-type="warn"\], \[data-type="warning"\]/, 'warning is not drawn as warn');
+});
+
+await it('FormFault has a neutral tone, and states one sentence without a title', async () => {
+  const view = await mount(
+    h('div', null,
+      h(FormFault, { announce: 'off', tone: 'neutral' }, h('p', null, 'Sign-up is by invitation.')),
+      h(FormFault, { title: 'The request failed', autoFocus: false }, h('p', null, 'Try again.')),
+      h(FormFault, { announce: 'polite', autoFocus: false }, h('p', null, 'The last change was not saved.')),
+    ),
+  );
+  const [neutral, fault, untitled] = view.container.querySelectorAll('.ekd-fault');
+  assert.equal(neutral.getAttribute('data-tone'), 'neutral');
+  assert.ok(!neutral.hasAttribute('role'), 'a statement that is not announced has a role');
+  assert.ok(!neutral.querySelector('h2, h3, h4'), 'a statement with no title rendered a heading');
+  assert.equal(neutral.firstElementChild?.className, 'ekd-fault-body');
+  assert.equal(neutral.textContent, 'Sign-up is by invitation.');
+  // The default is the markup of 0.26.0: no tone attribute at all.
+  assert.ok(!fault.hasAttribute('data-tone'));
+  assert.equal(fault.getAttribute('role'), 'alert');
+  // A live region with no title points at no heading.
+  assert.equal(untitled.getAttribute('role'), 'status');
+  assert.ok(!untitled.hasAttribute('aria-labelledby'), 'a statement with no title is named by an id that is not there');
+  await view.unmount();
+});
+
+await it('Select is the native element, named by its label', async () => {
+  const ref = React.createRef();
+  const view = await mount(
+    h('div', null,
+      h(Select, { ref, id: 'language', name: 'language', label: 'Language', hint: 'Sets the highlighting.', error: 'Choose a language.', defaultValue: 'python' },
+        h('option', { value: '' }, 'Plain text'), h('option', { value: 'python' }, 'Python')),
+      h(Select, { label: 'Language', labelHidden: true, size: 'small' }, h('option', null, 'Plain text')),
+    ),
+  );
+  const [full, small] = view.container.querySelectorAll('select');
+  assert.ok(ref.current === full, 'Select dropped its ref');
+  assert.equal(full.value, 'python');
+  assert.equal(view.container.querySelector('label[for="language"]')?.textContent, 'Language');
+  assert.equal(full.getAttribute('aria-invalid'), 'true');
+  assert.deepEqual(
+    full.getAttribute('aria-describedby').split(' ').map((id) => document.getElementById(id)?.textContent),
+    ['Sets the highlighting.', 'Choose a language.'],
+  );
+  assert.ok(!full.hasAttribute('role') && !full.hasAttribute('multiple'));
+  // The chevron is decoration and takes no name.
+  assert.equal(full.parentElement.querySelector('svg')?.getAttribute('aria-hidden'), 'true');
+  // Hidden from the page, the label still names the control.
+  const hidden = view.container.querySelector(`label[for="${small.id}"]`);
+  assert.equal(hidden?.textContent, 'Language');
+  assert.ok(hidden.classList.contains('sr-only') && hidden.classList.contains('ekd-field-label'));
+  assert.equal(small.closest('.ekd-field').getAttribute('data-size'), 'small');
+  assert.ok(!full.closest('.ekd-field').hasAttribute('data-size'));
+  await view.unmount();
+});
+
+await it('Toolbar is one Tab stop, and the arrow keys move between its controls', async () => {
+  const pressed = [];
+  const view = await mount(
+    h(Toolbar, { label: 'Formatting', floating: true },
+      h(Tooltip, { content: 'Bold, Ctrl+B' }, h(ToggleButton, { id: 'bold', label: 'Bold', pressed: true, onClick: () => pressed.push('bold') }, h('svg'))),
+      h(ToggleButton, { id: 'italic', label: 'Italic', pressed: false }, h('svg')),
+      h(ToggleButton, { id: 'off', label: 'Underline', pressed: false, disabled: true }, h('svg')),
+      h(ToolbarSeparator),
+      h(Select, { id: 'style', label: 'Style', labelHidden: true }, h('option', null, 'Paragraph'), h('option', null, 'Heading 1')),
+      h(Button, { id: 'copy' }, 'Copy'),
+    ),
+  );
+  const bar = view.container.querySelector('[role="toolbar"]');
+  const $ = (id) => document.getElementById(id);
+  // A disabled control reports tabIndex 0 and takes no focus, so it is no stop.
+  const stops = () =>
+    [...bar.querySelectorAll('button, select')].filter((el) => el.tabIndex === 0 && !el.disabled).map((el) => el.id);
+  const press = async (init) => {
+    let event;
+    await act(async () => {
+      event = key(document.activeElement, init);
+    });
+    return event;
+  };
+
+  assert.equal(bar.getAttribute('aria-label'), 'Formatting');
+  assert.ok(bar.hasAttribute('data-floating'));
+  assert.equal(bar.querySelector('[role="separator"]')?.getAttribute('aria-orientation'), 'vertical');
+
+  // The toggle: a button with a state and one name.
+  assert.equal($('bold').getAttribute('type'), 'button');
+  assert.equal($('bold').getAttribute('aria-pressed'), 'true');
+  assert.equal($('italic').getAttribute('aria-pressed'), 'false');
+  assert.equal($('bold').getAttribute('aria-label'), 'Bold');
+  // Described by its tooltip, which is found inside the toolbar like any control.
+  assert.equal(document.getElementById($('bold').getAttribute('aria-describedby'))?.textContent, 'Bold, Ctrl+B');
+  await act(async () => $('bold').click());
+  assert.deepEqual(pressed, ['bold']);
+  assert.equal($('bold').getAttribute('aria-pressed'), 'true', 'a press changed a state the application holds');
+
+  // One stop, on the first control.
+  assert.deepEqual(stops(), ['bold']);
+  $('bold').focus();
+  await press({ key: 'ArrowRight' });
+  assert.equal(document.activeElement.id, 'italic');
+  assert.deepEqual(stops(), ['italic'], 'the stop did not follow focus');
+  // A disabled control is passed over.
+  await press({ key: 'ArrowRight' });
+  assert.equal(document.activeElement.id, 'style');
+  // Up, Down, Home and End are the select's. Left and Right are the row's, and
+  // are kept from changing the select's value on the way.
+  assert.ok(!(await press({ key: 'ArrowDown' })).defaultPrevented, 'the toolbar took Down from a select');
+  assert.ok(!(await press({ key: 'Home' })).defaultPrevented, 'the toolbar took Home from a select');
+  assert.equal(document.activeElement.id, 'style');
+  assert.ok((await press({ key: 'ArrowRight' })).defaultPrevented);
+  assert.equal(document.activeElement.id, 'copy');
+  // It wraps at both ends.
+  await press({ key: 'ArrowRight' });
+  assert.equal(document.activeElement.id, 'bold');
+  await press({ key: 'ArrowLeft' });
+  assert.equal(document.activeElement.id, 'copy');
+  await press({ key: 'Home' });
+  assert.equal(document.activeElement.id, 'bold');
+  await press({ key: 'End' });
+  assert.equal(document.activeElement.id, 'copy');
+  // A chord is the browser's or the application's.
+  assert.ok(!(await press({ key: 'ArrowLeft', altKey: true })).defaultPrevented);
+  assert.equal(document.activeElement.id, 'copy');
+  // Focus that arrives by a press makes that control the stop Tab returns to.
+  await act(async () => $('italic').focus());
+  assert.deepEqual(stops(), ['italic']);
+
+  // A control that goes takes the stop with it, and the row still has one.
+  await view.rerender(h(Toolbar, { label: 'Formatting' }, h(Button, { id: 'copy' }, 'Copy'), h(Button, { id: 'paste' }, 'Paste')));
+  assert.deepEqual(stops(), ['copy']);
+  assert.ok(!bar.hasAttribute('data-floating'));
+  await view.unmount();
+});
+
+await it('MenuButton opens a menu, moves through it with the arrow keys, and returns focus', async () => {
+  const ran = [];
+  const items = [
+    { label: 'Add row above', onSelect: () => ran.push('above') },
+    { label: 'Add row below', onSelect: () => ran.push('below') },
+    { label: 'Split cell', onSelect: () => ran.push('split'), disabled: true, separatorBefore: true },
+    { label: 'Delete row', onSelect: () => ran.push(`delete, focus on ${document.activeElement?.id}`) },
+  ];
+  const view = await mount(
+    h('div', null,
+      h(Toolbar, { label: 'Table' }, h(MenuButton, { id: 'table-actions', label: 'Table', items }), h(Button, { id: 'beside' }, 'Beside')),
+      h('button', { id: 'outside' }, 'Outside'),
+    ),
+  );
+  const wrapper = view.container.querySelector('.ekd-menu');
+  const button = document.getElementById('table-actions');
+  const menu = wrapper.querySelector('[role="menu"]');
+  const actions = [...menu.querySelectorAll('[role="menuitem"]')];
+  const isOpen = () => wrapper.hasAttribute('data-open');
+  const press = async (init) => {
+    let event;
+    await act(async () => {
+      event = key(document.activeElement, init);
+    });
+    return event;
+  };
+  const focused = () => document.activeElement?.textContent;
+
+  assert.equal(button.getAttribute('aria-haspopup'), 'menu');
+  assert.equal(button.getAttribute('aria-expanded'), 'false');
+  assert.equal(button.getAttribute('aria-controls'), menu.id);
+  assert.equal(menu.getAttribute('aria-labelledby'), button.id);
+  assert.equal(actions.length, 4);
+  assert.ok(actions.every((a) => a.tabIndex === -1 && a.getAttribute('type') === 'button'), 'an action is a Tab stop');
+  assert.equal(menu.querySelectorAll('[role="separator"]').length, 1);
+  assert.equal(actions[2].getAttribute('aria-disabled'), 'true');
+  // The actions are not the toolbar's controls: the row has two.
+  assert.equal([...view.container.querySelectorAll('[role="toolbar"] button')].filter((b) => b.tabIndex === 0).length, 1);
+
+  // A press opens it on the first action.
+  await act(async () => button.click());
+  assert.ok(isOpen() && button.getAttribute('aria-expanded') === 'true');
+  assert.equal(focused(), 'Add row above');
+  // Down and Up move and wrap; Home and End go to the ends. None reaches the toolbar.
+  await press({ key: 'ArrowDown' });
+  assert.equal(focused(), 'Add row below');
+  await press({ key: 'ArrowUp' });
+  await press({ key: 'ArrowUp' });
+  assert.equal(focused(), 'Delete row', 'Up did not wrap to the last action');
+  await press({ key: 'ArrowDown' });
+  assert.equal(focused(), 'Add row above', 'Down did not wrap to the first action');
+  await press({ key: 'End' });
+  assert.equal(focused(), 'Delete row', 'End went to the end of the toolbar');
+  await press({ key: 'Home' });
+  assert.equal(focused(), 'Add row above');
+  await press({ key: 'ArrowRight' });
+  assert.equal(focused(), 'Add row above', 'the toolbar moved focus out of an open menu');
+
+  // Escape closes it and puts focus back on the button.
+  const escape = await press({ key: 'Escape' });
+  assert.ok(escape.defaultPrevented, 'Escape went on to whatever encloses the menu');
+  assert.ok(!isOpen() && document.activeElement === button, 'Escape did not return focus to the button');
+
+  // Down opens it on the first action and Up on the last.
+  await press({ key: 'ArrowUp' });
+  assert.ok(isOpen());
+  assert.equal(focused(), 'Delete row');
+  // An action closes the menu and returns focus before it runs.
+  await act(async () => document.activeElement.click());
+  assert.deepEqual(ran, ['delete, focus on table-actions']);
+  assert.ok(!isOpen());
+
+  // An unavailable action takes focus and does not run.
+  await press({ key: 'ArrowDown' });
+  await press({ key: 'ArrowDown' });
+  await press({ key: 'ArrowDown' });
+  assert.equal(focused(), 'Split cell', 'an unavailable action was skipped, so the list changes shape');
+  await act(async () => document.activeElement.click());
+  assert.equal(ran.length, 1, 'an unavailable action ran');
+  assert.ok(isOpen());
+
+  // Tab is not taken, and the menu goes.
+  assert.ok(!(await press({ key: 'Tab' })).defaultPrevented, 'the menu trapped Tab');
+  assert.ok(!isOpen());
+
+  // A press outside closes it, and so does focus that goes elsewhere.
+  await act(async () => button.click());
+  await act(async () => document.getElementById('outside').dispatchEvent(new window.Event('pointerdown', { bubbles: true })));
+  assert.ok(!isOpen(), 'a press outside left the menu open');
+  await act(async () => button.click());
+  await act(async () => document.getElementById('outside').focus());
+  assert.ok(!isOpen(), 'the menu outlived its focus');
+  // A second press on the button closes what the first opened.
+  await act(async () => button.click());
+  await act(async () => button.click());
+  assert.ok(!isOpen());
+  await view.unmount();
+});
+
+await it('SyncStatus has three states, and is announced when it settles and not when it flips', async () => {
+  let verified = 0;
+  const status = (state, label, extra) => h(SyncStatus, { state, label, announceAfterMs: 60, onClick: () => verified++, ...extra });
+  const wait = (ms) => act(async () => new Promise((resolve) => setTimeout(resolve, ms)));
+  const view = await mount(status('synced', 'Saved'));
+  const root = view.container.querySelector('.ekd-sync');
+  const live = root.querySelector('[role="status"]');
+  const control = () => root.querySelector('.ekd-sync-control');
+
+  assert.equal(root.getAttribute('data-state'), 'synced');
+  // A button, named by its words; the mark is decoration beside them.
+  assert.equal(control().tagName, 'BUTTON');
+  assert.equal(control().getAttribute('type'), 'button');
+  assert.equal(control().textContent, 'Saved');
+  assert.equal(control().querySelector('svg')?.getAttribute('aria-hidden'), 'true');
+  assert.ok(!control().hasAttribute('aria-label'));
+  await act(async () => control().click());
+  assert.equal(verified, 1);
+  // The state a document opens in is not announced.
+  assert.ok(!live.hasAttribute('aria-live'), 'aria-live restates the role');
+  assert.equal(live.textContent, '');
+  assert.ok(!control().contains(live), 'the live region is inside the button it would rename');
+
+  // Typing: syncing and back inside the interval. The page follows; nothing is said.
+  const marks = new Set([control().querySelector('svg').innerHTML]);
+  await view.rerender(status('syncing', 'Saving'));
+  assert.equal(root.getAttribute('data-state'), 'syncing');
+  assert.equal(control().textContent, 'Saving');
+  marks.add(control().querySelector('svg').innerHTML);
+  await wait(20);
+  await view.rerender(status('synced', 'Saved'));
+  await wait(120);
+  assert.equal(live.textContent, '', 'a save that completed at once was announced');
+
+  // A state that stands is announced, once, and so is the way out of it.
+  await view.rerender(status('error', 'Not connected. Editing is paused.'));
+  marks.add(control().querySelector('svg').innerHTML);
+  assert.equal(marks.size, 3, 'two states share a mark, so one of them is carried by colour');
+  assert.equal(live.textContent, '', 'the announcement did not wait for the state to settle');
+  await wait(120);
+  assert.equal(live.textContent, 'Not connected. Editing is paused.');
+  // Reconnecting is the syncing state with its own words.
+  await view.rerender(status('syncing', 'Reconnecting'));
+  await wait(120);
+  assert.equal(live.textContent, 'Reconnecting');
+  await view.rerender(status('synced', 'Saved'));
+  await wait(120);
+  assert.equal(live.textContent, 'Saved');
+
+  // With nothing to do it is text, not a control.
+  await view.rerender(h(SyncStatus, { state: 'synced', label: 'Saved' }));
+  assert.equal(control().tagName, 'SPAN');
+  assert.ok(!control().hasAttribute('tabindex') && !control().hasAttribute('role'));
+  await view.unmount();
+});
+
+// The two entries with no component. What can be held here is the contract:
+// the names an application's editor writes, and that the package still needs
+// no editor to be installed.
+await it('The editor and code stylesheets answer to the documented names, and import no editor', async () => {
+  const { readFileSync } = await import('node:fs');
+  const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+  const editor = read('../dist/styles/editor.css');
+  const code = read('../dist/styles/code.css');
+  for (const name of [
+    '.ekd-editor', '[data-placeholder]', '[data-node-selected]', '[data-cell-selected]', '.ekd-table-wrap',
+    '.ekd-column-resize', '[data-column-resizing]', '.ekd-table-caption', '.ekd-page-break', '.ekd-toc',
+    '.ekd-toc-title', '.ekd-toc-list', '[data-level="3"]', 'var(--hl-mark)', 'var(--measure)', 'var(--serif-fit)',
+  ]) {
+    assert.ok(editor.includes(name), `editor.css has no rule for ${name}`);
+  }
+  for (const name of ['.ekd-code', '.ekd-code-header', 'var(--bg-inset)']) {
+    assert.ok(code.includes(name), `code.css has no rule for ${name}`);
+  }
+  // Every syntax token is used, and every scope of highlight.js that carries a
+  // colour here is spelt as highlight.js spells it.
+  for (const token of ['keyword', 'string', 'number', 'title', 'attr', 'comment']) {
+    assert.ok(code.includes(`var(--syntax-${token})`), `code.css does not use --syntax-${token}`);
+  }
+  for (const scope of [
+    'keyword', 'built_in', 'type', 'literal', 'number', 'regexp', 'string', 'symbol', 'variable', 'title', 'comment',
+    'doctag', 'meta', 'section', 'name', 'attr', 'attribute', 'bullet', 'quote', 'emphasis', 'strong', 'link',
+    'selector-tag', 'selector-id', 'selector-class', 'selector-attr', 'selector-pseudo', 'template-tag',
+    'template-variable', 'addition', 'deletion', 'property',
+  ]) {
+    assert.ok(code.includes(`.hljs-${scope}`), `code.css has no rule for .hljs-${scope}`);
+  }
+  // A comment and a keyword are not carried by hue alone.
+  assert.match(code, /\.hljs-comment[^}]*\{[^}]*font-style:\s*italic/);
+  assert.match(code, /\.hljs-keyword[^}]*\{[^}]*font-weight:\s*var\(--fw-medium\)/);
+  // A table scrolls in its own wrapper.
+  assert.match(editor, /\.ekd-table-wrap[^}]*\{[^}]*overflow-x:\s*auto/);
+
+  const manifest = JSON.parse(read('../package.json'));
+  const all = { ...manifest.dependencies, ...manifest.peerDependencies, ...manifest.devDependencies };
+  const editors = Object.keys(all).filter((name) => /tiptap|prosemirror|lowlight|highlight\.js|^yjs$|^y-/.test(name));
+  assert.deepEqual(editors, [], 'the package depends on an editor');
+  assert.equal(manifest.dependencies, undefined, 'a runtime dependency was added');
+});
+
+// --- The QR code --------------------------------------------------------------
+// The fixture is another encoder's output, and three of them agreed on it. A
+// matrix this package wrote for itself would hold nothing.
+const qrFixture = async () => {
+  const { readFileSync } = await import('node:fs');
+  return JSON.parse(readFileSync(new URL('./fixtures/qr-code.json', import.meta.url), 'utf8')).symbols;
+};
+
+await it('The QR encoder writes the symbol another encoder writes, in every module', async () => {
+  const { encodeQr, QR_MAX_BYTES } = await import('../dist/src/components/qr.js');
+  const symbols = await qrFixture();
+  assert.ok(symbols.length >= 2, 'the fixture holds fewer than two symbols');
+
+  // A finder: seven by seven, a dark ring, a light ring, a dark three by three.
+  const FINDER = ['1111111', '1000001', '1011101', '1011101', '1011101', '1000001', '1111111'];
+  for (const { value, rows } of symbols) {
+    const mine = encodeQr(value).map((row) => row.map((dark) => (dark ? '1' : '0')).join(''));
+    assert.deepEqual(mine, rows, `the symbol for ${value}`);
+
+    const size = mine.length;
+    assert.equal((size - 17) % 4, 0, 'a symbol is 17 modules and four for each version');
+    for (const [x, y] of [[0, 0], [size - 7, 0], [0, size - 7]]) {
+      assert.deepEqual(mine.slice(y, y + 7).map((row) => row.slice(x, x + 7)), FINDER, `the finder at ${x},${y}`);
+    }
+    // And no fourth, where the alignment pattern stands instead.
+    assert.notDeepEqual(mine.slice(size - 7).map((row) => row.slice(size - 7)), FINDER);
+    // The separator: a light line on the inner sides of each finder.
+    for (let i = 0; i < 8; i++) {
+      for (const [x, y] of [[7, i], [i, 7], [size - 8, i], [size - 1 - i, 7], [7, size - 1 - i], [i, size - 8]]) {
+        assert.equal(mine[y][x], '0', `the separator at ${x},${y}`);
+      }
+    }
+  }
+
+  // The largest value fits the largest version, and one byte more is refused.
+  assert.equal(QR_MAX_BYTES, 2331);
+  assert.equal(encodeQr('a'.repeat(QR_MAX_BYTES)).length, 177);
+  assert.throws(() => encodeQr('a'.repeat(QR_MAX_BYTES + 1)), RangeError);
+  // Bytes, not characters: a Greek letter is two.
+  assert.throws(() => encodeQr('α'.repeat(QR_MAX_BYTES / 2 + 1)), /2332 bytes/);
+});
+
+await it('QrCode is an image named by its label, dark on light, with a quiet zone of four modules', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const [{ value, rows }] = await qrFixture();
+  const size = rows.length;
+  const label = 'QR code for your authenticator app';
+
+  const view = await mount(h(QrCode, { value, label, className: 'mine', id: 'totp' }));
+  const svg = view.container.querySelector('svg');
+  assert.equal(svg.getAttribute('role'), 'img');
+  assert.equal(svg.getAttribute('aria-label'), label);
+  assert.equal(svg.getAttribute('class'), 'ekd-qr mine');
+  assert.equal(svg.id, 'totp', 'other attributes pass through');
+  assert.equal(view.container.querySelector('img, canvas, image'), null);
+
+  // The plate is the whole image, and the image is the symbol and four
+  // modules on each side.
+  assert.equal(svg.getAttribute('viewBox'), `0 0 ${size + 8} ${size + 8}`);
+  assert.equal(svg.getAttribute('width'), '200');
+  assert.equal(svg.getAttribute('height'), '200');
+  const plate = svg.querySelector('rect');
+  assert.equal(plate.getAttribute('width'), String(size + 8));
+  assert.equal(plate.getAttribute('height'), String(size + 8));
+
+  // Paint the path onto a grid. Nothing dark may fall in the quiet zone, and
+  // what is inside it has to be the fixture's symbol.
+  const d = svg.querySelector('path').getAttribute('d');
+  const painted = Array.from({ length: size + 8 }, () => new Array(size + 8).fill('0'));
+  const runs = [...d.matchAll(/M(\d+) (\d+)h(\d+)v1h-(\d+)z/g)];
+  assert.equal(runs.map((run) => run[0]).join(''), d, 'the path holds something other than runs of modules');
+  for (const [, x, y, length, back] of runs) {
+    assert.equal(length, back);
+    for (let i = 0; i < Number(length); i++) painted[Number(y)][Number(x) + i] = '1';
+  }
+  const grid = painted.map((row) => row.join(''));
+  const empty = '0'.repeat(size + 8);
+  for (let i = 0; i < 4; i++) {
+    assert.equal(grid[i], empty, 'a dark module above the symbol');
+    assert.equal(grid[size + 7 - i], empty, 'a dark module below the symbol');
+  }
+  for (const row of grid) assert.ok(row.startsWith('0000') && row.endsWith('0000'), 'a dark module beside the symbol');
+  assert.deepEqual(grid.slice(4, size + 4).map((row) => row.slice(4, size + 4)), rows);
+
+  await view.rerender(h(QrCode, { value, label, size: 264 }));
+  assert.equal(view.container.querySelector('svg').getAttribute('width'), '264');
+  await view.unmount();
+
+  // On the server, with no document: the same path, and the two colours as
+  // tokens. jsdom drops a declaration it does not know, so the colours are
+  // read from the markup a server sends.
+  const html = renderToStaticMarkup(h(QrCode, { value, label }));
+  assert.match(html, /^<svg [^>]*role="img"/);
+  assert.ok(html.includes(`aria-label="${label}"`));
+  assert.ok(html.includes(`d="${d}"`), 'the server and the browser draw different paths');
+  assert.match(html, /<rect [^>]*style="fill:var\(--scan-plate\)"/);
+  assert.match(html, /<path [^>]*style="fill:var\(--scan-ink\)"/);
+  assert.match(html, /<svg [^>]*style="forced-color-adjust:none"/);
+  assert.ok(!/data:|<img|<canvas|href=/.test(html), 'the image refers to something outside itself');
+
+  // No client boundary, and no hook to need one.
+  const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+  for (const file of ['QrCode.js', 'qr.js']) {
+    const source = read(`../dist/src/components/${file}`);
+    assert.ok(!/['"]use client['"]/.test(source), `${file} is a client module`);
+    assert.ok(!/\buse[A-Z]\w*\(/.test(source), `${file} calls a hook`);
+    assert.ok(!/from ['"](?!react\/jsx-runtime['"]|\.\/qr\.js['"])/.test(source), `${file} imports something else`);
+  }
+
+  // A value that fits no version is a fault in the application, raised at render.
+  assert.throws(() => renderToStaticMarkup(h(QrCode, { value: 'a'.repeat(2332), label })), RangeError);
+
+  // The two colours are the same in every palette: declared once, in no theme.
+  const tokens = read('../tokens/generated/tokens.css');
+  assert.equal(tokens.match(/--scan-plate:/g).length, 1);
+  assert.equal(tokens.match(/--scan-ink:/g).length, 1);
 });
 
 console.log(`check:components — ${cases} cases: the a11y helpers, and the components' names, roles and focus, against jsdom`);

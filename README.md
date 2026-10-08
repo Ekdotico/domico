@@ -84,8 +84,9 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, and `page-heading.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `sync-status.css`, `editor.css`, and `code.css` |
 | `@ekdotico/domico/components` | The shared React components |
+| `@ekdotico/domico/icons` | The icon set: Lucide, vendored, at the house stroke weight |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, and `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord |
 | `@ekdotico/domico/fonts` | Font loading configuration for the three locked families |
@@ -321,15 +322,17 @@ the platform's, and every attribute the native element takes passes through.
 | `TextArea` | A multi-line field, with a count against a maximum | `styles/form.css` |
 | `RadioGroup` | A fieldset of native radios, named by its legend | `styles/form.css` |
 | `Checkbox` | One native checkbox, inside its label | `styles/form.css` |
+| `Select` | The native select, for one choice from a list | `styles/form.css` |
 | `FormFault` | The statement of a fault, at the head of a form or anywhere else on a page | `styles/form.css` |
 | `Dialog` | A modal dialog, on the native element | `styles/dialog.css` |
 | `Tooltip` | An explanation shown on hover and on focus | `styles/tooltip.css` |
 | `PageHeading` | The heading of an application page, an `h1` unless told otherwise | `styles/page-heading.css` |
+| `QrCode` | A QR code as an inline SVG, dark on light in every theme | None. It needs `tokens.css` alone |
 
 ```tsx
 import {
   Button, Checkbox, Dialog, FormFault, OneTimeCodeField, PageHeading,
-  PasswordField, RadioGroup, TextArea, TextField, Tooltip,
+  PasswordField, QrCode, RadioGroup, TextArea, TextField, Tooltip,
 } from '@ekdotico/domico/components';
 import '@ekdotico/domico/styles/button.css';
 import '@ekdotico/domico/styles/form.css';
@@ -417,6 +420,30 @@ each hand their native element to a `ref`.
 No radio is selected unless `defaultValue` or `value` says so. The first radio
 carries the group's `id`, so a `FormFault` link to the group lands on a control.
 
+```tsx
+<Select id="language" name="language" label="Language of the document"
+  hint="Sets the dictionary." defaultValue="en-GB">
+  <option value="en-GB">English (United Kingdom)</option>
+  <option value="el">Greek</option>
+</Select>
+```
+
+`Select` is the native `<select>`, with the label, the hint, and the message of
+every other field. Its options are `<option>` and `<optgroup>` children. The
+list is the platform's own, so it is a wheel on a phone, it is searched by
+typing, and it needs no script. `labelHidden` keeps the label for a screen
+reader and takes it off the page, and `size="small"` is the size for the header
+of a block; both are for a select whose position already says what it chooses.
+
+Use a `Select` for a long list, or for a short one where there is no room. Use
+a `RadioGroup` for two to five answers a person should see at once.
+
+### The width of a form
+
+`--form-w` is the widest a column of fields runs, `28rem`. Set it as
+`max-inline-size` on the form or on the column it sits in. It is in `rem`, so
+the column widens with a reader's own font size.
+
 ### A read-only field
 
 ```tsx
@@ -476,6 +503,22 @@ one that is not announced leave focus where it is. `autoFocus` overrides either
 default: pass `autoFocus={false}` for a fault stated beside a button that keeps
 focus.
 
+`tone` sets what the statement is, and is separate from how it is heard.
+`danger`, the default, is a fault, on the danger wash. `neutral` is a statement
+that is part of a page and is not a fault, on the sunken surface inside a plain
+hairline. A statement of one sentence can leave out `title`: the children are
+then the statement, at the body's weight, with no heading.
+
+```tsx
+<FormFault announce="off" tone="neutral">
+  <p>Sign-up is by invitation. Ask the Ekdotico team for one.</p>
+</FormFault>
+```
+
+Give a title to anything longer than a sentence, so that it can be found by
+its heading. With no `tone` and a `title` the component renders what it
+rendered at 0.26.0.
+
 ### The page heading
 
 ```tsx
@@ -495,11 +538,53 @@ add no span and no class for it. The component also reads the text inside an
 HTML element passed as a child. It does not read the text that a component of
 the application renders.
 
-The span sets the face and nothing else. A title in Greek still takes `lang`,
+The run is also set at `--serif-fit`, `0.84em`. The sans is the larger face at
+one font size, so a Greek letter at the heading's own size stood taller than
+the word before it. At `0.84em` its lowercase is the height of the serif's, and
+"Closed α" reads as one line of type.
+
+The span sets the face and the size and nothing else. A title in Greek still takes `lang`,
 which passes through to the heading with every other attribute. `ref` reaches
 the heading, for a page that moves focus to its title when it is shown. The
 component holds no state, so a server component renders it. The heading has no
 margin: the space under it is the layout's.
+
+### The QR code
+
+```tsx
+<QrCode value={otpauthUri} label="QR code for your authenticator app" />
+```
+
+`QrCode` draws `value` as a QR code, in an inline `<svg role="img">`. `label`
+is its accessible name and has no default: a screen reader is given the name
+and nothing inside the image, and what the code is for is the application's to
+say. Show the same value as text beside the code, for a person who cannot use
+a camera.
+
+The code is dark on light in every theme. A phone reads dark modules on a
+light ground and cannot read the reverse, so the two colours are `--scan-ink`
+and `--scan-plate`, which are the same in all eight palettes, and the code
+stands on a light plate on a dark page. They measure 12.76:1. The plate
+includes the quiet zone, four modules on each side, which a reader needs to
+find the code: do not crop it or round its corners into it. The colours are
+set on the image itself, so the control has no stylesheet entry, and they are
+kept where a reader has forced a palette.
+
+`size` is the width and the height in CSS pixels, quiet zone included, and is
+200 unless the application says otherwise. Keep 3 pixels a module or more. A
+value of 200 bytes makes a code 65 modules across with its quiet zone, which
+is a little over 3 at 200, so raise `size` for a longer value. `className` and
+every other attribute pass through to the `<svg>`.
+
+The component has no state and no hook, so a server component renders it, and
+a secret is encoded on the server and is not sent to the browser a second time
+as a string. The encoder is the package's own, in `src/components/qr.ts`, and
+the package still has no runtime dependency. It writes byte mode at
+error-correction level M, in the smallest version that holds the value, with
+the mask the standard's penalty rules score lowest. Text outside ASCII is
+written as UTF-8. A value over 2331 bytes fits no version, and the component
+throws a `RangeError` when it renders: that is a fault in the application and
+not a message for a reader.
 
 ### The button
 
@@ -583,6 +668,276 @@ inside a danger hairline. A read-only field has no ground of its own, so its
 value is `--fg-1` and its boundary `--rule-control` on whichever of
 `--bg-canvas`, `--bg-surface`, `--bg-surface-2`, and `--bg-raised` the form
 sits on. `pnpm check:contrast` measures each of those pairs.
+
+---
+
+## The editor
+
+What an application needs to build a document editor without writing a colour,
+a size, or a control of its own. There are two halves, and they are different
+kinds of thing.
+
+The controls round the document are React components. The document is not: it
+is whatever markup the application's editor produces, and the package styles
+that markup by class name and attribute. The package imports no editor and
+depends on none.
+
+| Component | What it is | Stylesheet |
+|---|---|---|
+| `Toolbar` | A row of controls with one Tab stop, inline or floating | `styles/toolbar.css` |
+| `ToggleButton` | A button with a pressed state, for a mark | `styles/toolbar.css` |
+| `ToolbarSeparator` | A hairline between two groups in a toolbar | `styles/toolbar.css` |
+| `MenuButton` | A button that opens a list of actions | `styles/menu.css` and `styles/button.css` |
+| `Select` | The native select, for the language of a code block | `styles/form.css` |
+| `SyncStatus` | Whether the document on screen is the document on the server | `styles/sync-status.css` |
+| `Callout` | The note, the warning, and the tip, each with its icon | `styles/callout.css` |
+
+| Stylesheet | What it styles |
+|---|---|
+| `styles/editor.css` | The document surface: prose, the nine marks, lists, a table, a page break, a table of contents |
+| `styles/code.css` | A code block, its header, and the syntax colours |
+
+```tsx
+import {
+  Button, Callout, MenuButton, Select, SyncStatus, ToggleButton, Toolbar,
+  ToolbarSeparator, Tooltip,
+} from '@ekdotico/domico/components';
+import { BoldIcon, ItalicIcon, LinkIcon } from '@ekdotico/domico/icons';
+import '@ekdotico/domico/styles/editor.css';
+import '@ekdotico/domico/styles/code.css';
+import '@ekdotico/domico/styles/callout.css';
+import '@ekdotico/domico/styles/toolbar.css';
+import '@ekdotico/domico/styles/menu.css';
+import '@ekdotico/domico/styles/sync-status.css';
+```
+
+All of them are in `styles.css` and `styles/components.css` already.
+
+### The toolbar and the toggle button
+
+```tsx
+<Toolbar label="Formatting" floating>
+  <Tooltip content={`Bold, ${shortcutLabel('b').label}`}>
+    <ToggleButton label="Bold" pressed={marks.bold} onClick={toggleBold}>
+      <BoldIcon />
+    </ToggleButton>
+  </Tooltip>
+  <Tooltip content={`Link, ${shortcutLabel('k').label}`}>
+    <ToggleButton label="Link" pressed={marks.link} onClick={editLink}>
+      <LinkIcon />
+    </ToggleButton>
+  </Tooltip>
+</Toolbar>
+```
+
+`Toolbar` is `role="toolbar"`, named by `label`. It is one stop in the Tab
+order. Left and Right move between its controls and wrap at the ends, Home and
+End go to the first and the last, and Tab returns to the control that last had
+focus. The controls are whatever is inside it, found in the document, so a
+control inside a `Tooltip` is found too.
+
+A `Select` in a toolbar keeps Up and Down and gives the row Left and Right. A
+text field needs all of those keys for its caret: put a text field beside a
+toolbar, not in one.
+
+`floating` draws the row as a raised surface, for a toolbar shown over a
+selection. The application places it and decides when it is shown. The
+application also owes two things the package cannot supply: a key that moves
+focus from the text to the toolbar, and Escape to return it. Without
+`floating` the row has no surface and sits in the header of a block.
+
+`ToggleButton` is a native button with `aria-pressed`. `label` is its name, and
+the name is the same in both states. The application holds `pressed`: a press
+calls `onClick` and changes nothing by itself, because what is pressed in an
+editor follows the selection. A pressed toggle is drawn with a boundary and a
+wash together, so the state does not depend on telling two hues apart.
+
+The icons for the nine marks are `BoldIcon`, `ItalicIcon`, `UnderlineIcon`,
+`StrikethroughIcon`, `CodeIcon`, `SuperscriptIcon`, `SubscriptIcon`, `LinkIcon`,
+and `HighlighterIcon`. An icon has no visible name, so wrap each toggle in a
+`Tooltip`, which also has room for the shortcut.
+
+### The menu button
+
+```tsx
+<MenuButton
+  label="Table"
+  items={[
+    { label: 'Add row above', onSelect: addRowAbove },
+    { label: 'Add row below', onSelect: addRowBelow },
+    { label: 'Delete row', onSelect: deleteRow, separatorBefore: true },
+    { label: 'Split cell', onSelect: splitCell, disabled: !canSplit },
+  ]}
+/>
+```
+
+A button that opens a list of actions, on the WAI-ARIA menu button pattern.
+Enter, Space, and Down on the button open the list on its first action, and Up
+opens it on its last. In the list, Down and Up move and wrap, and Home and End
+go to the ends. Escape closes the list and returns focus to the button. So
+does choosing an action, before the action runs. Tab closes the list and moves
+on, and a press outside closes it. It does not find an action by its first
+letter.
+
+A menu holds actions, and nothing in it stays selected. A value chosen from a
+list is a `Select`.
+
+An action with `disabled` stays in the list and takes focus, with
+`aria-disabled`, so the list is the same list each time. The button is a
+`Button`, `secondary` unless `variant` says otherwise, and its other attributes
+pass through.
+
+### The sync status
+
+```tsx
+<SyncStatus state="synced" label="Saved" onClick={verify} />
+<SyncStatus state="syncing" label="Reconnecting. Your changes are kept." onClick={verify} />
+<SyncStatus state="error" label="Not connected. Editing is paused." onClick={verify} />
+```
+
+Three states, `synced`, `syncing`, and `error`. Each is a mark and words
+together, and the words are the application's: `label` has no default. A
+connection being restored is `syncing` with words that say so. With `onClick`
+the indicator is a button, and without one it is text.
+
+The words on screen follow the state at once. A screen reader is told
+separately, through a polite status region, once the label has stood for
+`announceAfterMs`, which is 1500 unless the application says otherwise. A
+document that is being typed in changes state at every pause, and a save that
+completes inside that interval is never announced. A connection that stays
+lost is announced, and so is its return. Nothing is announced when the page
+loads.
+
+Syncing fades the mark in and out and moves nothing. A reader who asks for
+reduced motion gets the mark at rest.
+
+### The callout, in the editor
+
+```tsx
+<Callout type="warning" icon label="Warning">…</Callout>
+```
+
+`icon` draws the type's own icon, and `label` is the type in the application's
+words. With no title the label names the note. With a title the label is the
+icon's text alternative. `warning` is the same type as `warn`, under the name
+the editor uses. A callout that passes neither `icon` nor `label` renders what
+it rendered at 0.26.0.
+
+An editor that renders the callout's markup itself, so that its body can be
+edited, writes the same classes:
+
+```html
+<aside class="callout" data-type="warning" data-icon role="note" aria-label="Warning">
+  <span class="callout-icon"><!-- TriangleAlertIcon --></span>
+  <div class="callout-body">…</div>
+</aside>
+```
+
+The three icons are `StickyNoteIcon` for a note, `TriangleAlertIcon` for a
+warning, and `LightbulbIcon` for a tip.
+
+For the type of a callout and for the depth of a table of contents, three
+answers each, use a `RadioGroup`. A person sees all three at once.
+
+### The code block
+
+```tsx
+<div className="ekd-code">
+  <div className="ekd-code-header">
+    <Select label="Language" labelHidden size="small" value={language} onChange={setLanguage}>
+      {languages.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+    </Select>
+    <Button variant="quiet" onClick={copy}>Copy</Button>
+  </div>
+  <pre><code className="hljs language-typescript">…</code></pre>
+</div>
+```
+
+The header is a row with two Tab stops and is not a toolbar. The code scrolls
+inside the block. Outside an editor, where no caret reaches it, give the `pre`
+`tabIndex={0}`, a role, and a name, so that a keyboard can scroll it.
+
+The colours answer to the class names highlight.js writes, which lowlight
+writes too. Six tokens carry them, `--syntax-keyword`, `--syntax-string`,
+`--syntax-number`, `--syntax-title`, `--syntax-attr`, and `--syntax-comment`,
+each held at 4.5:1 on the block's surface in all eight palettes. A keyword is
+also a step heavier and a comment is also italic.
+
+| Token | highlight.js classes |
+|---|---|
+| `--syntax-keyword` | `hljs-keyword`, `hljs-selector-tag`, `hljs-name`, `hljs-doctag`, `hljs-variable.language_` |
+| `--syntax-string` | `hljs-string`, `hljs-regexp` |
+| `--syntax-number` | `hljs-number`, `hljs-literal`, `hljs-symbol`, `hljs-bullet`, `hljs-char.escape_` |
+| `--syntax-title` | `hljs-title` with its sub-scopes, `hljs-section`, `hljs-selector-id`, `hljs-selector-class` |
+| `--syntax-attr` | `hljs-attr`, `hljs-attribute`, `hljs-variable`, `hljs-template-variable`, `hljs-template-tag`, `hljs-type`, `hljs-built_in`, `hljs-property`, `hljs-selector-attr`, `hljs-selector-pseudo` |
+| `--syntax-comment` | `hljs-comment`, `hljs-quote`, `hljs-meta` |
+
+`hljs-emphasis`, `hljs-strong`, and `hljs-link` are drawn italic, bold, and
+underlined. `hljs-addition` and `hljs-deletion` take the success wash and the
+danger wash. `hljs-operator`, `hljs-punctuation`, `hljs-params`, `hljs-subst`,
+`hljs-tag`, `hljs-formula`, and `hljs-code` are left in the ink of the code.
+
+### The document surface
+
+`ekd-editor` goes on the editable root. Under it, the blocks and the marks are
+styled by element, so an editor that writes plain HTML needs no class for
+them.
+
+- Prose is the reading serif at `--fs-md` with `--lh-prose`. Running text is
+  capped at `--measure`; a table, a code block, and a callout take the width
+  of the column the application gives the editor.
+- Headings 1 to 3 are `--fs-2xl`, `--fs-xl`, and `--fs-lg`.
+- The nine marks are `strong`, `em`, `u`, `s`, `code`, `sup`, `sub`, `a`, and
+  `mark`. A link is the accent, underlined, and a step heavier, so that it
+  differs from underlined text by more than a hue. A highlight is `--hl-mark`.
+- The caret is `--fg-1`, and the selection is the reset's. A selection across
+  a highlight is drawn in the accent, so that it can be seen.
+- Focus on the root draws the reset's focus ring. The stylesheet does not
+  remove it.
+- A document or a block marked `lang="el"` is set in the sans, because the
+  serif has no Greek. A Greek phrase inside a document in another language is
+  not caught and is drawn in a substituted face.
+
+A table scrolls inside its own wrapper at every width. Its styles are not
+`styles/table.css`, which draws a card with a sticky header and expects `thead`
+and `tbody`: an editor's table has header cells in any row and any column.
+
+This is the contract. An application's editor writes these names, and the
+package styles them.
+
+| The editor writes | On | What it is |
+|---|---|---|
+| `class="ekd-editor"` | The editable root | The document surface |
+| `lang="el"` | The root, or any block or span | Text in Greek, set in the sans |
+| `h1`, `h2`, `h3`, `p`, `ul`, `ol`, `li`, `blockquote`, `hr` | Elements | The blocks, with no class |
+| `strong`, `em`, `u`, `s`, `code`, `sup`, `sub`, `a`, `mark` | Elements | The nine marks, with no class |
+| `data-placeholder="…"` | A block, while it is empty | The prompt shown in it |
+| `data-node-selected` | A block selected as a whole | An outline in the accent. `ProseMirror-selectednode` is answered too |
+| `class="ekd-table-wrap"` | The element round a `table` | The scroll container. `tableWrapper` is answered too |
+| `th`, `td` | Table cells | A header cell and a cell, in any row or column |
+| `data-cell-selected` | A `th` or `td` | A selected cell, and each cell of a selected range. `selectedCell` is answered too |
+| `class="ekd-column-resize"` | An element inside a cell | The handle on the column's edge. `column-resize-handle` is answered too |
+| `data-column-resizing` | The root, while a column is dragged | The resize cursor. `resize-cursor` is answered too |
+| `class="ekd-table-caption"` | A `figcaption` or `p` after the wrapper | The caption under a table |
+| `class="ekd-page-break"` | A block, with the label as its text | A page break |
+| `class="ekd-toc"` | A `nav`, named by its title | The table of contents |
+| `class="ekd-toc-title"` | A `p` or a heading in it | Its title |
+| `class="ekd-toc-list"` | An `ol` in it | The entries |
+| `data-level="1"`, `"2"`, `"3"` | Each `li` of that list, holding one `a` | The depth of an entry |
+| `class="ekd-code"` | The element round a header and a `pre` | A code block |
+| `class="ekd-code-header"` | The first element in it | The row for the language and the copy button |
+| `class="hljs-…"` | Spans in `pre code` | The syntax scopes of highlight.js |
+| `class="callout"`, `data-type`, `data-icon` | An `aside` with `role="note"` | A callout. `data-type` is `note`, `warning`, or `tip` |
+| `class="callout-icon"`, `class="callout-body"` | Its two children | The icon and the text |
+
+The names in the second sentence of a row are the ones one widely used table
+plugin and its editor write, and they cannot be changed from an application.
+The package's own name comes first and is the one to use where there is a
+choice.
+
+Three things are the application's and not here: where a floating toolbar is
+placed, a collaborator's caret and selection, which take the `--collab-N`
+tokens, and the white-space handling its editor needs on the root.
 
 ---
 

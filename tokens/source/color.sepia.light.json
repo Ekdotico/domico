@@ -147,12 +147,40 @@
     "$value": "oklch(91.635% 0.016 73.67)",
     "$type": "color"
   },
+  "hl-mark": {
+    "$value": "oklch(90.5% 0.07 96)",
+    "$type": "color"
+  },
   "accent-xref": {
     "$value": "oklch(45.706% 0.0647 249.41)",
     "$type": "color"
   },
   "fg-xref": {
     "$value": "oklch(39.16% 0.0519 247.34)",
+    "$type": "color"
+  },
+  "syntax-keyword": {
+    "$value": "var(--burgundy)",
+    "$type": "color"
+  },
+  "syntax-string": {
+    "$value": "var(--ok)",
+    "$type": "color"
+  },
+  "syntax-number": {
+    "$value": "var(--warn)",
+    "$type": "color"
+  },
+  "syntax-title": {
+    "$value": "var(--info)",
+    "$type": "color"
+  },
+  "syntax-attr": {
+    "$value": "var(--accent)",
+    "$type": "color"
+  },
+  "syntax-comment": {
+    "$value": "var(--fg-2)",
     "$type": "color"
   },
   "collab-1": {

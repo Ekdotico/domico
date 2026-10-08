@@ -30,5 +30,10 @@
   "badge-cap-gap": {
     "$value": "0.4em",
     "$type": "dimension"
+  },
+  "serif-fit": {
+    "$value": "0.84em",
+    "$type": "dimension",
+    "$description": "The font size of a run of --font-sans or --font-mono set inside a line of --font-serif: a Greek run in a heading, inline code in a paragraph. Read from the three faces: the lowercase of Crimson Pro stands 0.43 of its size, of Commissioner 0.51 and of Fira Code 0.53, so either at the serif's size stands a fifth to a quarter taller than the letters beside it. At 0.84em the Greek lowercase is the height of the serif's, and a Greek capital stands 5% over a serif capital, against 24% unscaled; the mono's lowercase stands 5% over."
   }
 }

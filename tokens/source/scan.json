@@ -1,0 +1,13 @@
+{
+  "$description": "The two colours of a code a camera reads. Like the brand values these do NOT change between themes or modes: a phone reads dark modules on a light ground and cannot read the reverse, so a QR code keeps a light plate under dark ink on a dark page too. Use these only for a machine-readable code. Anything a person reads uses the theme tokens.",
+  "scan-plate": {
+    "$value": "oklch(95.877% 0.0127 86.83)",
+    "$type": "color",
+    "$description": "The ground of a machine-readable code, quiet zone included. The parchment of the light logo tile, as a value of its own so that neither can be retuned by way of the other."
+  },
+  "scan-ink": {
+    "$value": "oklch(28.427% 0.0036 106.63)",
+    "$type": "color",
+    "$description": "The dark modules of a machine-readable code. Held at 7:1 on --scan-plate by check:contrast."
+  }
+}

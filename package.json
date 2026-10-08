@@ -81,6 +81,11 @@
     "./styles/dialog.css": "./dist/styles/dialog.css",
     "./styles/tooltip.css": "./dist/styles/tooltip.css",
     "./styles/page-heading.css": "./dist/styles/page-heading.css",
+    "./styles/toolbar.css": "./dist/styles/toolbar.css",
+    "./styles/menu.css": "./dist/styles/menu.css",
+    "./styles/sync-status.css": "./dist/styles/sync-status.css",
+    "./styles/editor.css": "./dist/styles/editor.css",
+    "./styles/code.css": "./dist/styles/code.css",
     "./components": {
       "types": "./dist/src/components/index.d.ts",
       "default": "./dist/src/components/index.js"

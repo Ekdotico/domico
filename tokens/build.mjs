@@ -74,6 +74,7 @@ const structural = [
   await block('motion.json'),
   await block('layout.json'),
   await block('brand.json'),
+  await block('scan.json'),
 ].join('\n\n');
 
 const css = `${BANNER}
@@ -162,6 +163,7 @@ const scales = {
   motion: values('motion.json'),
   layout: values('layout.json'),
   brand: values('brand.json'),
+  scan: values('scan.json'),
 };
 
 const collaboratorSlots = Object.keys(palettes.parchment.light)

@@ -66,6 +66,23 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
  * about one field — a refused sign-in, a failed request — takes `children` and
  * no list.
  *
+ * `tone` says what the statement is, where `announce` says how it is heard,
+ * and the two are set separately. `danger`, the default, is a fault: the
+ * danger wash inside a danger hairline. `neutral` is a statement that is part
+ * of a page and is not a fault — "This invitation has been used", "Sign-up is
+ * by invitation" — on the sunken surface inside a hairline in the rule
+ * colour, so a page that only tells the reader something does not open on what
+ * looks like an alert. It usually goes with `announce="off"`.
+ *
+ *   <FormFault announce="off" tone="neutral">
+ *     <p>Sign-up is by invitation. Ask the Ekdotico team for one.</p>
+ *   </FormFault>
+ *
+ * The title can be left out where the statement is one sentence: the children
+ * are then the statement, in the body's own weight, and there is no heading. A
+ * statement with a role and no title has no name, which a live region does not
+ * need. Give a title to anything longer, so it can be found by heading.
+ *
  * Styles ship in `@ekdotico/domico/styles/form.css`.
  */
 export interface FormFaultItem {
@@ -78,6 +95,9 @@ export interface FormFaultItem {
 /** How a screen reader comes to hear a `FormFault`. */
 export type FormFaultAnnounce = 'assertive' | 'polite' | 'off';
 
+/** What a `FormFault` states: a fault, or a statement that is not one. */
+export type FormFaultTone = 'danger' | 'neutral';
+
 const ROLE = { assertive: 'alert', polite: 'status', off: undefined } as const;
 
 export function FormFault({
@@ -86,13 +106,14 @@ export function FormFault({
   children,
   headingLevel = 2,
   announce = 'assertive',
+  tone = 'danger',
   focusKey,
   autoFocus = announce === 'assertive',
   id,
   className,
 }: {
-  /** What happened, as a heading. It names the statement. */
-  title: ReactNode;
+  /** What happened, as a heading. It names the statement. Leave it out for one sentence given as `children`. */
+  title?: ReactNode;
   /** The fields at fault, in the order they appear in the form. */
   faults?: readonly FormFaultItem[];
   /** What to do next, where the list does not say it. */
@@ -104,6 +125,8 @@ export function FormFault({
    * is part of the page as it was served.
    */
   announce?: FormFaultAnnounce;
+  /** `danger` is a fault. `neutral` is a statement that is part of the page and is not a fault. */
+  tone?: FormFaultTone;
   /** Moves focus to the statement again whenever it changes. Pass the attempt. */
   focusKey?: unknown;
   /** Whether focus moves to the statement. It does for an assertive one, unless this says otherwise. */
@@ -125,15 +148,20 @@ export function FormFault({
       ref={ref}
       id={id}
       className={['ekd-fault', className].filter(Boolean).join(' ')}
+      // Absent for a fault, so the markup of a statement that names no tone is
+      // what it was before there was one.
+      data-tone={tone === 'neutral' ? tone : undefined}
       role={role}
       // A name belongs to a role. With none this is a plain block, which takes
       // no name, and its heading is how it is found.
-      aria-labelledby={role ? titleId : undefined}
+      aria-labelledby={role && title != null ? titleId : undefined}
       tabIndex={-1}
     >
-      <Heading id={titleId} className="ekd-fault-title">
-        {title}
-      </Heading>
+      {title != null ? (
+        <Heading id={titleId} className="ekd-fault-title">
+          {title}
+        </Heading>
+      ) : null}
       {children != null ? <div className="ekd-fault-body">{children}</div> : null}
       {faults != null && faults.length > 0 ? (
         <ul className="ekd-fault-list">

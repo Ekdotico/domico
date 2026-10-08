@@ -2,7 +2,7 @@
 /**
  * Assemble the shipped stylesheets.
  *
- * Twenty-six entries, so a consumer can take as much or as little as it needs.
+ * Thirty-one entries, so a consumer can take as much or as little as it needs.
  * Tokens are separate again, so the values can be had without any of the
  * opinions.
  *
@@ -28,10 +28,15 @@
  *   styles/doc-meta.css
  *   styles/opening-sequence.css
  *   styles/button.css
- *   styles/form.css           the fields, the choices and the form fault together
+ *   styles/form.css           the fields, the select, the choices and the form fault together
  *   styles/dialog.css
  *   styles/tooltip.css
  *   styles/page-heading.css
+ *   styles/toolbar.css        the toolbar and the toggle button
+ *   styles/menu.css           the list a menu button opens
+ *   styles/sync-status.css
+ *   styles/editor.css         the document surface: styles for an editor's markup, no component
+ *   styles/code.css           the code block and its syntax colours
  *
  * The split exists because whole-stylesheet adoption is the wrong granularity
  * for an application that already has a layer of its own. deree wanted the
@@ -208,6 +213,14 @@ const COMPONENTS = [
   ['dialog', ['Dialog'], 'the dialog'],
   ['tooltip', ['Tooltip'], 'the tooltip'],
   ['page-heading', ['Page heading'], 'the page heading'],
+  ['toolbar', ['Toolbar'], 'the toolbar and the toggle button'],
+  ['menu', ['Menu button'], 'the menu of a menu button'],
+  ['sync-status', ['Sync status'], 'the sync status'],
+  // Two entries with no component behind them. They style markup an editor
+  // produces, and an application that shows code and has no editor takes the
+  // second alone.
+  ['editor', ['Editor'], 'the editor surface'],
+  ['code', ['Code block'], 'the code block and its syntax colours'],
 ];
 
 const header = (what, note) => `/**

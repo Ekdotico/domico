@@ -108,6 +108,17 @@ the word most likely to be affected.
 Use `--font-sans`. This is a stated exception to the role rule, for glyphs the
 serif cannot set at all, and it is not licence to mix roles elsewhere.
 
+Set the run at `--serif-fit` where it shares a line with the serif. The sans is
+the larger face at one font size, so a Greek word at the heading's own size
+reads as a larger word; `0.84em` puts its lowercase at the serif's height.
+
+**A document a writer types is where this rule is not yet kept.** A heading's
+Greek can be wrapped, because the package renders the heading. A writer's
+paragraph cannot. `styles/editor.css` sets a block or a document marked
+`lang="el"` in the sans, and leaves a Greek phrase inside a document in
+another language to the substituted face. That is a known gap, stated here so
+that it is not taken for compliance.
+
 **A standalone asset is a second exception, in the other direction.** An SVG that
 ships as a file has no cascade to read a custom property from, so naming a family
 literally is the only thing that can work there. That is correct in a shipped
@@ -210,7 +221,9 @@ for the application chrome `access-gate.css`, `nav-drawer.css`,
 controls `button.css`, `dialog.css`, `tooltip.css`, and `form.css`, which is one
 entry for the fields, the radio group, the checkbox, and the form fault, since
 they share a label, a hint, and a message, and for the heading of an
-application page `page-heading.css`. They are build outputs sliced
+application page `page-heading.css`, and for the editor `toolbar.css`,
+`menu.css`, `sync-status.css`, `editor.css`, and `code.css`. They are build
+outputs sliced
 from one source stylesheet; there is no per-component source file, so do not
 cite one. `styles/components.css` remains the whole set, and `build-styles.mjs`
 is where the list lives, so read it there rather than counting it here.
@@ -238,9 +251,31 @@ does not rest on a tint. It is driven by the native `readonly` attribute.
 `FormFault` states a fault with a form or without one, and its `announce`
 option decides the role: `role="alert"` for a fault that follows an action,
 `role="status"` for one that can wait, and no live region for a statement that
-is part of the page as it was served. `PageHeading` is the `h1` of an
-application page, and it applies rule 4 itself: a Greek run in the heading is
-wrapped and set in `--font-sans`, so an application writes no span for it.
+is part of the page as it was served. Its `tone` is a separate question:
+`neutral` draws a statement that is not a fault on the sunken surface, so a
+page that only tells the reader something does not open on the danger wash.
+`PageHeading` is the `h1` of an application page, and it applies rule 4 itself:
+a Greek run in the heading is wrapped and set in `--font-sans`, at
+`--serif-fit`, so an application writes no span for it and the run stands at
+the height of the serif beside it.
+
+The controls round a document being written ship the same way: `toolbar.css`
+for `Toolbar` and `ToggleButton`, `menu.css` for the list a `MenuButton` opens,
+`sync-status.css` for `SyncStatus`, and `Select` in `form.css` with the fields
+it is one of. Each keeps the promise its role makes. A toolbar is one Tab stop
+with the arrow keys moving inside it. `MenuButton` is the one place the package
+claims `role="menu"`, and it owes and has the arrows, Home, End, and Escape
+with the focus returned. A pressed toggle is a boundary and a wash together,
+never a hue alone. The sync status is announced when it has settled and not at
+each change, because a document being typed in changes state at every pause.
+
+Two entries have no component behind them. `editor.css` styles the markup an
+editor produces under the class `ekd-editor`, and `code.css` a code block and
+its syntax colours. The package imports no editor: the contract is a set of
+class names and attributes, tabled in the README, and where a rule also
+answers to a name such as `selectedCell`, that is a name a table plugin writes
+and gives an application no way to change. The package's own name is listed
+first and is the one to use.
 
 The chrome is shared for the same reason the components are. The passcode page,
 the navigation drawer, the on-this-page rail, and the opening sequence were each

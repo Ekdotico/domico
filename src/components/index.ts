@@ -64,12 +64,22 @@ export { TextField, OneTimeCodeField, type TextFieldProps } from './TextField.js
 export { PasswordField } from './PasswordField.js';
 export { TextArea } from './TextArea.js';
 export { Checkbox, RadioGroup, type RadioOption } from './Choice.js';
-export { FormFault, type FormFaultAnnounce, type FormFaultItem } from './FormFault.js';
+export { FormFault, type FormFaultAnnounce, type FormFaultItem, type FormFaultTone } from './FormFault.js';
 export { Dialog } from './Dialog.js';
 export { Tooltip } from './Tooltip.js';
 // The heading of an application page. The application had composed one from
 // tokens, with a class of its own to set a Greek letter in the sans.
 export { PageHeading, type PageHeadingProps } from './PageHeading.js';
+
+// The controls round a document being written: a select, a row of toggles, a
+// menu of actions, and whether the document is saved. Added before the editor
+// was built, so that it draws none of its own. The document itself is not a
+// component: `styles/editor.css` and `styles/code.css` style the markup an
+// editor produces, by class and attribute, and this package imports no editor.
+export { Select, type SelectProps } from './Select.js';
+export { Toolbar, ToolbarSeparator, ToggleButton } from './Toolbar.js';
+export { MenuButton, type MenuButtonItem } from './MenuButton.js';
+export { SyncStatus, type SyncState } from './SyncStatus.js';
 
 /** @supersedes UnlockScreen, ResearchUnlockScreen */
 export { AccessGate } from './AccessGate.js';

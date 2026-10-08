@@ -44,17 +44,27 @@ export function FieldShell({
   hint,
   error,
   className,
+  labelHidden,
+  size,
   children,
 }: FieldProps & {
   /** The control's id. The hint and the message derive theirs from it. */
   id: string;
   className?: string;
+  /**
+   * Keeps the label for a screen reader and takes it off the page, with the
+   * reset's `.sr-only`. `Select` alone offers it, for a control in the header
+   * of a block, where the block already says what is being chosen.
+   */
+  labelHidden?: boolean;
+  /** `small` is the size of a control in the header of a block. */
+  size?: 'small';
   /** The control, and anything that belongs directly under it. */
   children: ReactNode;
 }) {
   return (
-    <div className={['ekd-field', className].filter(Boolean).join(' ')}>
-      <label htmlFor={id} className="ekd-field-label">
+    <div className={['ekd-field', className].filter(Boolean).join(' ')} data-size={size}>
+      <label htmlFor={id} className={labelHidden ? 'ekd-field-label sr-only' : 'ekd-field-label'}>
         {label}
       </label>
       {hint != null ? (

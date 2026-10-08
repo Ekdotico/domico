@@ -1,4 +1,13 @@
 import { useId, type ReactNode } from 'react';
+import {
+  InfoIcon,
+  LightbulbIcon,
+  OctagonAlertIcon,
+  QuoteIcon,
+  StickyNoteIcon,
+  TriangleAlertIcon,
+  type IconProps,
+} from './icons.js';
 
 // Callout — editorial aside with semantic tone. Six types, each mapped
 // to a token pair (--*-soft for the wash, --* for the hairline border
@@ -29,20 +38,67 @@ import { useId, type ReactNode } from 'react';
 // "quote" is for editorial pull-quotes. Source quotations should still
 // use the native <blockquote> element, which has its own styling.
 
-export type CalloutType = 'note' | 'info' | 'tip' | 'warn' | 'danger' | 'quote';
+//
+// `warning` is `warn` under the name the editor's requirement gives it (note,
+// warning, tip). Both are accepted and drawn alike; the attribute carries
+// whichever was passed.
+//
+// `icon` draws the type's own icon beside the text, and `label` is the type in
+// the application's words: "Note", "Warning", "Tip". Together they are what
+// keeps the type from resting on the colour of the wash (WCAG 1.4.1). The
+// editor's three callouts take both:
+//
+//   <Callout type="warning" icon label="Warning">…</Callout>
+//
+// With no title the label names the note, so a screen reader announces
+// "Warning, note", and the icon is decoration beside words that already say
+// it. With a title the title names the note, as before, and the label is the
+// icon's text alternative, read once inside it. Neither is on by default: a
+// callout that passes neither renders what it rendered before there were any.
+
+export type CalloutType = 'note' | 'info' | 'tip' | 'warn' | 'warning' | 'danger' | 'quote';
+
+const ICON: Record<CalloutType, (props: IconProps) => ReactNode> = {
+  note: StickyNoteIcon,
+  info: InfoIcon,
+  tip: LightbulbIcon,
+  warn: TriangleAlertIcon,
+  warning: TriangleAlertIcon,
+  danger: OctagonAlertIcon,
+  quote: QuoteIcon,
+};
 
 export function Callout({
   type = 'note',
   title,
+  icon = false,
+  label,
   children,
 }: {
   type?: CalloutType;
   title?: string;
+  /** Draws the type's icon beside the text. */
+  icon?: boolean;
+  /** The type in words. Names the note where there is no title, and is the icon's text alternative where there is one. */
+  label?: string;
   children: ReactNode;
 }) {
   const titleId = useId();
+  const TypeIcon = ICON[type];
   return (
-    <aside className="callout" data-type={type} role="note" aria-labelledby={title ? titleId : undefined}>
+    <aside
+      className="callout"
+      data-type={type}
+      data-icon={icon ? '' : undefined}
+      role="note"
+      aria-labelledby={title ? titleId : undefined}
+      aria-label={title ? undefined : label}
+    >
+      {icon ? (
+        <span className="callout-icon">
+          <TypeIcon title={title ? label : undefined} />
+        </span>
+      ) : null}
       {title && (
         <p className="callout-title" id={titleId}>
           {title}

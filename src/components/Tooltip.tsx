@@ -5,13 +5,13 @@ import {
   isValidElement,
   useEffect,
   useId,
-  useLayoutEffect,
   useRef,
   useState,
   type ReactElement,
   type ReactNode,
 } from 'react';
 import { describedBy } from './Field.js';
+import { keepInViewport, useBeforePaint } from './viewport.js';
 
 /**
  * A short explanation of one control or one mark, shown on hover and on focus.
@@ -67,14 +67,6 @@ import { describedBy } from './Field.js';
  *
  * Styles ship in `@ekdotico/domico/styles/tooltip.css`.
  */
-
-/** The least distance kept between the tooltip and the viewport's edge, in CSS pixels. `--sp-4`. */
-const EDGE_MARGIN_PX = 16;
-
-// The layout effect, so the box is moved before it is painted and the page is
-// never one frame too wide. On the server there is no layout and React 18
-// warns about the hook there, so the plain effect stands in, and does nothing.
-const useBeforePaint = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export function Tooltip({
   content,
@@ -133,25 +125,10 @@ export function Tooltip({
     // `hold` reads a ref and sets state, so the one from this render does not go stale.
   }, [open]);
 
-  // Keep it inside the viewport. Measured where the stylesheet puts it, at the
-  // trigger's inline-start edge, then moved by the overhang. The offset is
-  // written to the same inset the stylesheet sets, and not to a transform: a
-  // transformed box still counts where it would have been towards the page's
-  // scrollable width, so the scrollbar this exists to prevent would remain.
+  // Keep it inside the viewport. `keepInViewport` is the menu's too, and says
+  // why it writes an inset and not a transform.
   useBeforePaint(() => {
-    const box = contentRef.current;
-    if (!open || !box) return;
-    box.style.insetInlineStart = '';
-    const rect = box.getBoundingClientRect();
-    const view = box.ownerDocument.defaultView;
-    const width = box.ownerDocument.documentElement.clientWidth;
-    let shift = 0;
-    if (rect.right > width - EDGE_MARGIN_PX) shift = width - EDGE_MARGIN_PX - rect.right;
-    if (rect.left + shift < EDGE_MARGIN_PX) shift = EDGE_MARGIN_PX - rect.left;
-    if (shift === 0) return;
-    // The inline-start edge is the right-hand one in a right-to-left line.
-    const rtl = view?.getComputedStyle(box).direction === 'rtl';
-    box.style.insetInlineStart = `${rtl ? -shift : shift}px`;
+    if (open && contentRef.current) keepInViewport(contentRef.current);
   }, [open, content]);
 
   const trigger = isValidElement(children) ? (

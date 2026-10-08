@@ -257,7 +257,12 @@ page that only tells the reader something does not open on the danger wash.
 `PageHeading` is the `h1` of an application page, and it applies rule 4 itself:
 a Greek run in the heading is wrapped and set in `--font-sans`, at
 `--serif-fit`, so an application writes no span for it and the run stands at
-the height of the serif beside it.
+the height of the serif beside it. `QrCode` is an inline SVG with no stylesheet
+entry. It is the one component that does not follow the theme: a camera reads
+dark on light and not the reverse, so it is drawn in `--scan-ink` on
+`--scan-plate`, which are the same in all eight palettes, with a quiet zone of
+four modules inside the plate. Its name is the application's, through `label`,
+because `role="img"` leaves a screen reader nothing else.
 
 The controls round a document being written ship the same way: `toolbar.css`
 for `Toolbar` and `ToggleButton`, `menu.css` for the list a `MenuButton` opens,

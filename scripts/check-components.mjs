@@ -63,7 +63,7 @@ const {
   Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
   AccessGate, GateSubmitButton, NavDrawer, OnThisPage, OpeningSequence, DocMeta,
   Button, TextField, OneTimeCodeField, PasswordField, TextArea, RadioGroup, Checkbox, FormFault, Dialog, Tooltip,
-  PageHeading, Select, Toolbar, ToolbarSeparator, ToggleButton, MenuButton, SyncStatus,
+  PageHeading, Select, Toolbar, ToolbarSeparator, ToggleButton, MenuButton, SyncStatus, QrCode,
 } = await import('../dist/src/components/index.js');
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
 
@@ -1615,6 +1615,125 @@ await it('The editor and code stylesheets answer to the documented names, and im
   const editors = Object.keys(all).filter((name) => /tiptap|prosemirror|lowlight|highlight\.js|^yjs$|^y-/.test(name));
   assert.deepEqual(editors, [], 'the package depends on an editor');
   assert.equal(manifest.dependencies, undefined, 'a runtime dependency was added');
+});
+
+// --- The QR code --------------------------------------------------------------
+// The fixture is another encoder's output, and three of them agreed on it. A
+// matrix this package wrote for itself would hold nothing.
+const qrFixture = async () => {
+  const { readFileSync } = await import('node:fs');
+  return JSON.parse(readFileSync(new URL('./fixtures/qr-code.json', import.meta.url), 'utf8')).symbols;
+};
+
+await it('The QR encoder writes the symbol another encoder writes, in every module', async () => {
+  const { encodeQr, QR_MAX_BYTES } = await import('../dist/src/components/qr.js');
+  const symbols = await qrFixture();
+  assert.ok(symbols.length >= 2, 'the fixture holds fewer than two symbols');
+
+  // A finder: seven by seven, a dark ring, a light ring, a dark three by three.
+  const FINDER = ['1111111', '1000001', '1011101', '1011101', '1011101', '1000001', '1111111'];
+  for (const { value, rows } of symbols) {
+    const mine = encodeQr(value).map((row) => row.map((dark) => (dark ? '1' : '0')).join(''));
+    assert.deepEqual(mine, rows, `the symbol for ${value}`);
+
+    const size = mine.length;
+    assert.equal((size - 17) % 4, 0, 'a symbol is 17 modules and four for each version');
+    for (const [x, y] of [[0, 0], [size - 7, 0], [0, size - 7]]) {
+      assert.deepEqual(mine.slice(y, y + 7).map((row) => row.slice(x, x + 7)), FINDER, `the finder at ${x},${y}`);
+    }
+    // And no fourth, where the alignment pattern stands instead.
+    assert.notDeepEqual(mine.slice(size - 7).map((row) => row.slice(size - 7)), FINDER);
+    // The separator: a light line on the inner sides of each finder.
+    for (let i = 0; i < 8; i++) {
+      for (const [x, y] of [[7, i], [i, 7], [size - 8, i], [size - 1 - i, 7], [7, size - 1 - i], [i, size - 8]]) {
+        assert.equal(mine[y][x], '0', `the separator at ${x},${y}`);
+      }
+    }
+  }
+
+  // The largest value fits the largest version, and one byte more is refused.
+  assert.equal(QR_MAX_BYTES, 2331);
+  assert.equal(encodeQr('a'.repeat(QR_MAX_BYTES)).length, 177);
+  assert.throws(() => encodeQr('a'.repeat(QR_MAX_BYTES + 1)), RangeError);
+  // Bytes, not characters: a Greek letter is two.
+  assert.throws(() => encodeQr('α'.repeat(QR_MAX_BYTES / 2 + 1)), /2332 bytes/);
+});
+
+await it('QrCode is an image named by its label, dark on light, with a quiet zone of four modules', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const [{ value, rows }] = await qrFixture();
+  const size = rows.length;
+  const label = 'QR code for your authenticator app';
+
+  const view = await mount(h(QrCode, { value, label, className: 'mine', id: 'totp' }));
+  const svg = view.container.querySelector('svg');
+  assert.equal(svg.getAttribute('role'), 'img');
+  assert.equal(svg.getAttribute('aria-label'), label);
+  assert.equal(svg.getAttribute('class'), 'ekd-qr mine');
+  assert.equal(svg.id, 'totp', 'other attributes pass through');
+  assert.equal(view.container.querySelector('img, canvas, image'), null);
+
+  // The plate is the whole image, and the image is the symbol and four
+  // modules on each side.
+  assert.equal(svg.getAttribute('viewBox'), `0 0 ${size + 8} ${size + 8}`);
+  assert.equal(svg.getAttribute('width'), '200');
+  assert.equal(svg.getAttribute('height'), '200');
+  const plate = svg.querySelector('rect');
+  assert.equal(plate.getAttribute('width'), String(size + 8));
+  assert.equal(plate.getAttribute('height'), String(size + 8));
+
+  // Paint the path onto a grid. Nothing dark may fall in the quiet zone, and
+  // what is inside it has to be the fixture's symbol.
+  const d = svg.querySelector('path').getAttribute('d');
+  const painted = Array.from({ length: size + 8 }, () => new Array(size + 8).fill('0'));
+  const runs = [...d.matchAll(/M(\d+) (\d+)h(\d+)v1h-(\d+)z/g)];
+  assert.equal(runs.map((run) => run[0]).join(''), d, 'the path holds something other than runs of modules');
+  for (const [, x, y, length, back] of runs) {
+    assert.equal(length, back);
+    for (let i = 0; i < Number(length); i++) painted[Number(y)][Number(x) + i] = '1';
+  }
+  const grid = painted.map((row) => row.join(''));
+  const empty = '0'.repeat(size + 8);
+  for (let i = 0; i < 4; i++) {
+    assert.equal(grid[i], empty, 'a dark module above the symbol');
+    assert.equal(grid[size + 7 - i], empty, 'a dark module below the symbol');
+  }
+  for (const row of grid) assert.ok(row.startsWith('0000') && row.endsWith('0000'), 'a dark module beside the symbol');
+  assert.deepEqual(grid.slice(4, size + 4).map((row) => row.slice(4, size + 4)), rows);
+
+  await view.rerender(h(QrCode, { value, label, size: 264 }));
+  assert.equal(view.container.querySelector('svg').getAttribute('width'), '264');
+  await view.unmount();
+
+  // On the server, with no document: the same path, and the two colours as
+  // tokens. jsdom drops a declaration it does not know, so the colours are
+  // read from the markup a server sends.
+  const html = renderToStaticMarkup(h(QrCode, { value, label }));
+  assert.match(html, /^<svg [^>]*role="img"/);
+  assert.ok(html.includes(`aria-label="${label}"`));
+  assert.ok(html.includes(`d="${d}"`), 'the server and the browser draw different paths');
+  assert.match(html, /<rect [^>]*style="fill:var\(--scan-plate\)"/);
+  assert.match(html, /<path [^>]*style="fill:var\(--scan-ink\)"/);
+  assert.match(html, /<svg [^>]*style="forced-color-adjust:none"/);
+  assert.ok(!/data:|<img|<canvas|href=/.test(html), 'the image refers to something outside itself');
+
+  // No client boundary, and no hook to need one.
+  const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+  for (const file of ['QrCode.js', 'qr.js']) {
+    const source = read(`../dist/src/components/${file}`);
+    assert.ok(!/['"]use client['"]/.test(source), `${file} is a client module`);
+    assert.ok(!/\buse[A-Z]\w*\(/.test(source), `${file} calls a hook`);
+    assert.ok(!/from ['"](?!react\/jsx-runtime['"]|\.\/qr\.js['"])/.test(source), `${file} imports something else`);
+  }
+
+  // A value that fits no version is a fault in the application, raised at render.
+  assert.throws(() => renderToStaticMarkup(h(QrCode, { value: 'a'.repeat(2332), label })), RangeError);
+
+  // The two colours are the same in every palette: declared once, in no theme.
+  const tokens = read('../tokens/generated/tokens.css');
+  assert.equal(tokens.match(/--scan-plate:/g).length, 1);
+  assert.equal(tokens.match(/--scan-ink:/g).length, 1);
 });
 
 console.log(`check:components — ${cases} cases: the a11y helpers, and the components' names, roles and focus, against jsdom`);

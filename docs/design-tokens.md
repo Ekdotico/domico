@@ -44,11 +44,12 @@ and forest under library.
 composites, and the overlay scrim. Each of the twelve theme blocks declares the
 complete set of 82 rather than inheriting part of it from another theme.
 
-**74 tokens are theme-invariant scales**, declared once under `:root`: the type
+**76 tokens are theme-invariant scales**, declared once under `:root`: the type
 scale, spacing, radius, optical offsets, motion, layout geometry, three named
-shadows, and the four brand values. They take no theme or mode override.
+shadows, the four brand values, and the two colours of a machine-readable code.
+They take no theme or mode override.
 
-That is **156 tokens** in total, and every one of them is in a table below.
+That is **158 tokens** in total, and every one of them is in a table below.
 
 ### Auto is the absence of `data-mode`, not a value of it
 
@@ -893,8 +894,9 @@ rather than editing the token.
 | `--logo-tile-light-bg`  | Parchment tile, used when the mark sits on a dark canvas. |
 | `--logo-tile-light-ink` | Primary ink stroke on the light tile.            |
 
-**These four deliberately do not follow the theme.** Unlike every other colour
-token in the system they are identical across all eight palettes: the logo tile
+**These four deliberately do not follow the theme.** With the two under
+[Scan](#scan), they are the only colour tokens in the system that are
+identical across all eight palettes: the logo tile
 has to read as the same mark on any canvas, so it carries its own contrast pair
 rather than inheriting the palette. The `dark`/`light` in each name describes the
 **tile**, not the mode — the dark tile is the one to use on a light page.
@@ -904,6 +906,36 @@ an ink colour uses the theme tokens, and a brand value borrowed as a general
 plum or a general cream will be wrong in seven palettes out of eight while
 looking correct in the one you tested. Do not recolour the mark outside these
 four, and do not tint it to match an accent.
+
+## Scan
+
+| Token          | Use                                                              |
+| -------------- | ---------------------------------------------------------------- |
+| `--scan-plate` | The ground of a machine-readable code, with its quiet zone.      |
+| `--scan-ink`   | The dark modules of a machine-readable code.                     |
+
+**These two do not follow the theme either, and the reason is a camera.** A
+phone reads a QR code as dark modules on a light ground. Many readers do not
+read the reverse, so a code drawn in `--fg-1` on `--bg-canvas` works in the
+four light palettes and fails in the four dark, where those two swap. No theme
+token can be dark in every palette, which is why these exist. The pair is the
+same in all eight: a code keeps a light plate under dark ink on a dark page,
+and the plate is part of the code.
+
+The values are those of the light logo tile, parchment and the primary ink, so
+that a code reads as the house's and not as a white box. They are declared as
+values and not as aliases of the brand tokens, so that neither pair can be
+retuned by way of the other. They measure 12.76:1, and `pnpm check:contrast`
+holds the pair at 7:1. That is above the 3:1 a graphical object owes, on
+purpose: the reader here is a camera, in whatever light the person has.
+
+`QrCode` is the one place they are used.
+
+**When not to.** Use these only for a code a camera reads. Do not use
+`--scan-plate` as a light surface or `--scan-ink` as a dark text colour: on a
+dark page each is the wrong way round for anything a person reads, and the
+theme tokens are the ones that follow the reader's choice. Do not draw a code
+with theme tokens, and do not let a theme override these two.
 
 ## Diagram
 

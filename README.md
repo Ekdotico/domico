@@ -327,11 +327,12 @@ the platform's, and every attribute the native element takes passes through.
 | `Dialog` | A modal dialog, on the native element | `styles/dialog.css` |
 | `Tooltip` | An explanation shown on hover and on focus | `styles/tooltip.css` |
 | `PageHeading` | The heading of an application page, an `h1` unless told otherwise | `styles/page-heading.css` |
+| `QrCode` | A QR code as an inline SVG, dark on light in every theme | None. It needs `tokens.css` alone |
 
 ```tsx
 import {
   Button, Checkbox, Dialog, FormFault, OneTimeCodeField, PageHeading,
-  PasswordField, RadioGroup, TextArea, TextField, Tooltip,
+  PasswordField, QrCode, RadioGroup, TextArea, TextField, Tooltip,
 } from '@ekdotico/domico/components';
 import '@ekdotico/domico/styles/button.css';
 import '@ekdotico/domico/styles/form.css';
@@ -547,6 +548,43 @@ which passes through to the heading with every other attribute. `ref` reaches
 the heading, for a page that moves focus to its title when it is shown. The
 component holds no state, so a server component renders it. The heading has no
 margin: the space under it is the layout's.
+
+### The QR code
+
+```tsx
+<QrCode value={otpauthUri} label="QR code for your authenticator app" />
+```
+
+`QrCode` draws `value` as a QR code, in an inline `<svg role="img">`. `label`
+is its accessible name and has no default: a screen reader is given the name
+and nothing inside the image, and what the code is for is the application's to
+say. Show the same value as text beside the code, for a person who cannot use
+a camera.
+
+The code is dark on light in every theme. A phone reads dark modules on a
+light ground and cannot read the reverse, so the two colours are `--scan-ink`
+and `--scan-plate`, which are the same in all eight palettes, and the code
+stands on a light plate on a dark page. They measure 12.76:1. The plate
+includes the quiet zone, four modules on each side, which a reader needs to
+find the code: do not crop it or round its corners into it. The colours are
+set on the image itself, so the control has no stylesheet entry, and they are
+kept where a reader has forced a palette.
+
+`size` is the width and the height in CSS pixels, quiet zone included, and is
+200 unless the application says otherwise. Keep 3 pixels a module or more. A
+value of 200 bytes makes a code 65 modules across with its quiet zone, which
+is a little over 3 at 200, so raise `size` for a longer value. `className` and
+every other attribute pass through to the `<svg>`.
+
+The component has no state and no hook, so a server component renders it, and
+a secret is encoded on the server and is not sent to the browser a second time
+as a string. The encoder is the package's own, in `src/components/qr.ts`, and
+the package still has no runtime dependency. It writes byte mode at
+error-correction level M, in the smallest version that holds the value, with
+the mask the standard's penalty rules score lowest. Text outside ASCII is
+written as UTF-8. A value over 2331 bytes fits no version, and the component
+throws a `RangeError` when it renders: that is a fault in the application and
+not a message for a reader.
 
 ### The button
 

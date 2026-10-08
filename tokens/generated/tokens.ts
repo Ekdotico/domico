@@ -791,6 +791,10 @@ export const scales = {
     "logo-tile-dark-ink": "oklch(93.691% 0.0247 91.62)",
     "logo-tile-light-bg": "oklch(95.877% 0.0127 86.83)",
     "logo-tile-light-ink": "oklch(28.427% 0.0036 106.63)"
+  },
+  "scan": {
+    "scan-plate": "oklch(95.877% 0.0127 86.83)",
+    "scan-ink": "oklch(28.427% 0.0036 106.63)"
   }
 } as const;
 

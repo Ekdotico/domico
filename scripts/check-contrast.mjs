@@ -123,6 +123,11 @@ const PAIRS = [
   // hovered as a button. A graphical object beside its words, so 3:1.
   ['ok', 'bg-surface', 3],
   ['ok', 'bg-surface-2', 3],
+  // The modules of a QR code on its plate. Both are theme-invariant, from
+  // tokens/source/scan.json, so the eight measurements are one. Held at 7:1
+  // and not at the 3:1 of a graphical object: the reader is a camera, in
+  // whatever light the person is sitting in.
+  ['scan-ink', 'scan-plate', 7],
   ['accent', 'bg-canvas', 4.5],
   ['accent-ink', 'accent', 4.5],
   ['gilt', 'bg-canvas', 4.5],
@@ -173,9 +178,13 @@ const read = (theme, mode) => {
   }
 };
 
+/** The two colours of a machine-readable code, which no palette overrides. */
+const scan = JSON.parse(readFileSync(join(ROOT, 'tokens/source/scan.json'), 'utf8'));
+
 /** Parchment light is the complete base; the rest override it, dark last. */
 function layer(theme, mode) {
   return {
+    ...scan,
     ...read('parchment', 'light'),
     ...read(theme, 'light'),
     ...(mode === 'dark' ? { ...read('parchment', 'dark'), ...read(theme, 'dark') } : {}),

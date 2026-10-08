@@ -209,7 +209,8 @@ for the application chrome `access-gate.css`, `nav-drawer.css`,
 `on-this-page.css`, `doc-meta.css`, and `opening-sequence.css`, and for the
 controls `button.css`, `dialog.css`, `tooltip.css`, and `form.css`, which is one
 entry for the fields, the radio group, the checkbox, and the form fault, since
-they share a label, a hint, and a message. They are build outputs sliced
+they share a label, a hint, and a message, and for the heading of an
+application page `page-heading.css`. They are build outputs sliced
 from one source stylesheet; there is no per-component source file, so do not
 cite one. `styles/components.css` remains the whole set, and `build-styles.mjs`
 is where the list lives, so read it there rather than counting it here.
@@ -227,6 +228,19 @@ The controls are the platform's own elements — `<input>`, `<textarea>`,
 sit on `--bg-raised`, where `--fg-3`, `--accent` and `--danger` each fall under
 4.5:1 as text in one palette, so on these controls text is `--fg-1` or `--fg-2`
 and the other two are boundaries and marks. `check:contrast` holds the pairs.
+
+A field has three grounds and each means one thing. `--bg-inset` is editable.
+`--bg-surface-2` with `--fg-3` is disabled. A read-only field has no ground of
+its own: it takes the surface the form sits on, keeps `--fg-1` for its value,
+and draws its `--rule-control` boundary dashed, so the state has a shape and
+does not rest on a tint. It is driven by the native `readonly` attribute.
+
+`FormFault` states a fault with a form or without one, and its `announce`
+option decides the role: `role="alert"` for a fault that follows an action,
+`role="status"` for one that can wait, and no live region for a statement that
+is part of the page as it was served. `PageHeading` is the `h1` of an
+application page, and it applies rule 4 itself: a Greek run in the heading is
+wrapped and set in `--font-sans`, so an application writes no span for it.
 
 The chrome is shared for the same reason the components are. The passcode page,
 the navigation drawer, the on-this-page rail, and the opening sequence were each

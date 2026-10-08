@@ -20,6 +20,15 @@ import { FieldShell, describedBy, errorId, hintId, type FieldProps } from './Fie
  * Server-safe: it holds no state, so a server component renders it inside a
  * form with a server action.
  *
+ * `readOnly` is the native attribute and has a presentation of its own: a
+ * value to read and copy, such as the address an invitation was sent to. The
+ * field keeps its ink and its place in the Tab order, and its text can be
+ * selected; it loses the inset ground, which means "type here", and its
+ * boundary is dashed. Say in the hint why the value cannot be changed. It is
+ * not `disabled`, which takes the field out of the Tab order and out of the
+ * submitted form. `PasswordField`, `OneTimeCodeField` and `TextArea` draw the
+ * state the same way.
+ *
  * `error` marks the field `aria-invalid` and is named by `aria-describedby`,
  * with the hint, so both are read when the field takes focus. Pass `id` where a
  * `FormFault` links to the field; without one the field makes its own.

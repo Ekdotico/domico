@@ -23,7 +23,7 @@ import { useEffect, useLayoutEffect } from 'react';
 export const useBeforePaint = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 /** The least distance kept between the box and the viewport's edge, in CSS pixels. `--sp-4`. */
-const EDGE_MARGIN_PX = 16;
+export const EDGE_MARGIN_PX = 16;
 
 export function keepInViewport(box: HTMLElement): void {
   box.style.insetInlineStart = '';

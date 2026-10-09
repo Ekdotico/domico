@@ -1971,6 +1971,195 @@ textarea.ekd-field-input {
   .ekd-menu-separator { background: CanvasText; }
 }
 
+/* --- Option list --------------------------------------------------------- */
+/* OptionList: the list an editor opens at the text cursor, with focus left in
+   the text. The menu's surface, placed by the component and not by this file:
+   `top`, `left` and, where the viewport is short, `max-block-size` are written
+   to the element, in viewport coordinates.
+
+   It is fixed, so an ancestor that clips its overflow does not clip it, and
+   the component also shows it as a manual popover where the browser has one,
+   which puts it in the top layer. A browser's own stylesheet gives every
+   popover `inset: 0`, `margin: auto`, a `fit-content` size and
+   `overflow: auto`, and the declarations marked "popover" put back what this
+   box needs in their place, so it is the same box with the Popover API and
+   without it.
+
+   `display: flex` is not marked, and it does one thing more than lay the box
+   out. A browser hides a popover that has not been shown with
+   `display: none`, and this declaration, being an author's, wins over that.
+   So an open list is laid out from its first render, in the page and not yet
+   in the top layer, before the component has called `showPopover()`: on the
+   server's markup, and for the frame before hydration. What keeps that box
+   out of sight is the `visibility` rule under this one and nothing else.
+   A closed list is not hidden by any rule here. The component renders
+   nothing for it, so there is no element to hide.
+
+   The text of the list cannot be selected. A page has one selection, and a
+   right-click, a Control-click or a long press selects the word under it
+   wherever text can be selected: on an option that moved the selection out
+   of the text being written, with focus still in it, and the next letter
+   went nowhere. `-webkit-touch-callout` is the same for the long press in
+   Safari on a phone. The context menu is not prevented.
+
+   The width is one width, 20rem or the viewport less a margin each side,
+   whichever is less: 288px at a 320px viewport. It does not follow the longest
+   label, because the list is filtered at every key and would change width at
+   every key. A label that does not fit wraps, and is not cut: the whole of it
+   is on the page for a sighted reader as it is for a screen reader, and it
+   still is at 200% zoom or with wider letter spacing (WCAG 1.4.4, 1.4.12).
+
+   Nothing here moves or fades. The list appears with the character that
+   opened it and goes with the one that closed it, and its active row changes
+   at the speed of the arrow keys; a transition on either would trail the
+   typing. So there is no motion for a reduced-motion rule to remove.
+
+   Until the component has placed it, the box has no position and is not
+   visible, which also takes it out of the accessibility tree. That is one
+   frame at most, and is the state an open list is in when it arrives from
+   the server. The component places every open list, with a cursor to place
+   it by or without one, so no list stays in that state. */
+.ekd-option-list {
+  position: fixed;
+  inset: auto; /* popover */
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  inline-size: min(20rem, calc(100vw - 2 * var(--sp-4)));
+  block-size: auto; /* popover */
+  max-block-size: calc(100vh - 2 * var(--sp-4));
+  margin: 0; /* popover */
+  padding: var(--sp-1);
+  overflow: hidden; /* popover: the list inside is what scrolls */
+  background: var(--bg-raised);
+  color: var(--fg-1);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-normal);
+  letter-spacing: var(--tr-normal);
+  text-align: start;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.ekd-option-list:not([data-placement]) { visibility: hidden; }
+/* The rows scroll and the surface does not. The component gives this box the
+   height of `maxVisible` rows as its most, and it gives way first when the
+   surface is held to a short viewport. A row in that sum is 32px or one line
+   of text with the row's padding and borders, whichever is more, so the sum
+   grows with the text where a reader has raised its size (WCAG 1.4.4). */
+.ekd-option-list-options {
+  flex: 0 1 auto;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* A row is 32px at its least, which clears the 24px a target owes (WCAG
+   2.5.8). `--sp-7` is a length in pixels and does not follow the text size;
+   the row does, being a least height and not a height. The label
+   starts the row and the detail ends it. Where the two do not fit on a line
+   the label wraps first and a short detail stays whole. The detail has half
+   the row at its most and wraps inside that, so the label keeps the other
+   half at its least. A detail with no such limit, a citation key of forty
+   characters, left the label one letter to a line and made the list scroll
+   sideways at a 320px viewport (WCAG 1.4.10).
+
+   Each of the two takes its direction from its own text and not from the
+   page (`unicode-bidi: plaintext`), so in a page that reads right to left
+   the command "/h1" is not drawn as "h1/". Text so marked is also aligned
+   by its own direction, so neither box grows: each is as wide as its text,
+   the row's `space-between` puts the label at the row's start and the
+   detail at its end, and a Latin label in such a page still starts at the
+   start edge. Only a label that wraps is aligned by its own direction, as a
+   paragraph in another script is.
+
+   There is no hover rule. The pointer makes a row the active one, so there is
+   one marked row and not a hovered one beside an active one. */
+.ekd-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  box-sizing: border-box;
+  min-block-size: var(--sp-7);
+  padding: var(--sp-1) var(--sp-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.ekd-option-label {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  unicode-bidi: plaintext;
+}
+/* The command beside the name: an identifier, so the mono face. --fg-2 holds
+   as text on the surface and on the active row's wash; --fg-3 does not hold on
+   --bg-raised in sepia dark, and is not used. */
+.ekd-option-detail {
+  flex: none;
+  max-inline-size: 50%;
+  overflow-wrap: anywhere;
+  unicode-bidi: plaintext;
+  color: var(--fg-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+/* The active option, which stands where a focus ring would if the list took
+   focus. Two things, as the pressed toggle is, and neither is the hue: the
+   boundary appears, in --accent, which is 4.42:1 at its least against the
+   surface and 4.57:1 against the wash inside it, where a state owes 3:1 (WCAG
+   1.4.11); and the ground takes the accent wash, on which --fg-1 is 10.42:1
+   at its least and --fg-2 6.40:1. The wash alone is 1.33:1 at most against
+   the surface, which is why it is not the only carrier. A full line round
+   the row, not a stripe at one edge, and two pixels of it: the row's own
+   border and one more inside it, drawn as a shadow so that the row is the
+   same size active and at rest. */
+.ekd-option[aria-selected="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.ekd-option-list-empty {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  color: var(--fg-2);
+  overflow-wrap: anywhere;
+}
+/* The announcement: present for a screen reader and absent from the page, the
+   technique of .sr-only in the reset, restated so this entry holds alone. */
+.ekd-option-list-announce {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (forced-colors: active) {
+  /* The wash is gone here and every border is a system colour, the
+     transparent one too, so the active row is given the system's own colours
+     for a selection, as the appearance control's chosen option is. The row
+     is taken out of the forced colours to be given them, which would leave
+     the inner line in the accent, so that goes. */
+  .ekd-option[aria-selected="true"] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+    box-shadow: none;
+  }
+  .ekd-option[aria-selected="true"] .ekd-option-detail { color: HighlightText; }
+}
+
 /* --- Sync status --------------------------------------------------------- */
 /* SyncStatus: whether the document on screen is the document on the server.
    Three states, and each is a mark and words together. The words are the

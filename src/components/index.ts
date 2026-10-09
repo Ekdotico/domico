@@ -83,6 +83,26 @@ export { Select, type SelectProps } from './Select.js';
 export { Toolbar, ToolbarSeparator, ToggleButton } from './Toolbar.js';
 export { MenuButton, type MenuButtonItem } from './MenuButton.js';
 export { SyncStatus, type SyncState } from './SyncStatus.js';
+// The list an editor opens at the cursor, on "/" or "@", with focus left in
+// the text. `Select` says a drawn listbox is not provided, and for a choice in
+// a form that still holds; this one is for the place a native select cannot
+// go. The control never has focus, so the keys and the attributes of the text
+// region are the application's, and the helpers beside it are how every
+// application gets the same ones.
+export { OptionList, type OptionListDismissReason, type OptionListProps } from './OptionList.js';
+export {
+  optionListAttributes,
+  optionListKey,
+  optionListNavigating,
+  optionListOptionId,
+  placeOptionList,
+  type OptionListAnchor,
+  type OptionListItem,
+  type OptionListKeyEvent,
+  type OptionListKeyResult,
+  type OptionListPlacement,
+  type OptionListTextAttributes,
+} from './optionListHelpers.js';
 
 /** @supersedes UnlockScreen, ResearchUnlockScreen */
 export { AccessGate } from './AccessGate.js';

@@ -222,7 +222,8 @@ controls `button.css`, `dialog.css`, `tooltip.css`, and `form.css`, which is one
 entry for the fields, the radio group, the checkbox, and the form fault, since
 they share a label, a hint, and a message, and for the heading of an
 application page `page-heading.css`, and for the editor `toolbar.css`,
-`menu.css`, `sync-status.css`, `editor.css`, and `code.css`. They are build
+`menu.css`, `option-list.css`, `sync-status.css`, `editor.css`, and `code.css`.
+They are build
 outputs sliced
 from one source stylesheet; there is no per-component source file, so do not
 cite one. `styles/components.css` remains the whole set, and `build-styles.mjs`
@@ -273,6 +274,24 @@ claims `role="menu"`, and it owes and has the arrows, Home, End, and Escape
 with the focus returned. A pressed toggle is a boundary and a wash together,
 never a hue alone. The sync status is announced when it has settled and not at
 each change, because a document being typed in changes state at every pause.
+
+`option-list.css` is for `OptionList`, the list an editor opens at the text
+cursor, and it is the one place the package claims `role="listbox"`. The role's
+promise is kept in two halves, because the list never has focus: the component
+owns the listbox, its options and the one that is `aria-selected`, and the
+application owns the keys and the attributes of the text region, which it gets
+from `optionListKey` and `optionListAttributes` so that every product sets the
+same ones. The text region stays a `textbox`. It is not made a `combobox`,
+whose value is one line, and it is not given `aria-expanded`, which a textbox
+does not support, or `aria-autocomplete`, whose value WAI-ARIA 1.2 says is not
+to be changed to signal that a list is showing. The list's own text cannot be
+selected, because a page has one selection and it belongs to the text being
+written. The active option stands where a focus ring would, so it is
+drawn as the pressed toggle is, a boundary in `--accent` and the accent wash
+together, and in forced colours as the system's selection. The list is placed
+by the component, at the cursor, in viewport coordinates written to the
+element's `style`; the stylesheet positions nothing and injects nothing. It
+does not move or fade, so it has no reduced-motion rule to keep.
 
 Two entries have no component behind them. `editor.css` styles the markup an
 editor produces under the class `ekd-editor`, and `code.css` a code block and

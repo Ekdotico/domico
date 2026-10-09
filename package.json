@@ -83,6 +83,7 @@
     "./styles/page-heading.css": "./dist/styles/page-heading.css",
     "./styles/toolbar.css": "./dist/styles/toolbar.css",
     "./styles/menu.css": "./dist/styles/menu.css",
+    "./styles/option-list.css": "./dist/styles/option-list.css",
     "./styles/sync-status.css": "./dist/styles/sync-status.css",
     "./styles/editor.css": "./dist/styles/editor.css",
     "./styles/code.css": "./dist/styles/code.css",

@@ -123,6 +123,19 @@ const PAIRS = [
   // hovered as a button. A graphical object beside its words, so 3:1.
   ['ok', 'bg-surface', 3],
   ['ok', 'bg-surface-2', 3],
+  // The option list, added at 0.28.0. It never has focus, so its active
+  // option is the only mark of where the keyboard is, and it is drawn as the
+  // pressed toggle is: the accent wash inside a boundary in --accent, on
+  // --bg-raised. Four of its pairs were already held above: the label, --fg-1
+  // on --accent-soft and on --bg-raised; the detail at rest, --fg-2 on
+  // --bg-raised; and the boundary against the surface outside it, --accent on
+  // --bg-raised at 3:1. These are the two that were not: the detail on the
+  // active row, as text, and the boundary against the wash inside it, as the
+  // mark of a state (SC 1.4.11). The wash against the surface is not listed
+  // and claims nothing: it measures 1.00:1 to 1.33:1, which is why the
+  // boundary is there.
+  ['fg-2', 'accent-soft', 4.5],
+  ['accent', 'accent-soft', 3],
   // The modules of a QR code on its plate. Both are theme-invariant, from
   // tokens/source/scan.json, so the eight measurements are one. Held at 7:1
   // and not at the 3:1 of a graphical object: the reader is a camera, in

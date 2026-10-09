@@ -84,7 +84,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `sync-status.css`, `editor.css`, and `code.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `option-list.css`, `sync-status.css`, `editor.css`, and `code.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/icons` | The icon set: Lucide, vendored, at the house stroke weight |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
@@ -689,6 +689,7 @@ depends on none.
 | `ToolbarSeparator` | A hairline between two groups in a toolbar | `styles/toolbar.css` |
 | `MenuButton` | A button that opens a list of actions | `styles/menu.css` and `styles/button.css` |
 | `Select` | The native select, for the language of a code block | `styles/form.css` |
+| `OptionList` | A list of options at the text cursor, filtered by typing, with focus left in the text | `styles/option-list.css` |
 | `SyncStatus` | Whether the document on screen is the document on the server | `styles/sync-status.css` |
 | `Callout` | The note, the warning, and the tip, each with its icon | `styles/callout.css` |
 
@@ -699,7 +700,7 @@ depends on none.
 
 ```tsx
 import {
-  Button, Callout, MenuButton, Select, SyncStatus, ToggleButton, Toolbar,
+  Button, Callout, MenuButton, OptionList, Select, SyncStatus, ToggleButton, Toolbar,
   ToolbarSeparator, Tooltip,
 } from '@ekdotico/domico/components';
 import { BoldIcon, ItalicIcon, LinkIcon } from '@ekdotico/domico/icons';
@@ -708,6 +709,7 @@ import '@ekdotico/domico/styles/code.css';
 import '@ekdotico/domico/styles/callout.css';
 import '@ekdotico/domico/styles/toolbar.css';
 import '@ekdotico/domico/styles/menu.css';
+import '@ekdotico/domico/styles/option-list.css';
 import '@ekdotico/domico/styles/sync-status.css';
 ```
 
@@ -810,6 +812,249 @@ loads.
 
 Syncing fades the mark in and out and moves nothing. A reader who asks for
 reduced motion gets the mark at rest.
+
+### The option list
+
+The list an editor opens at the text cursor when a writer types `/`, and the
+same control for a mention or a citation key. What is typed after the `/`
+filters it, the arrow keys move through it, Enter chooses, and Escape or a
+press outside closes it. Focus stays in the text throughout.
+
+That last sentence decides the design. The list never has focus, so it takes
+no key and can set no attribute on the element that does. The package
+therefore ships the control in two parts: the component, which draws the list,
+and three functions the application calls from its own text region.
+
+| Export | What it is |
+|---|---|
+| `OptionList` | The list: a `role="listbox"` with `role="option"` children, placed at the cursor |
+| `optionListKey` | Reads a `keydown` in the text and returns what it means for the list |
+| `optionListAttributes` | Returns the ARIA attributes the text region carries, open and closed |
+| `optionListOptionId` | The element id of one option, for an application that writes `aria-activedescendant` itself |
+| `placeOptionList` | The placement arithmetic, exported so it is tested and can be reused |
+
+The whole of a slash palette on a text region:
+
+```tsx
+'use client';
+
+import { useState, type KeyboardEvent } from 'react';
+import {
+  OptionList, optionListAttributes, optionListKey, type OptionListItem,
+} from '@ekdotico/domico/components';
+import '@ekdotico/domico/styles/option-list.css';
+
+const LIST_ID = 'slash-commands';
+
+const COMMANDS: (OptionListItem & { aliases: string[] })[] = [
+  { id: 'text', label: 'Text', detail: '/text', aliases: ['p', 'paragraph'] },
+  { id: 'h1', label: 'Heading 1', detail: '/h1', aliases: ['heading1'] },
+  { id: 'bullet', label: 'Bulleted list', detail: '/bullet', aliases: ['ul', 'unordered'] },
+  // and the rest
+];
+
+/** The cursor, in viewport coordinates. An editor has its own function for this. */
+function cursorRectangle(): DOMRect | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+  const range = selection.getRangeAt(0);
+  // A collapsed range at the start of a line has no box in some engines.
+  return range.getClientRects()[0] ?? range.getBoundingClientRect();
+}
+
+export function Editor() {
+  // `query` is what stands after the "/", or null while the palette is closed.
+  // The application sets it as the text changes and clears it to close.
+  const [query, setQuery] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const open = query !== null;
+  const options = open
+    ? COMMANDS.filter((command) =>
+        [command.id, ...command.aliases].some((name) => name.startsWith(query.toLowerCase())),
+      )
+    : [];
+  // The first match is active unless the writer has moved to another that is still shown.
+  const active = options.some((option) => option.id === activeId) ? activeId : (options[0]?.id ?? null);
+
+  const close = () => {
+    setQuery(null);
+    setActiveId(null);
+  };
+  const insert = (id: string) => {
+    close();
+    // Replace the "/" and the query with the block `id` names.
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!open) return;
+    const result = optionListKey(event, { options, activeId: active });
+    if (!result) return; // The text's own key: a letter, Backspace, Left, Tab.
+    event.preventDefault(); // The list's key. The caret stays where it is.
+    if ('activeId' in result) setActiveId(result.activeId);
+    else if ('select' in result) insert(result.select);
+    else close();
+  };
+
+  return (
+    <>
+      <div
+        className="ekd-editor"
+        contentEditable
+        suppressContentEditableWarning
+        role="textbox"
+        aria-multiline="true"
+        aria-label="Document"
+        {...optionListAttributes(LIST_ID, { open, options, activeId: active })}
+        onKeyDown={onKeyDown}
+        onBlur={close}
+      />
+      <OptionList
+        id={LIST_ID}
+        label="Blocks"
+        open={open}
+        options={options}
+        activeId={active}
+        onActiveChange={setActiveId}
+        onSelect={insert}
+        onDismiss={close}
+        anchor={cursorRectangle}
+        empty="No block matches. Delete a letter to see more."
+        status={options.length === 1 ? '1 block' : `${options.length} blocks`}
+      />
+    </>
+  );
+}
+```
+
+**The component is fully controlled.** The application holds `open`, `options`
+and `activeId`, and does the filtering. `OptionList` draws what it is given
+and reports three things: `onActiveChange` when the pointer moves onto an
+option, `onSelect` when one is pressed, and `onDismiss` for a press outside
+the list. Each option is `{ id, label, detail }`. `detail` is optional, and is
+a second and quieter text at the end of the row, such as the command that
+inserts the block. An option's `id` becomes part of an element id, so it holds
+no white space and is unique in the list.
+
+**The keys are the application's**, and `optionListKey` reads them the same way
+for every product. It returns one of four things and changes nothing by
+itself. It does not prevent the default: the application does, when the result
+is not `null`.
+
+| Key | Result | Meaning |
+|---|---|---|
+| Down, Up | `{ activeId }` | The next or the previous option. At an end, the option that was already active |
+| Home, End | `{ activeId }` | The first or the last option |
+| Page Down, Page Up | `{ activeId }` | `maxVisible` options on, or back, stopping at the ends |
+| Enter | `{ select }` | The active option is chosen. With none active, `null` |
+| Escape | `{ dismiss: true }` | The list closes |
+| Any other key | `null` | The text's key: letters, Backspace, Left, Right, and Tab |
+
+Down and Up stop at the ends and do not wrap. The WAI-ARIA Authoring Practices
+say of a listbox popup that on the last option Down "either returns focus to
+the combobox or does nothing", and focus is already in the text. With no
+option active, Down goes to the first and Up to the last.
+
+The result is `null` in three more cases, so that the key reaches the text.
+While an input method is composing, Enter commits its candidate and the arrows
+move through its own window; the function reads `isComposing`, on the event or
+on React's `nativeEvent`, and `keyCode` 229. With Alt, Control, Meta or Shift
+held, the key is a selection or a chord of the platform. With no options in
+the list, every key except Escape is the text's.
+
+**The attributes on the text region** come from `optionListAttributes`, and
+are spread onto the element that has focus.
+
+| Attribute | While the list shows at least one option | Closed, or open and empty |
+|---|---|---|
+| `aria-autocomplete` | `list` | removed |
+| `aria-haspopup` | `listbox` | removed |
+| `aria-controls` | the `id` of the list | removed |
+| `aria-activedescendant` | the id of the active option, where one is active | removed |
+
+The function returns all four keys every time, as a value or as `undefined`, so
+a spread in React takes off what the last render put on. An application that
+writes attributes by another route removes the same four.
+
+Two attributes are left out on purpose. The region keeps `role="textbox"` with
+`aria-multiline="true"`, which the application sets, and is not given
+`role="combobox"`: the value of a combobox is one line of text, and a document
+is not. `aria-expanded` is not set either. WAI-ARIA 1.2 lists the roles that
+support it and `textbox` is not among them, so the opening of the list is said
+by the announcement below.
+
+The four that are set are each supported on `textbox` in WAI-ARIA 1.2, which
+also says how they go together. Of `aria-autocomplete="list"`: "an element
+containing a collection of values that could complete the provided input may
+be displayed", and the element then has `aria-controls` referring to that
+collection and an `aria-haspopup` that matches its role. Of
+`aria-activedescendant`, that it identifies the active element while DOM focus
+is on a composite widget, a combobox, a textbox, a group, or an application,
+and that for a textbox the active element is a descendant of the element the
+textbox controls. They are removed with the list because, closed, there is no
+listbox in the page for them to refer to.
+
+**The announcement.** `OptionList` holds a polite status region and gives it
+`status`, or `empty` when there are no options. The region follows the text
+`announceAfterMs` after it last changed, which is 500 unless the application
+says otherwise. A writer who types three letters one after another hears the
+count they stopped on, and a key that leaves the count unchanged is not announced.
+Closing empties the region, so the next opening is announced again.
+
+Both texts are the application's, and the Expression Guidelines apply to them
+as to any copy. `status` is the count and what is counted, in sentence case and
+with a singular form: "1 block", "3 blocks". `empty` follows the formula for an
+empty state, which is what the space is for and how to start: "No block
+matches. Delete a letter to see more." It does not say that the writer did
+something wrong.
+
+**A press does not move focus.** The default of `pointerdown` and of
+`mousedown` is prevented over the whole list, so the text keeps its focus and
+its selection, and a phone keeps its keyboard up. The option is chosen on the
+click that follows, so a finger that scrolls the list chooses nothing. The
+pointer makes an option active when it moves onto it, and not when the list
+scrolls under a pointer that is still.
+
+**Placement.** `anchor` is the cursor: a rectangle `{ x, y, width, height }` in
+viewport coordinates, or a function that returns one. Pass the function. The
+list is placed again when the page or any container scrolls and when the
+window changes size, and only a function can say where the cursor has gone. A
+function that returns `null`, for a cursor no longer in the document, leaves
+the list where it is. A function that returns the rectangle of the `/`, and
+not of the caret, keeps the list still while the query is typed.
+
+The list opens under the cursor. Where the whole of it does not fit there it
+opens above. Where it fits on neither side, as at 200% zoom, it takes the side
+with more room and is held to that room, so the line being typed in is not
+covered and the list scrolls. Sideways it starts at the cursor and is moved in
+to stay 16 pixels from each edge of the viewport. It is 20rem wide, or the
+viewport less those margins where that is less, which is 288 pixels at a width
+of 320. A label that does not fit wraps and is not cut short.
+
+The list is `position: fixed`, and where the browser has the Popover API the
+component also shows it as a manual popover, in the top layer. An ancestor that
+clips its overflow does not clip the list. In a browser without the Popover
+API, an ancestor with a `transform`, a `filter`, or `contain` still positions
+and clips a fixed box, so render the list outside such an ancestor there. The
+position is written to the element's `style` by script. No stylesheet is
+injected.
+
+**Rows.** The list shows `maxVisible` rows, 8 unless given, and scrolls. The
+active option is scrolled into view when it changes. A row is 32 pixels high
+at its least. The active row is marked by a boundary in `--accent` and the
+accent wash together, and by the system's selection colours in forced colours.
+Nothing in the list moves or fades.
+
+**What it does not do.** It does not open itself, filter, or remember what was
+chosen. It handles no key. It does not group options or draw icons. It does not
+choose an option on Tab, and an application that wants that reads Tab in its
+own handler. It does not close when focus leaves the text: the application
+closes it, as `onBlur` does above. Closed, it renders nothing.
+
+It has not been heard in a screen reader. Support for `aria-activedescendant`
+on an editable region differs between screen readers, and where one does not
+follow it, the writer hears the count and not each option. An application can
+then add the label of the active option to `status`.
 
 ### The callout, in the editor
 

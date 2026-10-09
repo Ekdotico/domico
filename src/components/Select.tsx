@@ -24,7 +24,9 @@ import { ChevronDownIcon } from './icons.js';
  * short one where the row has no room: the language of a code block. A
  * `RadioGroup` for two to five answers a reader should see at once: the type
  * of a callout, the depth of a table of contents. A `MenuButton` is not a
- * choice at all. It holds actions, and nothing in it stays selected.
+ * choice at all. It holds actions, and nothing in it stays selected. An
+ * `OptionList` is the one drawn listbox, for the one place a native select
+ * cannot go: at the cursor of a text being typed in, with focus left there.
  *
  * The label is visible, as on every field. `labelHidden` keeps it for a screen
  * reader and takes it off the page, for a select in the header of a block

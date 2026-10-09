@@ -295,6 +295,18 @@ import { useModalSurface } from '@ekdotico/domico/a11y';
 useModalSurface({ open, surfaceRef, triggerRef, onClose: () => setOpen(false) });
 ```
 
+Escape has one rule for anything inside the surface that reads it: prevent the
+default when the key was used, and only then. The hook listens on the
+document, so a handler inside the surface runs first, and `defaultPrevented` is
+all the hook can read of what that handler did. It does not call `onClose` for
+an Escape whose default was prevented, so a menu or a list at the text cursor
+closes on one Escape and the surface on the next. A handler that prevents
+every Escape it sees leaves the surface with none, and a keyboard reader with
+no way out. A handler that closes something of its own and prevents nothing
+closes the surface with the same key. The hook also leaves an Escape pressed
+while an input method is composing, which cancels the composition and nothing
+else.
+
 `inertOutside` is the inert half on its own, for a surface that manages the
 rest itself. `isShortcut(event, 'k')` answers to ⌘K on Apple platforms and
 Ctrl+K elsewhere — never both, so Ctrl+K is left to a macOS text field — and
@@ -839,7 +851,7 @@ The whole of a slash palette on a text region:
 ```tsx
 'use client';
 
-import { useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import {
   OptionList, optionListAttributes, optionListKey, optionListNavigating, type OptionListItem,
 } from '@ekdotico/domico/components';
@@ -854,11 +866,14 @@ const COMMANDS: (OptionListItem & { aliases: string[] })[] = [
   // and the rest
 ];
 
-/** What stands between a "/" that starts a word and the cursor, or null. */
-function queryAtCursor(): string | null {
+/**
+ * What stands between a "/" that starts a word and the cursor, or null. Null
+ * too for a selection that is a range, and for one outside `text`.
+ */
+function queryAtCursor(text: HTMLElement | null): string | null {
   const selection = window.getSelection();
   const node = selection?.focusNode;
-  if (!selection?.isCollapsed || node?.nodeType !== Node.TEXT_NODE) return null;
+  if (!selection?.isCollapsed || node?.nodeType !== Node.TEXT_NODE || !text?.contains(node)) return null;
   const before = (node.textContent ?? '').slice(0, selection.focusOffset);
   return /(?:^|\s)\/(\S*)$/.exec(before)?.[1] ?? null;
 }
@@ -879,13 +894,29 @@ function cursorRectangle(): DOMRect | null {
 }
 
 export function Editor() {
+  const text = useRef<HTMLDivElement>(null);
   // What stands after the "/" at the cursor, or null where there is none.
   const [query, setQuery] = useState<string | null>(null);
   // The writer closed the list on this "/". It stays as text, and stays closed.
   const [dismissed, setDismissed] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-  // Whether the last key was a move in the list.
+  // Whether the writer is moving in the list: the last key was a move in it,
+  // and no text has arrived and the cursor has not moved since.
   const [navigating, setNavigating] = useState(false);
+
+  // The cursor moved: by Left, Right, Home or End, which are the text's keys
+  // and fire no `input`, or by a press. The query is read again, so the list
+  // closes when the cursor has left the query. A move never opens the list:
+  // a cursor that arrives after a "/" already in the text is not a request.
+  useEffect(() => {
+    const onCursorMove = () => {
+      const next = queryAtCursor(text.current);
+      setQuery((shown) => (shown === null ? null : next));
+      setNavigating(false);
+    };
+    document.addEventListener('selectionchange', onCursorMove);
+    return () => document.removeEventListener('selectionchange', onCursorMove);
+  }, []);
 
   const open = query !== null && !dismissed;
   const options = open
@@ -907,8 +938,10 @@ export function Editor() {
   };
 
   const onInput = (event: FormEvent<HTMLDivElement>) => {
-    const next = queryAtCursor();
+    const next = queryAtCursor(text.current);
     setQuery(next);
+    // Text can arrive with no key: a paste, dictation, an input method.
+    setNavigating(false);
     // A "/" typed now is a new request, and so is the first after the last one went.
     // `includes`, because one input can carry more than one character.
     const typed = (event.nativeEvent as InputEvent).data ?? '';
@@ -917,8 +950,9 @@ export function Editor() {
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const result = open ? optionListKey(event, { options, activeId: active }) : null;
-    // For every key, the list's or the text's, open or closed.
-    setNavigating(optionListNavigating(result));
+    // For every key, the list's or the text's, open or closed. It is given
+    // the value it last returned, which a modifier pressed by itself keeps.
+    setNavigating(optionListNavigating(event, result, navigating));
     if (!result) return; // The text's own key: a letter, Backspace, Left, Home, Tab.
     event.preventDefault(); // The list's key. The caret stays where it is.
     if ('activeId' in result) setActiveId(result.activeId);
@@ -926,9 +960,14 @@ export function Editor() {
     else dismiss();
   };
 
+  // The count, and the option Enter chooses while nothing has been moved.
+  const count = options.length === 1 ? '1 block' : `${options.length} blocks`;
+  const status = options[0] ? `${count}. ${options[0].label} first.` : '';
+
   return (
     <>
       <div
+        ref={text}
         className="ekd-editor"
         contentEditable
         suppressContentEditableWarning
@@ -951,7 +990,7 @@ export function Editor() {
         onDismiss={dismiss}
         anchor={cursorRectangle}
         empty="No block matches. Delete a letter to see more."
-        status={options.length === 1 ? '1 block' : `${options.length} blocks`}
+        status={status}
       />
     </>
   );
@@ -1012,8 +1051,8 @@ The function returns both keys every time, as a value or as `undefined`, so a
 spread in React takes off what the last render put on. An application that
 writes attributes by another route removes the same two.
 
-These two are the whole of what WAI-ARIA 1.2 gives a `textbox` for a list it
-does not hold, and each rests on a sentence of that specification.
+These two are the whole of what the function sets for a list the text region
+does not hold, and each rests on a sentence of WAI-ARIA 1.2.
 
 - `aria-activedescendant`. The section "aria-activedescendant property" allows
   it under two sets of conditions, and the second is this one: "The element
@@ -1028,7 +1067,12 @@ does not hold, and each rests on a sentence of that specification.
   are controlled by the current element."
 
 Three attributes that a list of suggestions often carries are left out, and
-the same specification says why.
+the same specification says why. Two of the three, `aria-autocomplete` and
+`aria-haspopup`, are supported on a `textbox` in WAI-ARIA 1.2. They are left
+out because a value that is set while the list shows and removed afterwards is
+a value changed to say that a suggestion is there, and the specification asks
+authors not to do that. Only `aria-expanded` is left out because the role does
+not support it.
 
 - `aria-autocomplete`. The section "aria-autocomplete property" says: "The
   aria-autocomplete property is not intended to indicate the presence of a
@@ -1047,7 +1091,8 @@ the same specification says why.
 - `aria-haspopup`. The section "aria-autocomplete property" asks for it of an
   element whose `aria-autocomplete` is `list`: "a value for aria-haspopup that
   matches the role of the element that contains the collection of suggested
-  values." With no `aria-autocomplete` it is not owed.
+  values." With no `aria-autocomplete` it is not owed. Set only while the list
+  shows, it would be the same changing value under another name.
 
 The region keeps `role="textbox"` with `aria-multiline="true"`, which the
 application sets. It is not given `role="combobox"`: the value of a combobox
@@ -1059,15 +1104,44 @@ chooses. A screen reader that follows `aria-activedescendant` would say that
 option again over each character of the query, and would say it in place of
 the character when the writer reads the query back with Left and Right. So
 `optionListAttributes` sets `aria-activedescendant` only where `navigating` is
-true, and `optionListNavigating` says what it is: true after Down, Up, Page
-Down or Page Up, and false after every other key. The application calls it for
-every `keydown`, as the example does, with `null` while the list is closed.
-The mark on the row does not depend on it.
+true, and `optionListNavigating(event, result, previous)` says what it is
+after a key: true after Down, Up, Page Down or Page Up, `previous` after a
+modifier pressed by itself, and false after every other key. The application
+calls it for every `keydown`, as the example does, with `null` as the result
+while the list is closed. The mark on the row does not depend on it.
 
-Enter with nothing moved chooses the marked first match. That is what a
-writer who sees the list expects. A writer who hears it has been told the
-count and not the first option, unless `announceActive` is on, and can press
-Down and then Up to hear it.
+A modifier pressed by itself changes nothing, which is why the function takes
+the value it last returned. Control is the key that silences a screen reader,
+and CapsLock is one that begins its commands. A writer who moves to an option,
+stops the speech and asks where they are is still on that option, and the text
+region still names it. The function takes `previous` and does not return
+`null` for "no change", so that one line is the whole of the call and no
+application has a branch to forget.
+
+A key is not all that ends the move. Text can arrive with no `keydown`, from a
+paste, from dictation or from an input method, and a press in the text moves
+the cursor with no key at all. The example sets `navigating` to false in
+`onInput` and in its `selectionchange` listener for those.
+
+**The cursor leaves the query, and the list closes.** Home, End, Left and
+Right are the text's keys, and they fire no `input`. An application that reads
+the query in `onInput` alone leaves the list open after Home: it is placed
+again at the cursor, it still takes Up, Down and Enter, and Enter replaces
+text the cursor is not in. So the example reads the query again on
+`selectionchange`, which the browser fires on the document for every move of
+the cursor, by a key or by a press. A selection that is a range has no query
+either. The listener only refilters or closes a list that is open. It never
+opens one: a cursor that arrives after a `/` already in the text is not a
+request, and typing in that word is.
+
+**Enter with nothing moved chooses the marked first match.** That is what a
+writer who sees the list expects. A writer who hears it was once told the
+count alone, and Enter then chose an option nobody had named. So the example's
+`status` names it with the count: "3 blocks. Heading 1 first." It names the
+first option and not the active one. The two are the same until the writer
+moves, and a status that followed the active option would change at every
+arrow and be announced again at every arrow. With `announceActive` on, the
+region says the active option itself, and `status` is the count alone.
 
 **The announcement.** `OptionList` holds a polite status region and gives it
 `status`, or `empty` when there are no options. The region follows the text
@@ -1078,7 +1152,8 @@ Closing empties the region, so the next opening is announced again.
 
 Both texts are the application's, and the Expression Guidelines apply to them
 as to any copy. `status` is the count and what is counted, in sentence case and
-with a singular form: "1 block", "3 blocks". `empty` follows the formula for an
+with a singular form, and then the option Enter chooses: "1 block. Text
+first.", "3 blocks. Heading 1 first." `empty` follows the formula for an
 empty state, which is what the space is for and how to start: "No block
 matches. Delete a letter to see more." It does not say that the writer did
 something wrong.
@@ -1096,19 +1171,27 @@ from 0 and the count to the words to say:
 
 It is for a screen reader that does not follow `aria-activedescendant` out of
 an editable region, where a writer would otherwise hear the count and then
-nothing as they press Down. The same region is given one text at a time, in
-this order.
+nothing as they press Down. The same region is given one text at a time.
 
 | What happened | What the region is given |
 |---|---|
-| The list opened | The count once it has settled, and the active option 150 milliseconds after it |
+| The list opened | Once the count has settled, the count and the active option as one text: "3 blocks. Heading 1, 1 of 3" |
 | A move in the list | The active option, 150 milliseconds after the move. A held key says where it stopped |
-| The filter changed | The count once it has settled, where it changed. Then the active option, where it changed |
-| A move while a count is waiting | The count first, once it has settled, and the option after it. Neither is dropped |
+| The filter changed | Once it has settled, the count where it changed and the active option where it changed, as one text where both did |
+| A move while a count is waiting | Once the count has settled, the count and the option as one text, the count first |
+
+Where the count and the option are both due they are one text, written once,
+and not two texts one after the other. A polite region that is given a second
+text before the first was spoken is not certain to speak the first, so two
+writes close together could lose the count. The component joins the two with a
+space and adds no punctuation, so with `announceActive` on, pass the count
+alone as `status` and end it with a full stop: "3 blocks." Whether each screen
+reader speaks the whole of the one text has not been tested, and step 9 of the
+script below is where to hear it.
 
 The 150 milliseconds are a constant of the component and not a prop. An option
-that is active again after the count, and was the last one said, is not said
-again.
+that is active again after a change of filter, and was the last one said, is
+not said again.
 
 With `announceActive` on, a screen reader that does follow
 `aria-activedescendant` says each option twice: once from the attribute and
@@ -1123,6 +1206,15 @@ its selection, and a phone keeps its keyboard up. The option is chosen on the
 click that follows, so a finger that scrolls the list chooses nothing. The
 pointer makes an option active when it moves onto it, and not when the list
 scrolls under a pointer that is still.
+
+**A press outside closes the list**, through `onDismiss('press-outside')`. For
+a mouse that is the button going down. For a finger or a pen it is the lift,
+and only where the touch did not become a pan or a pinch: a reader who drags
+the page to see the list, or pinches to enlarge it, has not pressed anything.
+The browser ends such a touch with `pointercancel` and no `pointerup`, and the
+component dismisses on `pointerup` alone. This is held by synthetic pointer
+events in `check:components`. It has not been run on a touch device, and what
+each browser sends for a pan is the thing to confirm there.
 
 The text of the list cannot be selected: the stylesheet sets `user-select:
 none` on it. A page has one selection. A right-click, a Control-click or a
@@ -1161,7 +1253,10 @@ with more room and is held to that room, so the line being typed in is not
 covered and the list scrolls. Sideways it starts at the cursor and is moved in
 to stay 16 pixels from each edge of the viewport. It is 20rem wide, or the
 viewport less those margins where that is less, which is 288 pixels at a width
-of 320. A label that does not fit wraps and is not cut short.
+of 320. A label that does not fit wraps and is not cut short. So does a
+`detail`: it is as wide as its text up to half the row and wraps inside that
+half, so a long one, such as a citation key of forty characters, leaves the
+label the other half and the list does not scroll sideways (WCAG 1.4.10).
 
 The viewport here is the visual viewport, where the browser has
 `window.visualViewport`: the part of the page a person can see. An on-screen
@@ -1190,9 +1285,14 @@ active option is scrolled into view when it changes. A row is 32 pixels high
 at its least and grows with its text. The height the list is held to is
 counted in rows that grow the same way, so a reader who has raised the text
 size alone still sees `maxVisible` rows, where the viewport has room for them
-(WCAG 1.4.4). The active row is marked by a boundary in `--accent` and the
-accent wash together, and by the system's selection colours in forced colours.
-Nothing in the list moves or fades.
+(WCAG 1.4.4). The active row is marked by a boundary in `--accent`, two pixels
+wide, and the accent wash together, and by the system's selection colours in
+forced colours. Nothing in the list moves or fades.
+
+In a page that reads right to left the row is mirrored: the label is at the
+right and the detail at the left. The label and the detail each take their
+direction from their own text, so a command such as `/h1` is drawn as `/h1`
+there and not as `h1/`.
 
 **What Escape leaves behind.** A dismissed list leaves the `/` and the query
 in the document as text. The list then stays closed for that `/`: the next
@@ -1205,7 +1305,10 @@ in the example, and a press outside and a blur are remembered the same way.
 
 Inside a modal surface, one Escape closes the list and the next closes the
 surface. `useModalSurface` ignores an Escape whose default was prevented, and
-the application prevents it for every key `optionListKey` answers.
+the application prevents it for every key `optionListKey` answers. Prevent it
+for those keys and for no others. With the list closed, `optionListKey` is not
+called, the result is `null`, and Escape is left for the surface. A handler
+that prevented every Escape would leave the surface with none.
 
 **What it does not do.** It does not open itself, filter, or remember what was
 chosen. It handles no key. It does not group options or draw icons. It does not
@@ -1230,34 +1333,114 @@ is on, and whether an option's `detail` belongs in its name. Run this with each
 pair of screen reader and browser the product supports, with `announceActive`
 off and `detailInName` as it is by default.
 
+**Before the first step.** The steps expect the screen reader to be editing
+the text and to say each character as it is typed.
+
+| Screen reader | The mode to be in | Typing echo |
+|---|---|---|
+| NVDA | Focus mode. NVDA enters it by itself when the cursor is in the text. If the arrow keys read the page and do not move the text cursor, press NVDA+Space | Characters: NVDA+2 until it says "speak typed characters on" |
+| JAWS | Forms mode, with the virtual cursor off. JAWS enters it by itself in an editable region. If the arrow keys read the page, press Insert+Z | Characters: Insert+2 until it says "characters" |
+| VoiceOver on macOS | Quick Nav off: press Left and Right together until it says "Quick Nav off" | VoiceOver Utility, Verbosity, Text, "While typing speak": Characters |
+| VoiceOver on iOS, TalkBack | The on-screen keyboard, in its standard typing mode | Characters, in the screen reader's own settings |
+
+**How to record it.** Keep one table for the run. Give it a row for each step
+below and a column for each pair, headed with the screen reader and its
+version and the browser and its version. In each cell write "pass" or "fail"
+and the words that were heard, as they were heard and not as they were
+expected. Write above the table what `announceActive` and `detailInName` were
+set to. Where a step changes one of them, run the steps again from step 1 in a
+new table. A step that cannot be run in a pair, such as step 15 with no touch
+screen, is "not run" and not "pass".
+
 1. Put the cursor in the text and type the trigger character. Expect the
-   character, and then the count: "12 blocks". Expect no option to be said.
+   character, and then the count and the first option: "12 blocks. Text
+   first." Expect no option to be said in any other way, such as "Text, 1 of
+   12" or "Text, selected".
 2. Type two letters of a query without a pause. Expect each letter, and then
-   one count, of the options left. Expect no option to be said over a letter.
+   one status, for the options left. Expect no option to be said over a letter.
 3. Press Left, then Right. Expect the character the cursor passes, as in any
    text. An option said here is a defect in the application's `navigating`.
 4. Press Down. Expect the second option to be said, and the cursor to stay
    where it is. If nothing is said, or the line of text is said, this screen
    reader does not follow `aria-activedescendant` from an editable region:
-   pass `announceActive` and start again from step 1.
-5. Press Down three times without a pause, then Up. Expect the option each
+   pass `announceActive`, pass the count alone as `status`, and start again
+   from step 1. Record also whether the name of the list, "Blocks", was heard
+   at this step or at any step before it. Some screen readers say the name of
+   a listbox when the first option in it is said, and some never do. Where it
+   is never heard, the count in `status` is the only place the writer learns
+   what the options are, so it has to say it.
+5. Straight after Down, press Left. Expect the character the cursor passes,
+   and not the option again. Press Down, then type a letter straight after it.
+   Expect the letter, and the status after a pause. An option said in place of
+   the character or the letter is a defect: the move in the list did not end.
+6. Press Down three times without a pause, then Up. Expect the option each
    press stops on, once. With `announceActive` on, an option said twice means
    this screen reader does follow the attribute, and is better off without it.
-6. Listen to an option that has a detail: "Heading 1 /h1". Decide whether the
+7. Press Down, and press Control while the option is being said, to stop the
+   speech. Then ask where the focus is: NVDA+Tab in NVDA, Insert+Tab in JAWS,
+   VO+F4 in VoiceOver on macOS. Expect the option, or the text region and the
+   option. Then press Down once more and expect the next option. If the first
+   answer is the text region alone and the second Down says the first option
+   again, Control ended the move in the list, which is a defect in how the
+   application calls `optionListNavigating`.
+8. Listen to an option that has a detail: "Heading 1 /h1". Decide whether the
    detail helps or delays. If it delays, pass `detailInName={false}`, which
    takes the detail out of the name and leaves it on the page, and listen again.
-7. Type one more letter. Expect the letter, then the new count after a pause.
-   With `announceActive` on, expect the first match after the count.
-8. Type until nothing matches. Expect the `empty` text, once.
-9. Press Escape. Expect the list to close and the cursor to be where it was.
-   Type a letter: expect the letter and no list. Read the line: expect the `/`
-   and the query as text. Type the trigger character again: expect step 1.
-10. Open the list and press Enter: expect the first option to be inserted.
-    Then, with a touch screen reader, move to an option by touch and
-    double-tap it: expect it to be chosen and the keyboard to stay up.
+9. Type one more letter. Expect the letter, then the new status after a pause.
+   With `announceActive` on, expect the count and the first match together, as
+   one announcement: "2 blocks. Heading 1, 1 of 2". A count with no option
+   after it, or an option with no count before it, means this screen reader
+   did not speak the whole of the one text. Record which part was lost.
+10. Type until nothing matches. Expect the `empty` text, once. Then delete one
+    letter, so that there are matches again. Expect the letter that was
+    deleted, as the screen reader says any deletion, and then the status
+    again. Silence after the deletion is a failure: the writer does not know
+    the list is back.
+11. Press Escape. Expect the list to close, the cursor to be where it was, and
+    nothing to be said about the list: closing empties the status region, and
+    the package announces no closing. A screen reader may say nothing at all
+    here, or may say the text region or the line again. Both pass. Type a
+    letter: expect the letter and then silence. A count after that letter is a
+    failure, because the list has opened again. Read the line: expect the `/`
+    and the query as text. Type the trigger character again: expect step 1.
+12. Open the list and press Enter without moving. Expect the first option to
+    be inserted, which is the one step 1 named. Open it again, press Down
+    twice, and press Enter. Expect the third option. Record what is heard
+    after each Enter. The package says nothing when an option is chosen, so
+    what is heard is what the application's editor does with the cursor. If
+    that is silence, the writer cannot tell that the block is there, and the
+    application owes a status message of its own.
+13. Open the list and press Tab. Expect focus to go to the next control, and
+    that control to be said. Press Shift+Tab. Expect the text region to be
+    said, no status, and no list. Type a letter: expect the letter and no list.
+14. Where the text is inside a dialog or another modal surface: open the list
+    and press Escape. Expect the list to close and the dialog to stay, with
+    nothing said about the dialog. Press Escape again. Expect the dialog to
+    close and its trigger to be said. A dialog that closes on the first
+    Escape, or does not close on the second, is a defect in how the
+    application prevents the default of the key.
+15. With a screen reader for touch, type the trigger character on the
+    on-screen keyboard. Expect the status. Then find the list by swiping right
+    from the text region. Record how many swipes it takes to reach the first
+    option, and whether the keys of the keyboard come before it. Expect each
+    option to be said with its name. Double-tap one: expect it to be chosen,
+    the keyboard to stay up, and the cursor to stay in the text. If the list
+    cannot be reached by swiping, record whether it can be found by moving a
+    finger over the screen. Then turn the screen reader off, open the list,
+    and drag the page with one finger, and pinch it with two. Expect the list
+    to stay open through both. Tap outside it: expect it to close.
+16. Switch to an input method that composes, such as one for Japanese, for
+    Chinese or for Korean. Open the list, then begin a word after the trigger
+    character. While the input method shows its candidates, press Down, Up,
+    Enter and Escape. Expect each to act on the candidates alone: the active
+    option does not move, nothing is inserted from the list, the list does
+    not close, and a dialog round the text does not close. Commit the word:
+    expect the list to be filtered by it.
 
 Not covered by any test in the package: a screen reader, Firefox, Safari, a
-touch device, and an input method that composes.
+touch device, forced colours, and an input method that composes. The
+stylesheet was read in Chromium at a width of 320 pixels, in a page that reads
+left to right and in one that reads right to left.
 
 ### The callout, in the editor
 

@@ -2062,8 +2062,21 @@ textarea.ekd-field-input {
 /* A row is 32px at its least, which clears the 24px a target owes (WCAG
    2.5.8). `--sp-7` is a length in pixels and does not follow the text size;
    the row does, being a least height and not a height. The label
-   starts the row and the detail ends it; where the two do not fit on a line
-   the label wraps and the detail stays whole.
+   starts the row and the detail ends it. Where the two do not fit on a line
+   the label wraps first and a short detail stays whole. The detail has half
+   the row at its most and wraps inside that, so the label keeps the other
+   half at its least. A detail with no such limit, a citation key of forty
+   characters, left the label one letter to a line and made the list scroll
+   sideways at a 320px viewport (WCAG 1.4.10).
+
+   Each of the two takes its direction from its own text and not from the
+   page (`unicode-bidi: plaintext`), so in a page that reads right to left
+   the command "/h1" is not drawn as "h1/". Text so marked is also aligned
+   by its own direction, so neither box grows: each is as wide as its text,
+   the row's `space-between` puts the label at the row's start and the
+   detail at its end, and a Latin label in such a page still starts at the
+   start edge. Only a label that wraps is aligned by its own direction, as a
+   paragraph in another script is.
 
    There is no hover rule. The pointer makes a row the active one, so there is
    one marked row and not a hovered one beside an active one. */
@@ -2080,14 +2093,19 @@ textarea.ekd-field-input {
   cursor: pointer;
 }
 .ekd-option-label {
+  flex: 0 1 auto;
   min-inline-size: 0;
   overflow-wrap: anywhere;
+  unicode-bidi: plaintext;
 }
 /* The command beside the name: an identifier, so the mono face. --fg-2 holds
    as text on the surface and on the active row's wash; --fg-3 does not hold on
    --bg-raised in sepia dark, and is not used. */
 .ekd-option-detail {
   flex: none;
+  max-inline-size: 50%;
+  overflow-wrap: anywhere;
+  unicode-bidi: plaintext;
   color: var(--fg-2);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
@@ -2098,11 +2116,14 @@ textarea.ekd-field-input {
    surface and 4.57:1 against the wash inside it, where a state owes 3:1 (WCAG
    1.4.11); and the ground takes the accent wash, on which --fg-1 is 10.42:1
    at its least and --fg-2 6.40:1. The wash alone is 1.33:1 at most against
-   the surface, which is why it is not the only carrier. A full hairline round
-   the row, not a stripe at one edge. */
+   the surface, which is why it is not the only carrier. A full line round
+   the row, not a stripe at one edge, and two pixels of it: the row's own
+   border and one more inside it, drawn as a shadow so that the row is the
+   same size active and at rest. */
 .ekd-option[aria-selected="true"] {
   background: var(--accent-soft);
   border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 .ekd-option-list-empty {
   margin: 0;
@@ -2126,12 +2147,15 @@ textarea.ekd-field-input {
 @media (forced-colors: active) {
   /* The wash is gone here and every border is a system colour, the
      transparent one too, so the active row is given the system's own colours
-     for a selection, as the appearance control's chosen option is. */
+     for a selection, as the appearance control's chosen option is. The row
+     is taken out of the forced colours to be given them, which would leave
+     the inner line in the accent, so that goes. */
   .ekd-option[aria-selected="true"] {
     forced-color-adjust: none;
     background: Highlight;
     color: HighlightText;
     border-color: Highlight;
+    box-shadow: none;
   }
   .ekd-option[aria-selected="true"] .ekd-option-detail { color: HighlightText; }
 }

@@ -65,7 +65,7 @@ export interface OptionListKeyEvent {
  * What a key pressed in the text means while the list is open.
  *
  *   const result = open ? optionListKey(event, { options, activeId }) : null;
- *   setNavigating(optionListNavigating(result));  // every key, open or closed
+ *   setNavigating(optionListNavigating(event, result, navigating));  // every key, open or closed
  *   if (!result) return;            // the text's own key: a letter, Left, Home, Tab
  *   event.preventDefault();         // the list's key: the caret stays put
  *   if ('activeId' in result) setActiveId(result.activeId);
@@ -138,19 +138,47 @@ export function optionListKey(
 }
 
 /**
- * Whether the writer is moving in the list after the key `result` came from:
- * true for a key that moved the active option, false for every other.
+ * The keys that are a modifier going down and nothing more, by their `key`
+ * value in UI Events. `OS` is what Firefox called Meta before version 118.
+ */
+const MODIFIER_KEYS: ReadonlySet<string> = new Set([
+  'Alt', 'AltGraph', 'CapsLock', 'Control', 'Fn', 'FnLock', 'Hyper', 'Meta',
+  'NumLock', 'OS', 'ScrollLock', 'Shift', 'Super', 'Symbol', 'SymbolLock',
+]);
+
+/**
+ * Whether the writer is moving in the list after the key `event`, whose
+ * meaning for the list was `result`: true for a key that moved the active
+ * option, `previous` for a modifier pressed by itself, false for every other.
  *
  *   const result = open ? optionListKey(event, { options, activeId }) : null;
- *   setNavigating(optionListNavigating(result));
+ *   setNavigating(optionListNavigating(event, result, navigating));
  *
  * It is what `optionListAttributes` takes as `navigating`. Call it for every
  * `keydown` in the text, with `null` while the list is closed, and not only
  * for the list's keys: a letter, Backspace, Left or Right is what ends the
  * moving, and the key that opens the list is what stops a value left over
  * from the last time it was open.
+ *
+ * **A modifier by itself changes nothing**, so the function takes the value
+ * it last returned and gives it back. Control is the key that silences a
+ * screen reader, and CapsLock is one that begins its commands. A writer who
+ * moves to an option, stops the speech and asks where they are is still on
+ * that option, and the text region still names it. `previous` is an argument,
+ * and the result is not `null` for "no change", so that the one line above
+ * is the whole of the call and no application has a branch to forget.
+ *
+ * A keydown is not the only thing that ends the moving. Text that arrives
+ * with no key, from a paste, from dictation or from an input method, and a
+ * caret moved by a press, end it too, and the application sets `navigating`
+ * to false on `input` and when the selection changes, as the README's
+ * example does.
  */
-export const optionListNavigating = (result: OptionListKeyResult): boolean => result !== null && 'activeId' in result;
+export const optionListNavigating = (
+  event: Pick<OptionListKeyEvent, 'key'>,
+  result: OptionListKeyResult,
+  previous: boolean,
+): boolean => (MODIFIER_KEYS.has(event.key) ? previous : result !== null && 'activeId' in result);
 
 // --- the text region's attributes --------------------------------------------
 
@@ -174,8 +202,9 @@ export interface OptionListTextAttributes {
  * off what the last one put on. An application that writes attributes itself
  * removes the two the same way.
  *
- * **`navigating`** is whether the last key was one that moved in the list,
- * which is what `optionListNavigating` says of a key. Without it
+ * **`navigating`** is whether the writer is moving in the list: the last key
+ * was one that moved in it, and no text has arrived and the caret has not
+ * moved since. `optionListNavigating` says the first of a key. Without it
  * `aria-activedescendant` is not set, whatever is active. An application
  * marks the first match as active from the moment the list opens, and a
  * screen reader that follows `aria-activedescendant` would then say that
@@ -185,8 +214,8 @@ export interface OptionListTextAttributes {
  * letter. The mark on the active row does not wait: it is drawn from
  * `activeId` on `OptionList`.
  *
- * These two are the whole of what WAI-ARIA 1.2 gives a `textbox` for a list
- * it does not hold, and each rests on a sentence of it.
+ * These two are the whole of what the function sets for a list the textbox
+ * does not hold, and each rests on a sentence of WAI-ARIA 1.2.
  *
  * - `aria-activedescendant` (section "aria-activedescendant property"): it is
  *   allowed where "The element with DOM focus is a combobox, textbox or
@@ -200,7 +229,12 @@ export interface OptionListTextAttributes {
  *   "Identifies the element (or elements) whose contents or presence are
  *   controlled by the current element."
  *
- * Three more are left out, and the same text says why.
+ * Three more are left out, and the same text says why. Two of the three,
+ * `aria-autocomplete` and `aria-haspopup`, are supported on a `textbox` in
+ * WAI-ARIA 1.2. They are left out because a value that is set while the list
+ * shows and removed after is a value changed to say that a suggestion is
+ * there, which the specification asks authors not to do. Only
+ * `aria-expanded` is left out for not being supported on the role.
  *
  * - `aria-autocomplete` (section "aria-autocomplete property"): "The
  *   aria-autocomplete property is not intended to indicate the presence of a
@@ -220,7 +254,8 @@ export interface OptionListTextAttributes {
  *   an element with `aria-autocomplete` set to `list`, "a value for
  *   aria-haspopup that matches the role of the element that contains the
  *   collection of suggested values". With no `aria-autocomplete` it is not
- *   owed, and a document is not a control that opens a popup.
+ *   owed. Set only while the list shows, it would be the same changing value
+ *   under another name, and a document is not a control that opens a popup.
  *
  * The region's own role stays `textbox`, with `aria-multiline`. It is not a
  * `combobox`: that role's value is one line of text, and a document is not.

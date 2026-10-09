@@ -29,9 +29,22 @@ import { inertOutside } from './inertOutside.js';
  *      reader is leaving the page.
  *   3. Escape calls `onClose`, unless its default was already prevented:
  *      a control inside the surface that closes on Escape prevents it, and
- *      one key then closes one thing. `MenuButton` does this.
+ *      one key then closes one thing. `MenuButton` does this. An Escape
+ *      pressed while an input method is composing is not the surface's
+ *      either: it cancels the composition, and the next one closes.
  *   4. On close, the page is released first and focus returns to the trigger
  *      second — in that order, because an inert element cannot take focus.
+ *
+ * **The contract for anything inside the surface that reads Escape: prevent
+ * the default when the key was used, and only then.** The hook listens on
+ * the document, so a handler inside the surface runs before it, and
+ * `defaultPrevented` is the one thing it can read of what that handler did.
+ * A handler that prevents every Escape it sees, used or not, leaves the
+ * surface with no Escape and a keyboard reader with no way out. A handler
+ * that closes something of its own and does not prevent the default closes
+ * the surface under it with the same key. Stopping propagation is not the
+ * signal: it would also keep the key from every other listener on the
+ * document.
  *
  * Focus on open goes to `initialFocusRef`, else the first focusable element
  * inside the surface, else the surface itself, which should then carry
@@ -152,6 +165,10 @@ export function useModalSurface({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        // An input method is composing, and Escape cancels its candidate.
+        // 229 is what a keydown reports in engines that fire it before
+        // `compositionstart` has set the flag, as `optionListKey` reads it.
+        if (event.isComposing || event.keyCode === 229) return;
         // An Escape something inside has already answered, and said so by
         // preventing the default: a menu, a tooltip, a list at the text
         // cursor. It closed that; the next one closes the surface.

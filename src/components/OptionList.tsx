@@ -16,21 +16,48 @@ import { useBeforePaint } from './viewport.js';
  *   const SLASH = 'slash-commands';
  *   const shown = commands.filter(matches(query));
  *
+ *   // The cursor moved, by a key of the text's or by a press: the query is
+ *   // read again, so the list closes where the cursor has left it, and the
+ *   // move in the list is over. A move never opens the list.
+ *   useEffect(() => {
+ *     const onCursorMove = () => {
+ *       const next = queryAtCursor();
+ *       setQuery((shown) => (shown === null ? null : next));
+ *       setNavigating(false);
+ *     };
+ *     document.addEventListener('selectionchange', onCursorMove);
+ *     return () => document.removeEventListener('selectionchange', onCursorMove);
+ *   }, []);
+ *
  *   <div contentEditable role="textbox" aria-multiline="true" aria-label="Document"
  *     {...optionListAttributes(SLASH, { open, options: shown, activeId, navigating })}
+ *     onInput={() => {
+ *       setQuery(queryAtCursor());
+ *       setNavigating(false);
+ *     }}
  *     onKeyDown={(event) => {
  *       const result = open ? optionListKey(event, { options: shown, activeId }) : null;
- *       setNavigating(optionListNavigating(result));
+ *       setNavigating(optionListNavigating(event, result, navigating));
  *       if (!result) return;
  *       event.preventDefault();
  *       if ('activeId' in result) setActiveId(result.activeId);
  *       else if ('select' in result) insert(result.select);
- *       else setOpen(false);
- *     }} />
+ *       else dismiss();
+ *     }}
+ *     onBlur={dismiss} />
  *   <OptionList id={SLASH} label="Blocks" open={open} options={shown}
  *     activeId={activeId} onActiveChange={setActiveId} onSelect={insert}
- *     onDismiss={() => setOpen(false)} anchor={cursorRectangle}
- *     empty="No block matches." status={`${shown.length} blocks`} />
+ *     onDismiss={dismiss} anchor={cursorRectangle}
+ *     empty="No block matches."
+ *     status={shown[0] ? `${shown.length} blocks. ${shown[0].label} first.` : ''} />
+ *
+ * `open` is derived: there is a query at the caret and the writer has not
+ * dismissed it. The query is read again when the text changes and when the
+ * caret moves, and not from `input` alone. Home, End, Left and Right are the
+ * text's keys and fire no `input`, so a list that followed `input` alone
+ * stayed open after the caret had left the query, was placed again at the
+ * caret, went on taking Up, Down and Enter, and Enter replaced text the caret
+ * was not in. The README has the whole of it, with `dismiss` and `insert`.
  *
  * The list an editor opens on "/", and the same control for a mention or a
  * citation key. It is `role="listbox"` with `role="option"` children, and it
@@ -44,6 +71,12 @@ import { useBeforePaint } from './viewport.js';
  * three things: `onActiveChange` when the pointer moves onto an option,
  * `onSelect` when one is pressed, and `onDismiss` for a press outside. It
  * does not open itself, filter, or remember.
+ *
+ * **A press outside** is a mouse button going down, or a finger or a pen
+ * lifting from where it went down. A touch that becomes a pan or a pinch is
+ * a reader moving the page to see the list, and the browser ends that touch
+ * with `pointercancel` and no `pointerup`, so it dismisses nothing. Held by
+ * synthetic events; not yet run on a device.
  *
  * **It handles no key**, because it is never focused. Escape is the
  * application's key like the rest, and `optionListKey` answers it.
@@ -75,15 +108,23 @@ import { useBeforePaint } from './viewport.js';
  * that did not change is not said again. Closing empties the region, so the
  * next opening is announced. Both texts are the application's.
  *
+ * Enter chooses the first match from the moment the list opens, and a writer
+ * who cannot see the list has not been told which option that is. So `status`
+ * names it with the count, "3 blocks. Heading 1 first.", unless
+ * `announceActive` is on and says it.
+ *
  * **The active option, said by the region: off unless asked for.** With
  * `announceActive` the same region is also given that function's words for
- * the active option. One text at a time, in a fixed order. On opening: the
- * count, and 150 milliseconds after it the active option. On a move in the
- * list: the active option, 150 milliseconds after the move, so a held key
- * says where it stopped. On a change of filter: the count once it has
- * settled, where it changed, and then the active option, where that changed.
- * A move made while a count is waiting does not drop the count: the count is
- * said first and the option after it. A screen reader that follows
+ * the active option. One text at a time. On opening: the count and the
+ * active option as one text, the count first. On a move in the list: the
+ * active option, 150 milliseconds after the move, so a held key says where
+ * it stopped. On a change of filter, once it has settled: the count where it
+ * changed and the active option where that changed, as one text where both
+ * did. A move made while a count is waiting does not drop the count: the two
+ * are one text, the count first. The two are one write and not two because a
+ * polite region that is given a second text before the first was spoken is
+ * not certain to speak the first. Whether a given screen reader speaks the
+ * whole of the one text has not been tested. A screen reader that follows
  * `aria-activedescendant` says the option by itself, and with this on says it
  * twice, so a product turns it on for what its own testing with screen
  * readers finds, and the README has the script for that.
@@ -136,7 +177,11 @@ export interface OptionListProps {
   onActiveChange: (id: string) => void;
   /** An option was pressed. */
   onSelect: (id: string) => void;
-  /** A press landed outside the list. Escape is the application's key. */
+  /**
+   * A press landed outside the list: a mouse button went down, or a finger or
+   * a pen lifted that had not become a pan or a pinch. Escape is the
+   * application's key.
+   */
   onDismiss: (reason: OptionListDismissReason) => void;
   /** The text cursor, in viewport coordinates, or a function that reads it. */
   anchor: OptionListAnchor | (() => OptionListAnchor | null);
@@ -144,7 +189,11 @@ export interface OptionListProps {
   maxVisible?: number;
   /** Shown, and announced, where there are no options. */
   empty: string;
-  /** The count of options in words, announced once it has settled: "3 blocks". */
+  /**
+   * The count of options in words, announced once it has settled, with the
+   * option Enter would choose: "3 blocks. Heading 1 first.". With
+   * `announceActive` the count alone, ending in a full stop: "3 blocks.".
+   */
   status: string;
   /** How long the announcement waits for the text to stop changing, in milliseconds. */
   announceAfterMs?: number;
@@ -167,9 +216,9 @@ export interface OptionListProps {
 
 /**
  * How long the active option's line waits before the status region is given
- * it, in milliseconds: after a move in the list, and after the count. A
- * constant and not a prop. It is long enough that a held arrow key says the
- * option it stops on, and nothing has yet shown a product needing another.
+ * it, in milliseconds, after a move in the list. A constant and not a prop.
+ * It is long enough that a held arrow key says the option it stops on, and
+ * nothing has yet shown a product needing another.
  */
 const ACTIVE_SETTLE_MS = 150;
 
@@ -273,8 +322,23 @@ export function OptionList({
   useEffect(() => {
     if (!open) return;
     const inside = (event: Event) => event.target instanceof Node && boxRef.current?.contains(event.target);
-    const onPointerDown = (event: Event) => {
-      if (!inside(event)) latest.current.onDismiss('press-outside');
+    // A press outside. A mouse dismisses as it goes down. A finger or a pen
+    // that goes down may be the start of a pan or a pinch, which is a reader
+    // moving the page to see the list and not a press: it dismisses when it
+    // lifts, and not at all where the browser took the gesture for itself,
+    // which it says with `pointercancel`. A pointer of no stated type is
+    // taken as a mouse.
+    const waiting = new Set<number>();
+    const onPointerDown = (event: PointerEvent) => {
+      if (inside(event)) return;
+      if (event.pointerType === 'touch' || event.pointerType === 'pen') waiting.add(event.pointerId);
+      else latest.current.onDismiss('press-outside');
+    };
+    const onPointerUp = (event: PointerEvent) => {
+      if (waiting.delete(event.pointerId)) latest.current.onDismiss('press-outside');
+    };
+    const onPointerCancel = (event: PointerEvent) => {
+      waiting.delete(event.pointerId);
     };
     // Any scroll, of the page or of a container the text is in: scroll events
     // do not bubble, so they are caught on the way down. The list's own
@@ -284,6 +348,8 @@ export function OptionList({
     };
     // Captured, so an editor that stops the event still lets the list close.
     document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('pointerup', onPointerUp, true);
+    document.addEventListener('pointercancel', onPointerCancel, true);
     window.addEventListener('scroll', onScroll, { capture: true, passive: true });
     window.addEventListener('resize', place);
     // An on-screen keyboard coming up, and a pinch or a pan of a zoomed page,
@@ -293,6 +359,8 @@ export function OptionList({
     visual?.addEventListener('scroll', place);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('pointerup', onPointerUp, true);
+      document.removeEventListener('pointercancel', onPointerCancel, true);
       window.removeEventListener('scroll', onScroll, { capture: true });
       window.removeEventListener('resize', place);
       visual?.removeEventListener('resize', place);
@@ -304,9 +372,11 @@ export function OptionList({
   // What a screen reader is given: one region, one text at a time. The count
   // follows the text once the text has stood for `announceAfterMs`. With
   // `announceActive`, the active option's line follows a move in the list
-  // after `ACTIVE_SETTLE_MS`, and follows the count by the same interval
-  // where the list was filtered, so that neither is written over the other
-  // before it has been in the region. What was last said of each is kept, so
+  // after `ACTIVE_SETTLE_MS`. Where the count and the option are both due,
+  // the region is given the two as one text, the count first, in one write:
+  // a polite region whose text is replaced before it was spoken is not
+  // certain to have the first text spoken at all, so two writes close
+  // together could lose the count. What was last said of each is kept, so
   // neither is said twice running, and both are forgotten on closing so that
   // the same count is news again the next time the list opens.
   const text = options.length === 0 ? empty : status;
@@ -325,30 +395,25 @@ export function OptionList({
       return;
     }
     const memo = said.current;
-    // By the option and not by its line: a filter that leaves the active
-    // option where it was changes "1 of 3" to "1 of 2", and the count has
-    // just said that.
-    const sayActive = () => {
-      if (activeKey === memo.active) return;
-      memo.active = activeKey;
-      if (activeLine) setAnnounced(activeLine);
-    };
-    let follow: ReturnType<typeof setTimeout> | undefined;
     const filtered = text !== memo.count || shown !== memo.shown;
     const timer = setTimeout(
       () => {
+        const due: string[] = [];
+        if (text !== memo.count) due.push(text);
+        // By the option and not by its line: a filter that leaves the active
+        // option where it was changes "1 of 3" to "1 of 2", and the count
+        // says that.
+        if (activeKey !== memo.active && activeLine) due.push(activeLine);
         memo.shown = shown;
-        if (text === memo.count) return sayActive();
         memo.count = text;
-        setAnnounced(text);
-        follow = setTimeout(sayActive, ACTIVE_SETTLE_MS);
+        memo.active = activeKey;
+        // One write. The two are joined by a space and nothing else: the
+        // words and their punctuation are the application's.
+        if (due.length > 0) setAnnounced(due.join(' '));
       },
       filtered ? announceAfterMs : ACTIVE_SETTLE_MS,
     );
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(follow);
-    };
+    return () => clearTimeout(timer);
   }, [open, text, shown, activeKey, activeLine, announceAfterMs]);
 
   if (!open) return null;

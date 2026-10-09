@@ -823,12 +823,13 @@ press outside closes it. Focus stays in the text throughout.
 That last sentence decides the design. The list never has focus, so it takes
 no key and can set no attribute on the element that does. The package
 therefore ships the control in two parts: the component, which draws the list,
-and three functions the application calls from its own text region.
+and the functions the application calls from its own text region.
 
 | Export | What it is |
 |---|---|
 | `OptionList` | The list: a `role="listbox"` with `role="option"` children, placed at the cursor |
 | `optionListKey` | Reads a `keydown` in the text and returns what it means for the list |
+| `optionListNavigating` | Says of that result whether the writer is moving in the list |
 | `optionListAttributes` | Returns the ARIA attributes the text region carries, open and closed |
 | `optionListOptionId` | The element id of one option, for an application that writes `aria-activedescendant` itself |
 | `placeOptionList` | The placement arithmetic, exported so it is tested and can be reused |
@@ -838,9 +839,9 @@ The whole of a slash palette on a text region:
 ```tsx
 'use client';
 
-import { useState, type KeyboardEvent } from 'react';
+import { useState, type FormEvent, type KeyboardEvent } from 'react';
 import {
-  OptionList, optionListAttributes, optionListKey, type OptionListItem,
+  OptionList, optionListAttributes, optionListKey, optionListNavigating, type OptionListItem,
 } from '@ekdotico/domico/components';
 import '@ekdotico/domico/styles/option-list.css';
 
@@ -853,47 +854,76 @@ const COMMANDS: (OptionListItem & { aliases: string[] })[] = [
   // and the rest
 ];
 
+/** What stands between a "/" that starts a word and the cursor, or null. */
+function queryAtCursor(): string | null {
+  const selection = window.getSelection();
+  const node = selection?.focusNode;
+  if (!selection?.isCollapsed || node?.nodeType !== Node.TEXT_NODE) return null;
+  const before = (node.textContent ?? '').slice(0, selection.focusOffset);
+  return /(?:^|\s)\/(\S*)$/.exec(before)?.[1] ?? null;
+}
+
 /** The cursor, in viewport coordinates. An editor has its own function for this. */
 function cursorRectangle(): DOMRect | null {
   const selection = window.getSelection();
   if (!selection || selection.rangeCount === 0) return null;
   const range = selection.getRangeAt(0);
-  // A collapsed range at the start of a line has no box in some engines.
-  return range.getClientRects()[0] ?? range.getBoundingClientRect();
+  const rect = range.getClientRects()[0] ?? range.getBoundingClientRect();
+  if (rect.width > 0 || rect.height > 0) return rect;
+  // A collapsed range in an empty block has no rectangle, and its bounding
+  // rectangle is all zeros, which is the corner of the viewport and not the
+  // cursor. The block that holds the cursor has a box.
+  const holder = range.startContainer;
+  const block = holder instanceof Element ? holder : holder.parentElement;
+  return block?.getBoundingClientRect() ?? null;
 }
 
 export function Editor() {
-  // `query` is what stands after the "/", or null while the palette is closed.
-  // The application sets it as the text changes and clears it to close.
+  // What stands after the "/" at the cursor, or null where there is none.
   const [query, setQuery] = useState<string | null>(null);
+  // The writer closed the list on this "/". It stays as text, and stays closed.
+  const [dismissed, setDismissed] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Whether the last key was a move in the list.
+  const [navigating, setNavigating] = useState(false);
 
-  const open = query !== null;
+  const open = query !== null && !dismissed;
   const options = open
     ? COMMANDS.filter((command) =>
         [command.id, ...command.aliases].some((name) => name.startsWith(query.toLowerCase())),
       )
     : [];
-  // The first match is active unless the writer has moved to another that is still shown.
+  // The first match is marked unless the writer has moved to another that is still shown.
   const active = options.some((option) => option.id === activeId) ? activeId : (options[0]?.id ?? null);
 
-  const close = () => {
-    setQuery(null);
+  const dismiss = () => {
+    setDismissed(true);
     setActiveId(null);
   };
   const insert = (id: string) => {
-    close();
+    setQuery(null);
+    setActiveId(null);
     // Replace the "/" and the query with the block `id` names.
   };
 
+  const onInput = (event: FormEvent<HTMLDivElement>) => {
+    const next = queryAtCursor();
+    setQuery(next);
+    // A "/" typed now is a new request, and so is the first after the last one went.
+    // `includes`, because one input can carry more than one character.
+    const typed = (event.nativeEvent as InputEvent).data ?? '';
+    if (typed.includes('/') || next === null) setDismissed(false);
+  };
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!open) return;
-    const result = optionListKey(event, { options, activeId: active });
-    if (!result) return; // The text's own key: a letter, Backspace, Left, Tab.
+    const result = open ? optionListKey(event, { options, activeId: active }) : null;
+    // For every key, the list's or the text's, open or closed.
+    setNavigating(optionListNavigating(result));
+    if (!result) return; // The text's own key: a letter, Backspace, Left, Home, Tab.
     event.preventDefault(); // The list's key. The caret stays where it is.
     if ('activeId' in result) setActiveId(result.activeId);
     else if ('select' in result) insert(result.select);
-    else close();
+    else dismiss();
   };
 
   return (
@@ -905,9 +935,10 @@ export function Editor() {
         role="textbox"
         aria-multiline="true"
         aria-label="Document"
-        {...optionListAttributes(LIST_ID, { open, options, activeId: active })}
+        {...optionListAttributes(LIST_ID, { open, options, activeId: active, navigating })}
+        onInput={onInput}
         onKeyDown={onKeyDown}
-        onBlur={close}
+        onBlur={dismiss}
       />
       <OptionList
         id={LIST_ID}
@@ -917,7 +948,7 @@ export function Editor() {
         activeId={active}
         onActiveChange={setActiveId}
         onSelect={insert}
-        onDismiss={close}
+        onDismiss={dismiss}
         anchor={cursorRectangle}
         empty="No block matches. Delete a letter to see more."
         status={options.length === 1 ? '1 block' : `${options.length} blocks`}
@@ -944,16 +975,23 @@ is not `null`.
 | Key | Result | Meaning |
 |---|---|---|
 | Down, Up | `{ activeId }` | The next or the previous option. At an end, the option that was already active |
-| Home, End | `{ activeId }` | The first or the last option |
 | Page Down, Page Up | `{ activeId }` | `maxVisible` options on, or back, stopping at the ends |
 | Enter | `{ select }` | The active option is chosen. With none active, `null` |
 | Escape | `{ dismiss: true }` | The list closes |
-| Any other key | `null` | The text's key: letters, Backspace, Left, Right, and Tab |
+| Any other key | `null` | The text's key: letters, Backspace, Left, Right, Home, End, and Tab |
 
 Down and Up stop at the ends and do not wrap. The WAI-ARIA Authoring Practices
 say of a listbox popup that on the last option Down "either returns focus to
 the combobox or does nothing", and focus is already in the text. With no
-option active, Down goes to the first and Up to the last.
+option active, Down and Page Down go to the first option, and Up and Page Up
+to the last. The Authoring Practices give a listbox popup no Page keys. The
+rule they do give for entering the popup from the text is that Down goes to
+the first option and Up to the last, and the Page keys follow it.
+
+Home and End are the text's. A document has lines, and a writer who cannot go
+to the start or the end of the line while a list is open has lost more than
+the list gives. The Authoring Practices mark both keys "(Optional)" for a
+listbox popup.
 
 The result is `null` in three more cases, so that the key reaches the text.
 While an input method is composing, Enter commits its candidate and the arrows
@@ -963,36 +1001,73 @@ held, the key is a selection or a chord of the platform. With no options in
 the list, every key except Escape is the text's.
 
 **The attributes on the text region** come from `optionListAttributes`, and
-are spread onto the element that has focus.
+are spread onto the element that has focus. There are two.
 
 | Attribute | While the list shows at least one option | Closed, or open and empty |
 |---|---|---|
-| `aria-autocomplete` | `list` | removed |
-| `aria-haspopup` | `listbox` | removed |
 | `aria-controls` | the `id` of the list | removed |
-| `aria-activedescendant` | the id of the active option, where one is active | removed |
+| `aria-activedescendant` | the id of the active option, while the writer is moving in the list | removed |
 
-The function returns all four keys every time, as a value or as `undefined`, so
-a spread in React takes off what the last render put on. An application that
-writes attributes by another route removes the same four.
+The function returns both keys every time, as a value or as `undefined`, so a
+spread in React takes off what the last render put on. An application that
+writes attributes by another route removes the same two.
 
-Two attributes are left out on purpose. The region keeps `role="textbox"` with
-`aria-multiline="true"`, which the application sets, and is not given
-`role="combobox"`: the value of a combobox is one line of text, and a document
-is not. `aria-expanded` is not set either. WAI-ARIA 1.2 lists the roles that
-support it and `textbox` is not among them, so the opening of the list is said
-by the announcement below.
+These two are the whole of what WAI-ARIA 1.2 gives a `textbox` for a list it
+does not hold, and each rests on a sentence of that specification.
 
-The four that are set are each supported on `textbox` in WAI-ARIA 1.2, which
-also says how they go together. Of `aria-autocomplete="list"`: "an element
-containing a collection of values that could complete the provided input may
-be displayed", and the element then has `aria-controls` referring to that
-collection and an `aria-haspopup` that matches its role. Of
-`aria-activedescendant`, that it identifies the active element while DOM focus
-is on a composite widget, a combobox, a textbox, a group, or an application,
-and that for a textbox the active element is a descendant of the element the
-textbox controls. They are removed with the list because, closed, there is no
-listbox in the page for them to refer to.
+- `aria-activedescendant`. The section "aria-activedescendant property" allows
+  it under two sets of conditions, and the second is this one: "The element
+  with DOM focus is a combobox, textbox or searchbox with aria-controls
+  referring to an element that supports aria-activedescendant, and the value
+  of aria-activedescendant refers to an owned element of the controlled
+  element." A `listbox` supports `aria-activedescendant` and the options are
+  its children. So `aria-controls` is what makes the other attribute valid,
+  and the two are set and removed together.
+- `aria-controls`. The section "aria-controls property" lists it for every
+  element: "Identifies the element (or elements) whose contents or presence
+  are controlled by the current element."
+
+Three attributes that a list of suggestions often carries are left out, and
+the same specification says why.
+
+- `aria-autocomplete`. The section "aria-autocomplete property" says: "The
+  aria-autocomplete property is not intended to indicate the presence of a
+  completion suggestion, and authors SHOULD NOT dynamically change its value
+  in order to communicate the presence of a suggestion." Setting it while the
+  list shows and removing it afterwards is that. A text region that offers
+  completions for as long as it is edited may carry `aria-autocomplete="list"`
+  as a fixed attribute of its own. A document that opens a list of blocks on
+  one character is not that.
+- `aria-expanded`. The same section continues: "authors SHOULD use the
+  aria-expanded state to communicate whether the element that presents the
+  suggestion collection is displayed." The section "aria-expanded state" lists
+  the roles the state is used in, and `textbox` is not one of them. So a
+  textbox has no attribute that says a list is open, and the opening of the
+  list is said by the announcement below.
+- `aria-haspopup`. The section "aria-autocomplete property" asks for it of an
+  element whose `aria-autocomplete` is `list`: "a value for aria-haspopup that
+  matches the role of the element that contains the collection of suggested
+  values." With no `aria-autocomplete` it is not owed.
+
+The region keeps `role="textbox"` with `aria-multiline="true"`, which the
+application sets. It is not given `role="combobox"`: the value of a combobox
+is one line of text, and a document is not.
+
+**While the query is typed, no option is named.** The first match is marked
+as active from the moment the list opens, because that is the option Enter
+chooses. A screen reader that follows `aria-activedescendant` would say that
+option again over each character of the query, and would say it in place of
+the character when the writer reads the query back with Left and Right. So
+`optionListAttributes` sets `aria-activedescendant` only where `navigating` is
+true, and `optionListNavigating` says what it is: true after Down, Up, Page
+Down or Page Up, and false after every other key. The application calls it for
+every `keydown`, as the example does, with `null` while the list is closed.
+The mark on the row does not depend on it.
+
+Enter with nothing moved chooses the marked first match. That is what a
+writer who sees the list expects. A writer who hears it has been told the
+count and not the first option, unless `announceActive` is on, and can press
+Down and then Up to hear it.
 
 **The announcement.** `OptionList` holds a polite status region and gives it
 `status`, or `empty` when there are no options. The region follows the text
@@ -1008,6 +1083,40 @@ empty state, which is what the space is for and how to start: "No block
 matches. Delete a letter to see more." It does not say that the writer did
 something wrong.
 
+**The active option, said by the status region.** This is off unless the
+application passes `announceActive`, a function from the option, its index
+from 0 and the count to the words to say:
+
+```tsx
+<OptionList
+  announceActive={(option, index, count) => `${option.label}, ${index + 1} of ${count}`}
+  …
+/>
+```
+
+It is for a screen reader that does not follow `aria-activedescendant` out of
+an editable region, where a writer would otherwise hear the count and then
+nothing as they press Down. The same region is given one text at a time, in
+this order.
+
+| What happened | What the region is given |
+|---|---|
+| The list opened | The count once it has settled, and the active option 150 milliseconds after it |
+| A move in the list | The active option, 150 milliseconds after the move. A held key says where it stopped |
+| The filter changed | The count once it has settled, where it changed. Then the active option, where it changed |
+| A move while a count is waiting | The count first, once it has settled, and the option after it. Neither is dropped |
+
+The 150 milliseconds are a constant of the component and not a prop. An option
+that is active again after the count, and was the last one said, is not said
+again.
+
+With `announceActive` on, a screen reader that does follow
+`aria-activedescendant` says each option twice: once from the attribute and
+once from the region. The package cannot tell which kind of reader is running,
+and no browser says. So a product turns this on according to what a person
+finds with the screen readers it supports, by the script under "What to test
+with a screen reader before shipping" below, and not by default.
+
 **A press does not move focus.** The default of `pointerdown` and of
 `mousedown` is prevented over the whole list, so the text keeps its focus and
 its selection, and a phone keeps its keyboard up. The option is chosen on the
@@ -1015,13 +1124,36 @@ click that follows, so a finger that scrolls the list chooses nothing. The
 pointer makes an option active when it moves onto it, and not when the list
 scrolls under a pointer that is still.
 
+The text of the list cannot be selected: the stylesheet sets `user-select:
+none` on it. A page has one selection. A right-click, a Control-click or a
+long press selects the word under it wherever text can be selected, and on an
+option that took the selection out of the text being written while focus
+stayed there. The context menu itself is not prevented. It does no harm once
+there is nothing to select, and it holds what the browser and its extensions
+put there.
+
 **Placement.** `anchor` is the cursor: a rectangle `{ x, y, width, height }` in
 viewport coordinates, or a function that returns one. Pass the function. The
-list is placed again when the page or any container scrolls and when the
-window changes size, and only a function can say where the cursor has gone. A
-function that returns `null`, for a cursor no longer in the document, leaves
-the list where it is. A function that returns the rectangle of the `/`, and
-not of the caret, keeps the list still while the query is typed.
+list is placed again when the page or any container scrolls, when the window
+changes size, and when the visual viewport changes, and only a function can
+say where the cursor has gone. A function that returns the rectangle of the
+`/`, and not of the caret, keeps the list still while the query is typed.
+
+A function that returns `null`, for a cursor no longer in the document, leaves
+a placed list where it is. A list that has not been placed yet is put at the
+start of the top of the viewport, 16 pixels in, and moves to the cursor at the
+next placement that has one. It is not left unplaced, because the stylesheet
+hides an unplaced list and the keys and the text region's attributes would go
+on as if it were there. It is not dismissed either: a cursor with no
+rectangle is a fault in the application's function and not a choice the
+writer made, and a list in the corner is a fault that can be seen.
+
+There is one trap in reading the cursor, and `cursorRectangle` above steps
+round it. A collapsed range in an empty block has no client rectangles, and
+its bounding rectangle is all zeros. That is a rectangle and not `null`, so a
+function that returns it sends the list to the top left corner of the
+viewport. Return the rectangle of the block that holds the cursor in that
+case.
 
 The list opens under the cursor. Where the whole of it does not fit there it
 opens above. Where it fits on neither side, as at 200% zoom, it takes the side
@@ -1031,6 +1163,16 @@ to stay 16 pixels from each edge of the viewport. It is 20rem wide, or the
 viewport less those margins where that is less, which is 288 pixels at a width
 of 320. A label that does not fit wraps and is not cut short.
 
+The viewport here is the visual viewport, where the browser has
+`window.visualViewport`: the part of the page a person can see. An on-screen
+keyboard makes it shorter than the layout viewport in Safari on iOS, and in
+Chrome on Android as that browser is set by default, and a pinch-zoomed page
+shows a part of the layout viewport that starts somewhere inside it. The list
+is placed inside what shows, and again when the keyboard comes or goes. In a
+browser without `visualViewport` it is placed in the layout viewport.
+`placeOptionList` takes the viewport as a rectangle, `{ x, y, width, height }`
+in the anchor's coordinates, with `x` and `y` at 0 unless given.
+
 The list is `position: fixed`, and where the browser has the Popover API the
 component also shows it as a manual popover, in the top layer. An ancestor that
 clips its overflow does not clip the list. In a browser without the Popover
@@ -1039,22 +1181,83 @@ and clips a fixed box, so render the list outside such an ancestor there. The
 position is written to the element's `style` by script. No stylesheet is
 injected.
 
+The top layer does not lift the list out of an inert page. A modal `<dialog>`
+makes everything outside itself inert, a popover included, so render the list
+inside the dialog that holds the text.
+
 **Rows.** The list shows `maxVisible` rows, 8 unless given, and scrolls. The
 active option is scrolled into view when it changes. A row is 32 pixels high
-at its least. The active row is marked by a boundary in `--accent` and the
+at its least and grows with its text. The height the list is held to is
+counted in rows that grow the same way, so a reader who has raised the text
+size alone still sees `maxVisible` rows, where the viewport has room for them
+(WCAG 1.4.4). The active row is marked by a boundary in `--accent` and the
 accent wash together, and by the system's selection colours in forced colours.
 Nothing in the list moves or fades.
+
+**What Escape leaves behind.** A dismissed list leaves the `/` and the query
+in the document as text. The list then stays closed for that `/`: the next
+letter typed after it does not open it again. An application that derives
+`open` from "there is a `/` before the cursor" alone reopens the list at every
+letter, and a writer who uses a screen reader, and pressed Escape to get back
+to the text, is put back in the list each time. So the application remembers
+the dismissal until the trigger character is typed again, as `dismissed` does
+in the example, and a press outside and a blur are remembered the same way.
+
+Inside a modal surface, one Escape closes the list and the next closes the
+surface. `useModalSurface` ignores an Escape whose default was prevented, and
+the application prevents it for every key `optionListKey` answers.
 
 **What it does not do.** It does not open itself, filter, or remember what was
 chosen. It handles no key. It does not group options or draw icons. It does not
 choose an option on Tab, and an application that wants that reads Tab in its
 own handler. It does not close when focus leaves the text: the application
-closes it, as `onBlur` does above. Closed, it renders nothing.
+closes it, as `onBlur` does above. Closed, it renders nothing, so no part of a
+closed list is in the accessibility tree.
 
-It has not been heard in a screen reader. Support for `aria-activedescendant`
-on an editable region differs between screen readers, and where one does not
-follow it, the writer hears the count and not each option. An application can
-then add the label of the active option to `status`.
+It does not warn of misuse. The package has no development-only code path, and
+this control does not add the first one. Two mistakes are silent, and are the
+application's to test for: an option `id` that holds white space, which is not
+a valid element id, and a list that is open while no element in the page
+carries `aria-controls` naming it, which is a text region that was not given
+`optionListAttributes`.
+
+#### What to test with a screen reader before shipping
+
+The list has not been heard in a screen reader. Support for
+`aria-activedescendant` on an editable region differs between screen readers,
+and two decisions are left to a person who can listen: whether `announceActive`
+is on, and whether an option's `detail` belongs in its name. Run this with each
+pair of screen reader and browser the product supports, with `announceActive`
+off and `detailInName` as it is by default.
+
+1. Put the cursor in the text and type the trigger character. Expect the
+   character, and then the count: "12 blocks". Expect no option to be said.
+2. Type two letters of a query without a pause. Expect each letter, and then
+   one count, of the options left. Expect no option to be said over a letter.
+3. Press Left, then Right. Expect the character the cursor passes, as in any
+   text. An option said here is a defect in the application's `navigating`.
+4. Press Down. Expect the second option to be said, and the cursor to stay
+   where it is. If nothing is said, or the line of text is said, this screen
+   reader does not follow `aria-activedescendant` from an editable region:
+   pass `announceActive` and start again from step 1.
+5. Press Down three times without a pause, then Up. Expect the option each
+   press stops on, once. With `announceActive` on, an option said twice means
+   this screen reader does follow the attribute, and is better off without it.
+6. Listen to an option that has a detail: "Heading 1 /h1". Decide whether the
+   detail helps or delays. If it delays, pass `detailInName={false}`, which
+   takes the detail out of the name and leaves it on the page, and listen again.
+7. Type one more letter. Expect the letter, then the new count after a pause.
+   With `announceActive` on, expect the first match after the count.
+8. Type until nothing matches. Expect the `empty` text, once.
+9. Press Escape. Expect the list to close and the cursor to be where it was.
+   Type a letter: expect the letter and no list. Read the line: expect the `/`
+   and the query as text. Type the trigger character again: expect step 1.
+10. Open the list and press Enter: expect the first option to be inserted.
+    Then, with a touch screen reader, move to an option by touch and
+    double-tap it: expect it to be chosen and the keyboard to stay up.
+
+Not covered by any test in the package: a screen reader, Firefox, Safari, a
+touch device, and an input method that composes.
 
 ### The callout, in the editor
 

@@ -64,7 +64,7 @@ const {
   AccessGate, GateSubmitButton, NavDrawer, OnThisPage, OpeningSequence, DocMeta,
   Button, TextField, OneTimeCodeField, PasswordField, TextArea, RadioGroup, Checkbox, FormFault, Dialog, Tooltip,
   PageHeading, Select, Toolbar, ToolbarSeparator, ToggleButton, MenuButton, SyncStatus, QrCode,
-  OptionList, optionListAttributes, optionListKey, optionListOptionId, placeOptionList,
+  OptionList, optionListAttributes, optionListKey, optionListNavigating, optionListOptionId, placeOptionList,
 } = await import('../dist/src/components/index.js');
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
 
@@ -203,6 +203,17 @@ await it('useModalSurface', async () => {
   // A chord is the browser's, not the cycle's.
   event = key($('last'), { key: 'Tab', ctrlKey: true });
   assert.ok(!event.defaultPrevented, 'Ctrl+Tab was taken from the browser');
+
+  // An Escape that something inside the surface has answered, and prevented
+  // the default of to say so, is not the surface's: one key closes one thing.
+  const answer = (keydown) => keydown.preventDefault();
+  $('last').addEventListener('keydown', answer);
+  await act(async () => {
+    key($('last'), { key: 'Escape' });
+  });
+  assert.equal(closed, 0, 'an Escape that a control inside had answered closed the surface too');
+  assert.ok($('behind').hasAttribute('inert'), 'the surface let go of the page on an Escape that was not its own');
+  $('last').removeEventListener('keydown', answer);
 
   await act(async () => {
     key($('first'), { key: 'Escape' });
@@ -1605,9 +1616,12 @@ await it('optionListKey answers every key of the list, and leaves the rest to th
   assert.deepEqual(press('ArrowDown', null), { activeId: 'text' });
   assert.deepEqual(press('ArrowUp', null), { activeId: 'divider' });
   assert.deepEqual(press('ArrowDown', 'gone'), { activeId: 'text' });
-  // Home and End.
-  assert.deepEqual(press('Home', 'quote'), { activeId: 'text' });
-  assert.deepEqual(press('End', 'quote'), { activeId: 'divider' });
+  // Home and End are the text's: a document has lines, and the keys go to
+  // the start and the end of one. With an option active and with none.
+  for (const activeId of ['quote', null]) {
+    assert.equal(press('Home', activeId), null, 'Home was taken from the text');
+    assert.equal(press('End', activeId), null, 'End was taken from the text');
+  }
   // A page is maxVisible, eight unless given, and stops at the ends.
   assert.deepEqual(press('PageDown', 'text'), { activeId: 'code' });
   assert.deepEqual(press('PageDown', 'code'), { activeId: 'divider' });
@@ -1615,8 +1629,12 @@ await it('optionListKey answers every key of the list, and leaves the rest to th
   assert.deepEqual(press('PageUp', 'h3'), { activeId: 'text' });
   assert.deepEqual(press('PageDown', 'text', { maxVisible: 3 }), { activeId: 'h3' });
   assert.deepEqual(press('PageUp', 'h3', { maxVisible: 3 }), { activeId: 'text' });
-  assert.deepEqual(press('PageDown', null), { activeId: 'table' });
-  assert.deepEqual(press('PageUp', null), { activeId: 'bullet' });
+  // With no active option a Page key enters the list as Down and Up do: at
+  // the first option and at the last.
+  assert.deepEqual(press('PageDown', null), { activeId: 'text' });
+  assert.deepEqual(press('PageUp', null), { activeId: 'divider' });
+  assert.deepEqual(press('PageDown', 'gone'), { activeId: 'text' });
+  assert.deepEqual(press('PageUp', 'gone'), { activeId: 'divider' });
   // Enter chooses the active option, and is the text's where there is none.
   assert.deepEqual(press('Enter', 'h2'), { select: 'h2' });
   assert.equal(press('Enter', null), null);
@@ -1624,9 +1642,24 @@ await it('optionListKey answers every key of the list, and leaves the rest to th
   assert.deepEqual(press('Escape', 'h2'), { dismiss: true });
 
   // Every other key reaches the text, which is what filters the list.
-  for (const key of ['a', '/', ' ', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Shift', 'F1', 'Dead', 'Process']) {
+  for (const key of ['a', '/', ' ', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Tab', 'Shift', 'F1', 'Dead', 'Process']) {
     assert.equal(press(key, 'h2'), null, `${key} was taken from the text`);
   }
+
+  // Which keys are a move in the list: the ones that name an option, and no
+  // other. Choosing, dismissing and every key of the text end the moving,
+  // and so does a closed list, which the application passes as null.
+  for (const key of ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp']) {
+    assert.equal(optionListNavigating(press(key, 'h2')), true, `${key} did not begin a move in the list`);
+    assert.equal(optionListNavigating(press(key, null)), true, `${key} from the text did not begin a move in the list`);
+  }
+  // At an end the key is still a move: the writer is still in the list.
+  assert.equal(optionListNavigating(press('ArrowDown', 'divider')), true);
+  for (const key of ['Enter', 'Escape', 'a', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Tab']) {
+    assert.equal(optionListNavigating(press(key, 'h2')), false, `${key} left the writer moving in the list`);
+  }
+  assert.equal(optionListNavigating(null), false);
+  assert.equal(optionListNavigating(press({ key: 'ArrowDown', isComposing: true }, 'h2')), false);
   // A held modifier is the selection's or the platform's.
   for (const modifier of ['shiftKey', 'altKey', 'ctrlKey', 'metaKey']) {
     for (const key of ['ArrowDown', 'ArrowUp', 'Home', 'End', 'PageDown', 'PageUp', 'Enter']) {
@@ -1651,29 +1684,37 @@ await it('optionListKey answers every key of the list, and leaves the rest to th
   assert.deepEqual(optionListKey({ key: 'Escape' }, { options: [], activeId: null }), { dismiss: true });
 });
 
-await it('optionListAttributes gives the text region four attributes while the list shows, and takes them off', () => {
-  const NAMES = ['aria-activedescendant', 'aria-autocomplete', 'aria-controls', 'aria-haspopup'];
-  const open = optionListAttributes('slash', { open: true, options: COMMANDS, activeId: 'h1' });
+await it('optionListAttributes gives the text region two attributes while the list shows, names the active option only during a move, and takes them off', () => {
+  // The whole set, and nothing else. Not `aria-autocomplete`, whose value
+  // WAI-ARIA 1.2 says is not to be changed to say that a list is showing;
+  // not `aria-haspopup`, which was owed to it; not `aria-expanded`, which a
+  // textbox does not support; and no role.
+  const NAMES = ['aria-activedescendant', 'aria-controls'];
+  const open = optionListAttributes('slash', { open: true, options: COMMANDS, activeId: 'h1', navigating: true });
   assert.deepEqual(open, {
-    'aria-autocomplete': 'list',
-    'aria-haspopup': 'listbox',
     'aria-controls': 'slash',
     'aria-activedescendant': 'slash-option-h1',
   });
   assert.equal(open['aria-activedescendant'], optionListOptionId('slash', 'h1'));
-  // No role and no aria-expanded: the region stays a textbox, which does not support the second.
   assert.deepEqual(Object.keys(open).sort(), NAMES);
+
+  // An option is active from the first render, and is not named until the
+  // writer has moved in the list: typing the query is not a move.
+  assert.deepEqual(optionListAttributes('slash', { open: true, options: COMMANDS, activeId: 'h1', navigating: false }), {
+    'aria-controls': 'slash',
+    'aria-activedescendant': undefined,
+  }, 'the active option was named while the query was being typed');
 
   // No active option, or one that is not in the list: nothing is named.
   for (const activeId of [null, 'gone']) {
-    const none = optionListAttributes('slash', { open: true, options: COMMANDS, activeId });
+    const none = optionListAttributes('slash', { open: true, options: COMMANDS, activeId, navigating: true });
     assert.equal(none['aria-activedescendant'], undefined, 'an option that is not in the document was named');
     assert.equal(none['aria-controls'], 'slash');
   }
   // Closed, and open with nothing in it: there is no listbox to point at.
   for (const state of [
-    { open: false, options: COMMANDS, activeId: 'h1' },
-    { open: true, options: [], activeId: null },
+    { open: false, options: COMMANDS, activeId: 'h1', navigating: true },
+    { open: true, options: [], activeId: null, navigating: true },
   ]) {
     const off = optionListAttributes('slash', state);
     // Every key present and undefined, so a spread removes what the last one set.
@@ -1759,6 +1800,47 @@ await it('placeOptionList puts the list under the cursor, above it for want of r
   });
   assert.equal(placeOptionList({ anchor: caret(-900, 200), size, viewport: desktop }).x, 16);
   assert.equal(placeOptionList({ anchor: caret(5000, 200), size, viewport: desktop }).x, 944);
+
+  // The viewport is a rectangle: where a person can see, in the anchor's
+  // coordinates. A phone of 390 by 844 with an on-screen keyboard over the
+  // lower 40%: 506 pixels are left. By the layout viewport the list would go
+  // under a cursor at 300, down to 590, behind the keyboard. It fits above.
+  const phoneSize = { width: 358, height: 266 };
+  const keyboard = { x: 0, y: 0, width: 390, height: 506 };
+  assert.deepEqual(placeOptionList({ anchor: caret(40, 300), size: phoneSize, viewport: { width: 390, height: 844 } }), {
+    x: 16, y: 324, placement: 'below', maxHeight: null,
+  });
+  assert.deepEqual(placeOptionList({ anchor: caret(40, 300), size: phoneSize, viewport: keyboard }), {
+    x: 16, y: 30, placement: 'above', maxHeight: null,
+  }, 'the list went behind the keyboard');
+  // The browser has scrolled the visual viewport up the layout viewport to
+  // keep the cursor above the keyboard, by 200. The list fits under the
+  // cursor inside what shows, and its bottom is above the keyboard's top.
+  const pushed = placeOptionList({ anchor: caret(40, 380), size: phoneSize, viewport: { ...keyboard, y: 200 } });
+  assert.deepEqual(pushed, { x: 16, y: 404, placement: 'below', maxHeight: null });
+  assert.ok(pushed.y + phoneSize.height <= 200 + 506 - 16);
+  // Pinch-zoomed to twice the size: 640 by 400 of a 1280 by 800 page shows,
+  // starting 500 across and 300 down. Every edge is the visual viewport's.
+  const pinched = { x: 500, y: 300, width: 640, height: 400 };
+  assert.deepEqual(placeOptionList({ anchor: caret(700, 400), size, viewport: pinched }), {
+    x: 700, y: 424, placement: 'below', maxHeight: 260,
+  });
+  assert.deepEqual(placeOptionList({ anchor: caret(700, 600), size, viewport: pinched }), {
+    x: 700, y: 330, placement: 'above', maxHeight: null,
+  });
+  // A cursor outside what shows is on its nearest edge, and the list is
+  // moved in from each side of what shows, not of the page.
+  assert.equal(placeOptionList({ anchor: caret(100, 400), size, viewport: pinched }).x, 500 + 16);
+  assert.equal(placeOptionList({ anchor: caret(1200, 400), size, viewport: pinched }).x, 500 + 640 - 16 - 320);
+  assert.equal(placeOptionList({ anchor: caret(700, 100), size, viewport: pinched }).y, 300 + 16 + 4);
+  for (const x of [0, 500, 820, 1140, 1280]) {
+    for (const y of [0, 300, 500, 700, 800]) {
+      const placed = placeOptionList({ anchor: caret(x, y), size, viewport: pinched });
+      const height = placed.maxHeight ?? size.height;
+      assert.ok(placed.x >= 516 && placed.x + size.width <= 1124, `cursor ${x},${y}: off the side of what shows`);
+      assert.ok(placed.y >= 316 && placed.y + height <= 684, `cursor ${x},${y}: off the top or the bottom of what shows`);
+    }
+  }
 });
 
 await it('OptionList is a listbox that never takes focus: one option active, a press chooses, a press outside dismisses', async () => {
@@ -1766,7 +1848,7 @@ await it('OptionList is a listbox that never takes focus: one option active, a p
   const list = (props) =>
     h('div', null,
       h('div', { id: 'text', role: 'textbox', 'aria-multiline': 'true', 'aria-label': 'Document', tabIndex: 0,
-        ...optionListAttributes('slash', { open: props.open ?? true, options: props.options ?? COMMANDS, activeId: props.activeId ?? null }) }),
+        ...optionListAttributes('slash', { open: props.open ?? true, options: props.options ?? COMMANDS, activeId: props.activeId ?? null, navigating: true }) }),
       h(OptionList, {
         id: 'slash', label: 'Blocks', open: true, options: COMMANDS, activeId: null,
         onActiveChange: (id) => log.push(`active ${id}`),
@@ -1785,6 +1867,9 @@ await it('OptionList is a listbox that never takes focus: one option active, a p
   assert.equal(view.container.querySelectorAll('[role]').length, 1, 'a closed list left a role behind');
   assert.ok(!document.getElementById('slash'), 'a closed list left its listbox behind');
   assert.equal(view.container.children[0].children.length, 1);
+  // So nothing of a closed list is in the accessibility tree or can be
+  // reached: no option, no live region, and no popover waiting to be shown.
+  assert.equal(document.querySelectorAll('[role="listbox"], [role="option"], [role="status"], [popover], [id^="slash"]').length, 0, 'a closed list left something a reader can reach');
   for (const name of ['aria-controls', 'aria-activedescendant', 'aria-autocomplete', 'aria-haspopup', 'aria-expanded']) {
     assert.ok(!text.hasAttribute(name), `${name} on the text with the list closed`);
   }
@@ -1820,10 +1905,19 @@ await it('OptionList is a listbox that never takes focus: one option active, a p
   // What the text region points at exists, and is what it says it is.
   assert.ok(document.getElementById(text.getAttribute('aria-controls')) === listbox, 'aria-controls does not name the listbox');
   assert.ok(document.getElementById(text.getAttribute('aria-activedescendant')) === options()[1], 'aria-activedescendant does not name the active option');
-  assert.equal(text.getAttribute('aria-haspopup'), listbox.getAttribute('role'));
-  assert.equal(text.getAttribute('aria-autocomplete'), 'list');
   assert.equal(text.getAttribute('role'), 'textbox');
-  assert.ok(!text.hasAttribute('aria-expanded'), 'aria-expanded is not supported on a textbox');
+  for (const name of ['aria-autocomplete', 'aria-haspopup', 'aria-expanded']) {
+    assert.ok(!text.hasAttribute(name), `${name} was set to say that the list is open`);
+  }
+  // The detail is part of the option's name unless the product takes it out.
+  assert.ok(!options()[1].querySelector('.ekd-option-detail').hasAttribute('aria-hidden'), 'the detail was hidden from the name by default');
+  await view.rerender(list({ activeId: 'h1', detailInName: false }));
+  const details = [...listbox.querySelectorAll('.ekd-option-detail')];
+  assert.equal(details.length, 11);
+  assert.ok(details.every((detail) => detail.getAttribute('aria-hidden') === 'true'), 'detailInName={false} left a detail in a name');
+  assert.equal(options()[1].querySelector('.ekd-option-detail').textContent, '/h1', 'the detail left the page with the name');
+  assert.ok(!options()[1].querySelector('.ekd-option-label').hasAttribute('aria-hidden'));
+  await view.rerender(list({ activeId: 'h1' }));
   // The live region is beside the listbox, not in it.
   const live = box.querySelector('[role="status"]');
   assert.ok(live && !listbox.contains(live));
@@ -1854,6 +1948,10 @@ await it('OptionList is a listbox that never takes focus: one option active, a p
   assert.ok((await fire(box, 'mousedown')).defaultPrevented, 'a press on the edge of the list would move focus');
   assert.ok((await fire(box, 'pointerdown')).defaultPrevented);
   assert.equal(log.length, 1);
+  // The context menu is the browser's and is not taken: what keeps a
+  // right-click from moving the selection is the stylesheet, held below.
+  assert.ok(!(await fire(row, 'contextmenu')).defaultPrevented, 'the context menu was prevented on an option');
+  assert.equal(log.length, 1, 'a right-click chose an option or dismissed the list');
 
   // The pointer moving onto another option makes it the active one, through
   // the application. Moving on the active one says nothing.
@@ -2018,6 +2116,62 @@ await it('OptionList is placed at its anchor, placed again on scroll and resize,
   delete window.HTMLElement.prototype.showPopover;
   window.Element.prototype.matches = matches;
 
+  // A cursor with no rectangle when the list opens. The list is not left
+  // unplaced, which the stylesheet would keep out of sight while the text
+  // region went on naming it: it goes to the start of the top of the
+  // viewport, and to the cursor as soon as there is one.
+  cursor = null;
+  const lost = await mount(list({}));
+  const lostBox = lost.container.querySelector('.ekd-option-list');
+  const lostAt = () => `${lostBox.style.left} ${lostBox.style.top} ${lostBox.dataset.placement}`;
+  assert.ok(lostBox.hasAttribute('data-placement'), 'a list with no cursor to place it by was left unplaced, and so invisible');
+  assert.equal(lostAt(), '16px 20px below');
+  cursor = { x: 400, y: 200, width: 1, height: 20 };
+  await act(async () => window.dispatchEvent(new window.Event('resize')));
+  assert.equal(lostAt(), '400px 224px below', 'a cursor that came back did not take the list with it');
+  // Gone again: now the list has a place, and keeps it.
+  cursor = null;
+  await act(async () => window.dispatchEvent(new window.Event('resize')));
+  assert.equal(lostAt(), '400px 224px below');
+  await lost.unmount();
+  // Right to left, the start is the right edge.
+  document.documentElement.dir = 'rtl';
+  const computed = window.getComputedStyle;
+  window.getComputedStyle = (element) => ({ direction: element.closest('[dir]')?.getAttribute('dir') ?? 'ltr' });
+  const lostRtl = await mount(list({}));
+  assert.equal(lostRtl.container.querySelector('.ekd-option-list').style.left, `${1280 - 16 - 320}px`);
+  await lostRtl.unmount();
+  window.getComputedStyle = computed;
+  document.documentElement.removeAttribute('dir');
+
+  // The visual viewport, where the browser has one, is what the list is
+  // placed in: the layout viewport is still 1280 by 800, and an on-screen
+  // keyboard has left 480 of the 800 showing.
+  const visual = Object.assign(new window.EventTarget(), { offsetLeft: 0, offsetTop: 0, width: 1280, height: 480, scale: 1 });
+  Object.defineProperty(window, 'visualViewport', { value: visual, configurable: true });
+  cursor = { x: 400, y: 300, width: 1, height: 20 };
+  const small = await mount(list({}));
+  const smallBox = small.container.querySelector('.ekd-option-list');
+  const smallAt = () => `${smallBox.style.left} ${smallBox.style.top} ${smallBox.dataset.placement}`;
+  // Under the cursor it would end at 590, behind the keyboard. Above: 300 - 4 - 266.
+  assert.equal(smallAt(), '400px 30px above', 'the list was placed by the layout viewport, behind the keyboard');
+  // The keyboard goes: the visual viewport says so, and the window says nothing.
+  visual.height = 800;
+  await act(async () => visual.dispatchEvent(new window.Event('resize')));
+  assert.equal(smallAt(), '400px 324px below', 'a change of the visual viewport left the list where it was');
+  // A pinch-zoomed page is panned: the visual viewport scrolls inside the layout viewport.
+  Object.assign(visual, { offsetLeft: 600, offsetTop: 250, width: 640, height: 300 });
+  await act(async () => visual.dispatchEvent(new window.Event('scroll')));
+  assert.equal(smallAt(), '616px 324px below', 'a pan of the visual viewport left the list where it was');
+  assert.equal(smallBox.style.maxBlockSize, `${250 + 300 - 16 - 324}px`, 'the list was not held to what shows under the cursor');
+  // Closed, it listens for neither.
+  await small.rerender(list({ open: false }));
+  const closedReads = reads;
+  await act(async () => { visual.dispatchEvent(new window.Event('resize')); visual.dispatchEvent(new window.Event('scroll')); });
+  assert.equal(reads, closedReads, 'a closed list still listens to the visual viewport');
+  await small.unmount();
+  delete window.visualViewport;
+
   window.HTMLElement.prototype.getBoundingClientRect = native;
   Object.defineProperty(window.Element.prototype, 'scrollTop', scrollTop);
   delete root.clientWidth;
@@ -2081,6 +2235,288 @@ await it('OptionList announces its count once it has settled, and not at every k
   await view.unmount();
 });
 
+await it('OptionList says the active option in the same region only when asked to, after the count and never over it', async () => {
+  const wait = (ms) => act(async () => new Promise((resolve) => setTimeout(resolve, ms)));
+  const calls = [];
+  const announceActive = (option, index, count) => {
+    calls.push([option.id, index, count]);
+    return `${option.label}, ${index + 1} of ${count}`;
+  };
+  // The count settles in 400ms; the active option in 150, which is the component's own.
+  const list = (ids, activeId, extra) => h(OptionList, {
+    id: 'slash', label: 'Blocks', open: true, options: COMMANDS.filter((c) => ids.includes(c.id)), activeId,
+    onActiveChange() {}, onSelect() {}, onDismiss() {}, anchor: { x: 0, y: 0, width: 1, height: 20 },
+    empty: 'No block matches.', status: ids.length === 1 ? '1 block' : `${ids.length} blocks`, announceAfterMs: 400,
+    announceActive, ...extra,
+  });
+  const HEADINGS = ['h1', 'h2', 'h3'];
+  const view = await mount(list(HEADINGS, 'h1'));
+  const regions = () => view.container.querySelectorAll('[role="status"]');
+  // Every text the one region is given, with when: what a screen reader hears, in order.
+  const said = [];
+  const started = Date.now();
+  let last = '';
+  const observer = new window.MutationObserver(() => {
+    const text = regions()[0]?.textContent ?? '';
+    if (text && text !== last) said.push({ text, at: Date.now() - started });
+    last = text;
+  });
+  observer.observe(view.container, { childList: true, subtree: true, characterData: true });
+  const texts = () => said.map((entry) => entry.text);
+
+  // On opening: the count first, and the active option after it. One region.
+  assert.equal(regions().length, 1, 'the active option was given a region of its own');
+  assert.deepEqual(calls[0], ['h1', 0, 3], 'announceActive was not given the option, its index from 0, and the count');
+  await wait(300);
+  assert.deepEqual(texts(), [], 'something was said before the count had settled');
+  await wait(180);
+  assert.deepEqual(texts(), ['3 blocks'], 'the option was said with the count, or before it');
+  await wait(200);
+  assert.deepEqual(texts(), ['3 blocks', 'Heading 1, 1 of 3']);
+  assert.ok(said[1].at - said[0].at >= 140, `the option followed the count by ${said[1].at - said[0].at}ms: both at once`);
+
+  // An arrow: the active option, by itself, soon. The count is not said again.
+  said.length = 0;
+  let moved = Date.now();
+  await view.rerender(list(HEADINGS, 'h2'));
+  await wait(60);
+  assert.deepEqual(texts(), [], 'the option was said before the key could have been held');
+  await wait(160);
+  assert.deepEqual(texts(), ['Heading 2, 2 of 3']);
+  assert.ok(Date.now() - moved < 400, 'the case took longer than the count takes, and proves nothing about which timer ran');
+  // A held arrow: one announcement, of where it stopped.
+  said.length = 0;
+  for (const id of ['h3', 'h2', 'h1', 'h2', 'h3']) {
+    await view.rerender(list(HEADINGS, id));
+    await wait(20);
+  }
+  await wait(250);
+  assert.deepEqual(texts(), ['Heading 3, 3 of 3'], 'an option passed on the way was said');
+  // Down on the last option names it again, and it is not said again.
+  await view.rerender(list(HEADINGS, 'h3'));
+  await wait(250);
+  assert.deepEqual(texts(), ['Heading 3, 3 of 3']);
+
+  // The filter changes, the count with it and the active option with it:
+  // the count, then the option. Neither is dropped and neither is first.
+  said.length = 0;
+  await view.rerender(list(['bullet', 'numbered'], 'bullet'));
+  await wait(250);
+  assert.deepEqual(texts(), [], 'the new first match was said over the typing, before the count');
+  // Two waits, here and below: React renders what happened inside one `act`
+  // once, at its end, so the region is looked at between the two texts.
+  await wait(200);
+  assert.deepEqual(texts(), ['2 blocks'], 'the option was said with the count, or in its place');
+  await wait(250);
+  assert.deepEqual(texts(), ['2 blocks', 'Bulleted list, 1 of 2']);
+  // The filter changes and the count does not: the option, once the typing has stopped.
+  said.length = 0;
+  await view.rerender(list(['h1', 'h2'], 'h1'));
+  await wait(250);
+  assert.deepEqual(texts(), [], 'a new first match was said at the speed of an arrow, over the typing');
+  await wait(300);
+  assert.deepEqual(texts(), ['Heading 1, 1 of 2'], 'a count that did not change was said, or the new option was not');
+  // The filter changes the count and leaves the active option: the count alone.
+  said.length = 0;
+  await view.rerender(list(HEADINGS, 'h1'));
+  await wait(700);
+  assert.deepEqual(texts(), ['3 blocks'], 'an active option that did not change was said again after the count');
+
+  // An arrow while the count is waiting: the count is still said, first, and the option after it.
+  said.length = 0;
+  await view.rerender(list(['h1', 'h2'], 'h1'));
+  await wait(200);
+  await view.rerender(list(['h1', 'h2'], 'h2'));
+  await wait(250);
+  assert.deepEqual(texts(), [], 'an arrow let the option out ahead of a count that was waiting');
+  await wait(200);
+  assert.deepEqual(texts(), ['2 blocks'], 'an arrow during the wait dropped the count');
+  await wait(250);
+  assert.deepEqual(texts(), ['2 blocks', 'Heading 2, 2 of 2'], 'an arrow during the wait dropped the option');
+
+  // Nothing matches: the empty text, and no option to say.
+  said.length = 0;
+  await view.rerender(list([], null));
+  await wait(700);
+  assert.deepEqual(texts(), ['No block matches.']);
+  // Closed and opened again: both are news again.
+  await view.rerender(list(['h1', 'h2'], 'h2', { open: false }));
+  said.length = 0;
+  await view.rerender(list(['h1', 'h2'], 'h2'));
+  await wait(450);
+  await wait(250);
+  assert.deepEqual(texts(), ['2 blocks', 'Heading 2, 2 of 2']);
+
+  // Off, which is the default: the region never holds an option, at any speed.
+  said.length = 0;
+  await view.rerender(list(['h1', 'h2'], 'h2', { open: false }));
+  await view.rerender(list(['h1', 'h2'], 'h2', { announceActive: undefined }));
+  await wait(500);
+  await view.rerender(list(['h1', 'h2'], 'h1', { announceActive: undefined }));
+  await wait(500);
+  assert.deepEqual(texts(), ['2 blocks'], 'the active option was announced without being asked for');
+  observer.disconnect();
+  await view.unmount();
+});
+
+// The README's editor, with the text read from the element and not from a
+// selection, which jsdom does not move when a key is pressed. What is held is
+// the pattern the helpers are documented with, inside a modal surface.
+await it('The documented pattern names no option while the query is typed, keeps a dismissed list closed, and lets one Escape close one thing', async () => {
+  let surfaceClosed = 0;
+  const chosen = [];
+  function Editor() {
+    const [query, setQuery] = React.useState(null);
+    const [dismissed, setDismissed] = React.useState(false);
+    const [activeId, setActiveId] = React.useState(null);
+    const [navigating, setNavigating] = React.useState(false);
+    const open = query !== null && !dismissed;
+    const options = open ? COMMANDS.filter((command) => command.id.startsWith(query)) : [];
+    const active = options.some((option) => option.id === activeId) ? activeId : (options[0]?.id ?? null);
+    const dismiss = () => { setDismissed(true); setActiveId(null); };
+    const insert = (id) => { chosen.push(id); setQuery(null); setActiveId(null); };
+    return h(React.Fragment, null,
+      h('div', {
+        id: 'text', role: 'textbox', 'aria-multiline': 'true', 'aria-label': 'Document', tabIndex: 0,
+        ...optionListAttributes('slash', { open, options, activeId: active, navigating }),
+        onInput: (event) => {
+          const next = /(?:^|\s)\/(\S*)$/.exec(event.currentTarget.textContent)?.[1] ?? null;
+          setQuery(next);
+          if ((event.nativeEvent.data ?? '').includes('/') || next === null) setDismissed(false);
+        },
+        onKeyDown: (event) => {
+          const result = open ? optionListKey(event, { options, activeId: active }) : null;
+          setNavigating(optionListNavigating(result));
+          if (!result) return;
+          event.preventDefault();
+          if ('activeId' in result) setActiveId(result.activeId);
+          else if ('select' in result) insert(result.select);
+          else dismiss();
+        },
+      }),
+      h(OptionList, {
+        id: 'slash', label: 'Blocks', open, options, activeId: active,
+        onActiveChange: setActiveId, onSelect: insert, onDismiss: dismiss,
+        anchor: { x: 0, y: 0, width: 1, height: 20 }, empty: 'No block matches.', status: `${options.length} blocks`,
+      }),
+    );
+  }
+  function Surface() {
+    const surface = React.useRef(null);
+    useModalSurface({ open: true, surfaceRef: surface, onClose: () => surfaceClosed++ });
+    return h('div', { ref: surface, role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Note', tabIndex: -1 },
+      h(Editor),
+      h(MenuButton, { id: 'note-actions', label: 'Note', items: [{ label: 'Delete note', onSelect() {} }] }),
+    );
+  }
+  const view = await mount(h('div', null, h(Surface), h('button', { id: 'elsewhere' }, 'Elsewhere')));
+  const text = document.getElementById('text');
+  assert.equal(document.activeElement, text, 'the case lost the focus it is about');
+  const press = async (init) => {
+    let event;
+    await act(async () => { event = key(document.activeElement, typeof init === 'string' ? { key: init } : init); });
+    return event;
+  };
+  // A key that changes the text: the keydown, the change, and the input event.
+  const type = async (character) => {
+    const down = await press(character);
+    if (down.defaultPrevented) return;
+    text.textContent = character === 'Backspace' ? text.textContent.slice(0, -1) : text.textContent + character;
+    const data = character === 'Backspace' ? null : character;
+    await act(async () => text.dispatchEvent(new window.InputEvent('input', { bubbles: true, data })));
+  };
+  const listbox = () => document.getElementById('slash');
+  const marked = () => listbox()?.querySelector('[aria-selected="true"]')?.id ?? null;
+  const named = () => text.getAttribute('aria-activedescendant');
+
+  // The query is typed. The first match is marked, and is not named.
+  await type('/');
+  assert.ok(listbox(), 'the trigger character did not open the list');
+  assert.equal(text.getAttribute('aria-controls'), 'slash');
+  assert.equal(marked(), 'slash-option-text');
+  assert.equal(named(), null, 'the first match was named as the list opened');
+  await type('h');
+  assert.equal(marked(), 'slash-option-h1');
+  assert.equal(named(), null, 'the first match was named over a letter of the query');
+  // The query is read back: the keys are the text's, and name nothing.
+  for (const reading of ['ArrowLeft', 'ArrowRight', 'Home', 'End']) {
+    assert.ok(!(await press(reading)).defaultPrevented, `${reading} was taken from the text`);
+    assert.equal(named(), null, `${reading} named an option`);
+  }
+  // A move in the list names the option it reaches.
+  assert.ok((await press('ArrowDown')).defaultPrevented);
+  assert.equal(named(), 'slash-option-h2', 'Down did not name the option it moved to');
+  assert.equal(marked(), 'slash-option-h2');
+  // Reading the query again ends the move: the name goes and the mark stays.
+  await press('ArrowLeft');
+  assert.equal(named(), null, 'Left left an option named, to be said in place of the character');
+  assert.equal(marked(), 'slash-option-h2', 'the mark left with the name');
+  await press('ArrowUp');
+  assert.equal(named(), 'slash-option-h1');
+  // So does the next letter, and Backspace.
+  await type('2');
+  assert.equal(named(), null, 'a letter left an option named');
+  assert.equal(marked(), 'slash-option-h2');
+  await press('ArrowDown');
+  await type('Backspace');
+  assert.equal(named(), null, 'Backspace left an option named');
+
+  // Escape closes the list and nothing else. The "/" and the query stay as text.
+  const escape = await press('Escape');
+  assert.ok(escape.defaultPrevented);
+  assert.ok(!listbox(), 'Escape left the list open');
+  assert.equal(surfaceClosed, 0, 'one Escape closed the list and the surface that holds the text');
+  assert.equal(text.textContent, '/h');
+  assert.ok(!text.hasAttribute('aria-controls') && !text.hasAttribute('aria-activedescendant'));
+  // The next letter of the same word does not open it again.
+  await type('1');
+  assert.equal(text.textContent, '/h1');
+  assert.ok(!listbox(), 'a letter typed after Escape put the writer back in the list');
+  // With the list closed, Escape is the surface's.
+  assert.ok(!(await press('Escape')).defaultPrevented);
+  assert.equal(surfaceClosed, 1, 'the second Escape did not reach the surface');
+  // The trigger character typed again is a new request.
+  await type(' ');
+  await type('/');
+  assert.ok(listbox(), 'the trigger character did not open the list after a dismissal');
+  assert.equal(named(), null);
+  // Enter with nothing moved chooses the marked first match.
+  await type('h');
+  assert.ok((await press('Enter')).defaultPrevented);
+  assert.deepEqual(chosen, ['h1']);
+  assert.ok(!listbox());
+
+  // A press outside while the writer is moving in the list. The dismissal is
+  // remembered as Escape's is, and the move is not carried into the next list.
+  await type(' ');
+  await type('/');
+  await press('ArrowDown');
+  assert.equal(named(), 'slash-option-h1');
+  await act(async () => document.body.dispatchEvent(new window.Event('pointerdown', { bubbles: true })));
+  assert.ok(!listbox(), 'a press outside left the list open');
+  await type('t');
+  assert.ok(!listbox(), 'a letter typed after a press outside opened the list again');
+  // Deleting back through the "/" and typing it again is a new request too.
+  await type('Backspace');
+  await type('Backspace');
+  await type('/');
+  assert.ok(listbox());
+  assert.equal(named(), null, 'the move in the last list was still in force in this one');
+  await press('Escape');
+  assert.equal(surfaceClosed, 1);
+
+  // A menu in the same surface: its Escape is its own as well.
+  const button = document.getElementById('note-actions');
+  await act(async () => button.click());
+  assert.equal(button.getAttribute('aria-expanded'), 'true');
+  assert.ok((await press('Escape')).defaultPrevented);
+  assert.equal(button.getAttribute('aria-expanded'), 'false');
+  assert.equal(surfaceClosed, 1, 'one Escape closed the menu and the surface that holds it');
+  await press('Escape');
+  assert.equal(surfaceClosed, 2);
+  await view.unmount();
+});
+
 await it('OptionList renders on the server, hydrates without a mismatch, and shows at most maxVisible rows', async () => {
   const { readFileSync } = await import('node:fs');
   const server = await import('react-dom/server');
@@ -2115,7 +2551,11 @@ await it('OptionList renders on the server, hydrates without a mismatch, and sho
   // read from the markup a server sends.
   const html = renderToString(list({}));
   assert.match(html, /^<div popover="manual" class="ekd-option-list">/);
-  assert.match(html, /<div id="slash" role="listbox" aria-label="Blocks" class="ekd-option-list-options" style="max-block-size:calc\(8 \* var\(--sp-7\)\)">/);
+  assert.match(html, /<div id="slash" role="listbox" aria-label="Blocks" class="ekd-option-list-options" style="max-block-size:calc\(8 \* max\(var\(--sp-7\), 1lh \+ 2 \* var\(--sp-1\) \+ 2px\)\)">/);
+  // The cap is counted in rows that follow the text size: one line of the
+  // row's text, in `lh`, where that is more than the fixed least height.
+  // Counted in `--sp-7` alone it is 256px at every text size (WCAG 1.4.4).
+  assert.ok(!/max-block-size:calc\(\d+ \* var\(--sp-7\)\)/.test(html), 'the row cap does not follow the text size');
   assert.equal(html.match(/role="option"/g).length, 12);
   assert.equal(html.match(/aria-selected="true"/g).length, 1);
   assert.match(html, /<div id="slash-option-h1" role="option" aria-selected="true"/);
@@ -2124,8 +2564,8 @@ await it('OptionList renders on the server, hydrates without a mismatch, and sho
   // No position from the server, which has no viewport: the stylesheet keeps
   // an unplaced list out of sight until the browser has placed it.
   assert.ok(!/data-placement|top:|left:/.test(html));
-  assert.match(renderToString(list({ maxVisible: 5 })), /style="max-block-size:calc\(5 \* var\(--sp-7\)\)"/);
-  assert.match(renderToString(list({ maxVisible: 0 })), /style="max-block-size:calc\(1 \* var\(--sp-7\)\)"/);
+  assert.match(renderToString(list({ maxVisible: 5 })), /style="max-block-size:calc\(5 \* max\(var\(--sp-7\), 1lh \+/);
+  assert.match(renderToString(list({ maxVisible: 0 })), /style="max-block-size:calc\(1 \* max\(var\(--sp-7\), 1lh \+/);
   assert.match(renderToString(list({ options: [] })), /<p class="ekd-option-list-empty">No block matches\.<\/p>/);
 
   // Hydration: React reports a mismatch through console.error.
@@ -2159,6 +2599,15 @@ await it('OptionList renders on the server, hydrates without a mismatch, and sho
   assert.match(css, /\.ekd-option-list \{[^}]*inline-size:\s*min\(20rem, calc\(100vw - 2 \* var\(--sp-4\)\)\)/);
   assert.match(css, /\.ekd-option-list-options \{[^}]*overflow-y:\s*auto/);
   assert.match(css, /\.ekd-option-list:not\(\[data-placement\]\) \{ visibility: hidden; \}/);
+  // The list's text cannot be selected, so a right-click, a Control-click or
+  // a long press on an option cannot move the page's one selection out of
+  // the text. jsdom selects nothing on a press, so the rule is held here and
+  // the behaviour was read in a browser.
+  const surface = css.match(/\.ekd-option-list \{([^}]*)\}/)[1];
+  for (const declaration of ['user-select: none;', '-webkit-user-select: none;', '-webkit-touch-callout: none;']) {
+    assert.ok(surface.split('\n').some((line) => line.trim() === declaration), `the list does not declare ${declaration}`);
+  }
+  assert.ok(!/user-select:\s*(auto|text|all)/.test(css), 'part of the list can be selected');
   assert.match(css, /\.ekd-option\[aria-selected="true"\] \{\s*background: var\(--accent-soft\);\s*border-color: var\(--accent\);/);
   assert.match(css, /@media \(forced-colors: active\) \{[^}]*\.ekd-option\[aria-selected="true"\] \{[^}]*background: Highlight;[^}]*color: HighlightText;/);
   assert.ok(!/transition|animation|:hover|:focus|outline|text-overflow|nowrap/.test(css.replace(/\.ekd-option-list-announce \{[^}]*\}/, '')),

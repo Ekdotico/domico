@@ -17,10 +17,10 @@ import { useBeforePaint } from './viewport.js';
  *   const shown = commands.filter(matches(query));
  *
  *   <div contentEditable role="textbox" aria-multiline="true" aria-label="Document"
- *     {...optionListAttributes(SLASH, { open, options: shown, activeId })}
+ *     {...optionListAttributes(SLASH, { open, options: shown, activeId, navigating })}
  *     onKeyDown={(event) => {
- *       if (!open) return;
- *       const result = optionListKey(event, { options: shown, activeId });
+ *       const result = open ? optionListKey(event, { options: shown, activeId }) : null;
+ *       setNavigating(optionListNavigating(result));
  *       if (!result) return;
  *       event.preventDefault();
  *       if ('activeId' in result) setActiveId(result.activeId);
@@ -52,6 +52,11 @@ import { useBeforePaint } from './viewport.js';
  * `mousedown` is prevented over the whole list, so the text keeps its focus,
  * its selection and, on a phone, its keyboard. The option is chosen on the
  * click that follows, so a finger that scrolls the list chooses nothing.
+ * The list's own text cannot be selected (`user-select: none` in the
+ * stylesheet): a right-click, a Control-click or a long press selects the
+ * word under it where text can be selected, and the page has one selection,
+ * so that took the cursor out of the text while focus stayed. The context
+ * menu itself is left to the browser.
  *
  * The active option is the one `aria-selected="true"`; the others are
  * `"false"`. Each option's element id is `optionListOptionId(id, option.id)`,
@@ -70,23 +75,49 @@ import { useBeforePaint } from './viewport.js';
  * that did not change is not said again. Closing empties the region, so the
  * next opening is announced. Both texts are the application's.
  *
+ * **The active option, said by the region: off unless asked for.** With
+ * `announceActive` the same region is also given that function's words for
+ * the active option. One text at a time, in a fixed order. On opening: the
+ * count, and 150 milliseconds after it the active option. On a move in the
+ * list: the active option, 150 milliseconds after the move, so a held key
+ * says where it stopped. On a change of filter: the count once it has
+ * settled, where it changed, and then the active option, where that changed.
+ * A move made while a count is waiting does not drop the count: the count is
+ * said first and the option after it. A screen reader that follows
+ * `aria-activedescendant` says the option by itself, and with this on says it
+ * twice, so a product turns it on for what its own testing with screen
+ * readers finds, and the README has the script for that.
+ *
  * `anchor` is where the cursor is: a rectangle in viewport coordinates, or a
  * function that returns one. Pass the function. The list is placed again
- * when the page scrolls or the window changes size, and only a function can
- * say where the cursor has gone; a rectangle is placed where it was. A
+ * when the page scrolls, the window changes size, or the visual viewport
+ * does, as when an on-screen keyboard comes up; only a function can say
+ * where the cursor has gone, and a rectangle is placed where it was. A
  * function that returns `null`, for a cursor that is no longer in the
- * document, leaves the list where it is. `placeOptionList` has the rules:
- * under the cursor, above it where there is no room, held inside the
- * viewport both ways.
+ * document, leaves a placed list where it is. A list that has not been
+ * placed yet is put at the start of the top of the viewport and not left
+ * hidden: hidden, it would still take the keys and still be named by the
+ * text region, with nothing to see or hear. It is not dismissed for that, because a cursor
+ * with no rectangle is the application's to fix and not a choice the writer
+ * made. `placeOptionList` has the rules: under the cursor, above it where
+ * there is no room, held inside the viewport both ways.
  *
  * It is `position: fixed`, and where the browser has the Popover API it is
  * shown as a manual popover, in the top layer. So an ancestor that clips its
  * overflow does not clip the list, and in the top layer neither does one with
  * a transform. A manual popover takes no focus and is not dismissed by the
- * browser.
+ * browser. The top layer does not lift it out of an inert page: a list
+ * rendered outside a modal `<dialog>` cannot be pressed, so it is rendered
+ * inside the dialog that holds the text.
  *
  * Closed, it renders nothing. On the server an open list renders unplaced
  * and not visible, and is placed before the first paint after hydration.
+ *
+ * Nothing warns of misuse. The package has no development-only branch
+ * anywhere, and this control does not add the first. Two mistakes are silent
+ * and are the application's to test for: an option `id` that holds white
+ * space, and a list that is open while no element carries `aria-controls`
+ * naming it.
  *
  * Styles ship in `@ekdotico/domico/styles/option-list.css`.
  */
@@ -117,8 +148,30 @@ export interface OptionListProps {
   status: string;
   /** How long the announcement waits for the text to stop changing, in milliseconds. */
   announceAfterMs?: number;
+  /**
+   * Off unless given. The words for the active option, which the status
+   * region then says when the active option changes: "Heading 1, 2 of 12".
+   * `index` counts from 0. For a screen reader that does not follow
+   * `aria-activedescendant` out of an editable region; one that does follow
+   * it says the option twice.
+   */
+  announceActive?: (option: OptionListItem, index: number, count: number) => string;
+  /**
+   * Whether an option's `detail` is part of its accessible name. True unless
+   * given: "Heading 1 /h1". False puts `aria-hidden` on the detail, and the
+   * name is the label alone.
+   */
+  detailInName?: boolean;
   className?: string;
 }
+
+/**
+ * How long the active option's line waits before the status region is given
+ * it, in milliseconds: after a move in the list, and after the count. A
+ * constant and not a prop. It is long enough that a held arrow key says the
+ * option it stops on, and nothing has yet shown a product needing another.
+ */
+const ACTIVE_SETTLE_MS = 150;
 
 export function OptionList({
   id,
@@ -134,6 +187,8 @@ export function OptionList({
   empty,
   status,
   announceAfterMs = 500,
+  announceActive,
+  detailInName = true,
   className,
 }: OptionListProps) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -145,21 +200,41 @@ export function OptionList({
   const place = () => {
     const box = boxRef.current;
     if (!box) return;
+    const view = box.ownerDocument.defaultView;
+    const root = box.ownerDocument.documentElement;
+    // What a person can see: the visual viewport where the browser has one,
+    // which an on-screen keyboard shortens and a pinch moves inside the layout
+    // viewport. Its offsets are in the layout viewport's coordinates, which
+    // are the anchor's and those of a fixed box. Without one, the layout
+    // viewport, as before.
+    const visual = view?.visualViewport;
+    const viewport = visual
+      ? { x: visual.offsetLeft, y: visual.offsetTop, width: visual.width, height: visual.height }
+      : { x: 0, y: 0, width: root.clientWidth, height: root.clientHeight };
+    const rtl = view?.getComputedStyle(box).direction === 'rtl';
     const { anchor: given } = latest.current;
-    const rect = typeof given === 'function' ? given() : given;
-    if (!rect) return;
+    let rect = typeof given === 'function' ? given() : given;
+    if (!rect) {
+      // No cursor to place by. A list that has a place keeps it. One that has
+      // none yet would stay hidden by the stylesheet, open for the
+      // application and its keys and present for nobody, while the text
+      // region still names it. So it is put at the start of the top of the
+      // viewport, where it can be seen and used, until the anchor returns a
+      // rectangle.
+      if (box.dataset.placement) return;
+      rect = { x: rtl ? viewport.x + viewport.width : viewport.x, y: viewport.y, width: 0, height: 0 };
+    }
     // Measured without the height the last placement held it to. Lifting that
     // lets the browser clamp the list's scroll position, so it is put back.
     const list = listRef.current;
     const scrolled = list?.scrollTop ?? 0;
     box.style.maxBlockSize = '';
     const size = box.getBoundingClientRect();
-    const root = box.ownerDocument.documentElement;
     const placed = placeOptionList({
       anchor: rect,
       size: { width: size.width, height: size.height },
-      viewport: { width: root.clientWidth, height: root.clientHeight },
-      rtl: box.ownerDocument.defaultView?.getComputedStyle(box).direction === 'rtl',
+      viewport,
+      rtl,
     });
     // Written to the element and not through React, as `keepInViewport` does:
     // a scroll places the list again without a render. These are style
@@ -211,27 +286,70 @@ export function OptionList({
     document.addEventListener('pointerdown', onPointerDown, true);
     window.addEventListener('scroll', onScroll, { capture: true, passive: true });
     window.addEventListener('resize', place);
+    // An on-screen keyboard coming up, and a pinch or a pan of a zoomed page,
+    // change the visual viewport and fire nothing on the window.
+    const visual = window.visualViewport;
+    visual?.addEventListener('resize', place);
+    visual?.addEventListener('scroll', place);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true);
       window.removeEventListener('scroll', onScroll, { capture: true });
       window.removeEventListener('resize', place);
+      visual?.removeEventListener('resize', place);
+      visual?.removeEventListener('scroll', place);
     };
     // `place` and the handlers read refs, so the ones from this render do not go stale.
   }, [open]);
 
-  // What a screen reader is given. It follows the text once the text has
-  // stood for the interval, and is emptied on closing so that the same count
-  // is news again the next time the list opens.
+  // What a screen reader is given: one region, one text at a time. The count
+  // follows the text once the text has stood for `announceAfterMs`. With
+  // `announceActive`, the active option's line follows a move in the list
+  // after `ACTIVE_SETTLE_MS`, and follows the count by the same interval
+  // where the list was filtered, so that neither is written over the other
+  // before it has been in the region. What was last said of each is kept, so
+  // neither is said twice running, and both are forgotten on closing so that
+  // the same count is news again the next time the list opens.
   const text = options.length === 0 ? empty : status;
+  const at = announceActive ? options.findIndex((option) => option.id === activeId) : -1;
+  const activeKey = at >= 0 ? options[at]!.id : '';
+  const activeLine = announceActive && at >= 0 ? announceActive(options[at]!, at, options.length) : '';
+  // Which options are shown, as one string: an id holds no white space. A
+  // filter can change the options and leave their number as it was.
+  const shown = announceActive ? options.map((option) => option.id).join(' ') : '';
   const [announced, setAnnounced] = useState('');
+  const said = useRef({ count: '', active: '', shown: '' });
   useEffect(() => {
     if (!open) {
       setAnnounced('');
+      said.current = { count: '', active: '', shown: '' };
       return;
     }
-    const timer = setTimeout(() => setAnnounced(text), announceAfterMs);
-    return () => clearTimeout(timer);
-  }, [open, text, announceAfterMs]);
+    const memo = said.current;
+    // By the option and not by its line: a filter that leaves the active
+    // option where it was changes "1 of 3" to "1 of 2", and the count has
+    // just said that.
+    const sayActive = () => {
+      if (activeKey === memo.active) return;
+      memo.active = activeKey;
+      if (activeLine) setAnnounced(activeLine);
+    };
+    let follow: ReturnType<typeof setTimeout> | undefined;
+    const filtered = text !== memo.count || shown !== memo.shown;
+    const timer = setTimeout(
+      () => {
+        memo.shown = shown;
+        if (text === memo.count) return sayActive();
+        memo.count = text;
+        setAnnounced(text);
+        follow = setTimeout(sayActive, ACTIVE_SETTLE_MS);
+      },
+      filtered ? announceAfterMs : ACTIVE_SETTLE_MS,
+    );
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(follow);
+    };
+  }, [open, text, shown, activeKey, activeLine, announceAfterMs]);
 
   if (!open) return null;
 
@@ -258,8 +376,14 @@ export function OptionList({
           role="listbox"
           aria-label={label}
           className="ekd-option-list-options"
-          // The one length that depends on a prop. A row is `--sp-7` high.
-          style={{ maxBlockSize: `calc(${rows} * var(--sp-7))` }}
+          // The one length that depends on a prop: `rows` rows. A row is
+          // `--sp-7` at its least, and otherwise one line of its text with the
+          // row's padding and its two borders, which is what grows when a
+          // reader raises the text size alone (WCAG 1.4.4). `--sp-7` is 32px
+          // and does not grow, so a cap counted in it alone would show five
+          // rows of eight at 200%. A browser without the `lh` unit drops the
+          // declaration, and the surface's own height is then the cap.
+          style={{ maxBlockSize: `calc(${rows} * max(var(--sp-7), 1lh + 2 * var(--sp-1) + 2px))` }}
         >
           {options.map((option) => (
             <div
@@ -274,7 +398,11 @@ export function OptionList({
               onClick={() => onSelect(option.id)}
             >
               <span className="ekd-option-label">{option.label}</span>
-              {option.detail != null && <span className="ekd-option-detail">{option.detail}</span>}
+              {option.detail != null && (
+                <span className="ekd-option-detail" aria-hidden={detailInName ? undefined : true}>
+                  {option.detail}
+                </span>
+              )}
             </div>
           ))}
         </div>

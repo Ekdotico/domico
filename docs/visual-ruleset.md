@@ -283,7 +283,10 @@ application owns the keys and the attributes of the text region, which it gets
 from `optionListKey` and `optionListAttributes` so that every product sets the
 same ones. The text region stays a `textbox`. It is not made a `combobox`,
 whose value is one line, and it is not given `aria-expanded`, which a textbox
-does not support. The active option stands where a focus ring would, so it is
+does not support, or `aria-autocomplete`, whose value WAI-ARIA 1.2 says is not
+to be changed to signal that a list is showing. The list's own text cannot be
+selected, because a page has one selection and it belongs to the text being
+written. The active option stands where a focus ring would, so it is
 drawn as the pressed toggle is, a boundary in `--accent` and the accent wash
 together, and in forced colours as the system's selection. The list is placed
 by the component, at the cursor, in viewport coordinates written to the

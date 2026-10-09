@@ -93,6 +93,7 @@ export { OptionList, type OptionListDismissReason, type OptionListProps } from '
 export {
   optionListAttributes,
   optionListKey,
+  optionListNavigating,
   optionListOptionId,
   placeOptionList,
   type OptionListAnchor,

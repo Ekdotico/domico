@@ -1979,8 +1979,28 @@ textarea.ekd-field-input {
 
    It is fixed, so an ancestor that clips its overflow does not clip it, and
    the component also shows it as a manual popover where the browser has one,
-   which puts it in the top layer. The declarations marked "popover" undo what
-   a browser gives every popover, so the box is the same box either way.
+   which puts it in the top layer. A browser's own stylesheet gives every
+   popover `inset: 0`, `margin: auto`, a `fit-content` size and
+   `overflow: auto`, and the declarations marked "popover" put back what this
+   box needs in their place, so it is the same box with the Popover API and
+   without it.
+
+   `display: flex` is not marked, and it does one thing more than lay the box
+   out. A browser hides a popover that has not been shown with
+   `display: none`, and this declaration, being an author's, wins over that.
+   So an open list is laid out from its first render, in the page and not yet
+   in the top layer, before the component has called `showPopover()`: on the
+   server's markup, and for the frame before hydration. What keeps that box
+   out of sight is the `visibility` rule under this one and nothing else.
+   A closed list is not hidden by any rule here. The component renders
+   nothing for it, so there is no element to hide.
+
+   The text of the list cannot be selected. A page has one selection, and a
+   right-click, a Control-click or a long press selects the word under it
+   wherever text can be selected: on an option that moved the selection out
+   of the text being written, with focus still in it, and the next letter
+   went nowhere. `-webkit-touch-callout` is the same for the long press in
+   Safari on a phone. The context menu is not prevented.
 
    The width is one width, 20rem or the viewport less a margin each side,
    whichever is less: 288px at a 320px viewport. It does not follow the longest
@@ -1995,8 +2015,10 @@ textarea.ekd-field-input {
    typing. So there is no motion for a reduced-motion rule to remove.
 
    Until the component has placed it, the box has no position and is not
-   shown. That is one frame at most, and is the state an open list is in when
-   it arrives from the server. */
+   visible, which also takes it out of the accessibility tree. That is one
+   frame at most, and is the state an open list is in when it arrives from
+   the server. The component places every open list, with a cursor to place
+   it by or without one, so no list stays in that state. */
 .ekd-option-list {
   position: fixed;
   inset: auto; /* popover */
@@ -2021,11 +2043,16 @@ textarea.ekd-field-input {
   line-height: var(--lh-normal);
   letter-spacing: var(--tr-normal);
   text-align: start;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 .ekd-option-list:not([data-placement]) { visibility: hidden; }
 /* The rows scroll and the surface does not. The component gives this box the
    height of `maxVisible` rows as its most, and it gives way first when the
-   surface is held to a short viewport. */
+   surface is held to a short viewport. A row in that sum is 32px or one line
+   of text with the row's padding and borders, whichever is more, so the sum
+   grows with the text where a reader has raised its size (WCAG 1.4.4). */
 .ekd-option-list-options {
   flex: 0 1 auto;
   min-block-size: 0;
@@ -2033,7 +2060,8 @@ textarea.ekd-field-input {
   overscroll-behavior: contain;
 }
 /* A row is 32px at its least, which clears the 24px a target owes (WCAG
-   2.5.8), and is the height the component counts `maxVisible` in. The label
+   2.5.8). `--sp-7` is a length in pixels and does not follow the text size;
+   the row does, being a least height and not a height. The label
    starts the row and the detail ends it; where the two do not fit on a line
    the label wraps and the detail stays whole.
 

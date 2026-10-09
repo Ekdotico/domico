@@ -15,7 +15,9 @@ import { EDGE_MARGIN_PX } from './viewport.js';
 export interface OptionListItem {
   /**
    * The application's name for the option. It is part of an element id, so it
-   * holds no white space, and it is unique in the list.
+   * holds no white space, and it is unique in the list. Nothing checks this:
+   * an id with a space in it still draws, it is not a valid element id, and
+   * what `aria-activedescendant` then names is left to the browser.
    */
   id: string;
   /** What the option is, in words: "Heading 1". */
@@ -62,8 +64,9 @@ export interface OptionListKeyEvent {
 /**
  * What a key pressed in the text means while the list is open.
  *
- *   const result = optionListKey(event, { options, activeId });
- *   if (!result) return;            // the text's own key: a letter, Left, Tab
+ *   const result = open ? optionListKey(event, { options, activeId }) : null;
+ *   setNavigating(optionListNavigating(result));  // every key, open or closed
+ *   if (!result) return;            // the text's own key: a letter, Left, Home, Tab
  *   event.preventDefault();         // the list's key: the caret stays put
  *   if ('activeId' in result) setActiveId(result.activeId);
  *   else if ('select' in result) run(result.select);
@@ -78,13 +81,20 @@ export interface OptionListKeyEvent {
  *   focus is already in the text. At an end the key is still the list's, and
  *   the result names the option that was already active.
  * - With no active option, Down goes to the first and Up to the last.
- * - Home and End go to the first and the last option.
  * - Page Down and Page Up move by `maxVisible`, 8 unless given, and stop at
- *   the ends.
+ *   the ends. With no active option Page Down goes to the first and Page Up
+ *   to the last, as Down and Up do. The Authoring Practices give a listbox
+ *   popup no Page keys; their one rule for entering it from the text is that
+ *   Down goes to the first option and Up to the last, and this follows it.
  * - Enter chooses the active option. With none active it is the text's.
  * - Escape dismisses.
- * - Every other key is `null`: letters, Backspace, Left and Right, and Tab
- *   reach the text, which is what filters the list.
+ * - Every other key is `null`: letters, Backspace, Left and Right, Home and
+ *   End, and Tab reach the text, which is what filters the list. Home and End
+ *   are the text's because a document has lines, and a writer who loses the
+ *   start and the end of the line while a list is open has lost more than the
+ *   list gives. The Authoring Practices mark both "(Optional)" for a listbox
+ *   popup, and allow that Home "returns focus to the combobox and places the
+ *   cursor on the first character".
  *
  * `null` too while an input method is composing, when Enter and the arrows
  * belong to its candidate window, and with Alt, Control, Meta or Shift held,
@@ -116,14 +126,10 @@ export function optionListKey(
       return to(at + 1);
     case 'ArrowUp':
       return to(at < 0 ? count - 1 : at - 1);
-    case 'Home':
-      return to(0);
-    case 'End':
-      return to(count - 1);
     case 'PageDown':
-      return to(at < 0 ? page - 1 : at + page);
+      return to(at < 0 ? 0 : at + page);
     case 'PageUp':
-      return to(at < 0 ? count - page : at - page);
+      return to(at < 0 ? count - 1 : at - page);
     case 'Enter':
       return at < 0 ? null : { select: options[at]!.id };
     default:
@@ -131,12 +137,25 @@ export function optionListKey(
   }
 }
 
+/**
+ * Whether the writer is moving in the list after the key `result` came from:
+ * true for a key that moved the active option, false for every other.
+ *
+ *   const result = open ? optionListKey(event, { options, activeId }) : null;
+ *   setNavigating(optionListNavigating(result));
+ *
+ * It is what `optionListAttributes` takes as `navigating`. Call it for every
+ * `keydown` in the text, with `null` while the list is closed, and not only
+ * for the list's keys: a letter, Backspace, Left or Right is what ends the
+ * moving, and the key that opens the list is what stops a value left over
+ * from the last time it was open.
+ */
+export const optionListNavigating = (result: OptionListKeyResult): boolean => result !== null && 'activeId' in result;
+
 // --- the text region's attributes --------------------------------------------
 
-/** The four attributes, each present or `undefined`. Spread them onto the text region. */
+/** The two attributes, each present or `undefined`. Spread them onto the text region. */
 export interface OptionListTextAttributes {
-  'aria-autocomplete': 'list' | undefined;
-  'aria-haspopup': 'listbox' | undefined;
   'aria-controls': string | undefined;
   'aria-activedescendant': string | undefined;
 }
@@ -145,36 +164,74 @@ export interface OptionListTextAttributes {
  * The attributes the focused text region carries for the list `id`.
  *
  *   <div contentEditable role="textbox" aria-multiline="true" aria-label="Document"
- *     {...optionListAttributes('slash', { open, options, activeId })} />
+ *     {...optionListAttributes('slash', { open, options, activeId, navigating })} />
  *
- * While the list is showing at least one option: `aria-autocomplete="list"`,
- * `aria-haspopup="listbox"`, `aria-controls` naming the list, and
- * `aria-activedescendant` naming the active option where there is one.
- * Closed, or open with nothing in it, all four are `undefined`, which removes
- * them: there is then no listbox in the document for them to point at. Every
- * key is always in the result, so a spread takes off what the last one put on.
- * An application that writes attributes itself removes the four the same way.
+ * While the list is showing at least one option: `aria-controls` naming the
+ * list and, while the writer is moving in it, `aria-activedescendant` naming
+ * the active option. Closed, or open with nothing in it, both are
+ * `undefined`, which removes them: there is then no listbox in the document
+ * for them to point at. Both keys are always in the result, so a spread takes
+ * off what the last one put on. An application that writes attributes itself
+ * removes the two the same way.
+ *
+ * **`navigating`** is whether the last key was one that moved in the list,
+ * which is what `optionListNavigating` says of a key. Without it
+ * `aria-activedescendant` is not set, whatever is active. An application
+ * marks the first match as active from the moment the list opens, and a
+ * screen reader that follows `aria-activedescendant` would then say that
+ * option over each character of the query, and say it in place of the
+ * character when the writer reads the query back with Left and Right. So the
+ * attribute waits for Down, Up or a Page key, and goes again at the next
+ * letter. The mark on the active row does not wait: it is drawn from
+ * `activeId` on `OptionList`.
+ *
+ * These two are the whole of what WAI-ARIA 1.2 gives a `textbox` for a list
+ * it does not hold, and each rests on a sentence of it.
+ *
+ * - `aria-activedescendant` (section "aria-activedescendant property"): it is
+ *   allowed where "The element with DOM focus is a combobox, textbox or
+ *   searchbox with aria-controls referring to an element that supports
+ *   aria-activedescendant, and the value of aria-activedescendant refers to
+ *   an owned element of the controlled element." A `listbox` supports
+ *   `aria-activedescendant`, and the options are its children. So
+ *   `aria-controls` is what makes the second attribute valid, and the two
+ *   are set and removed together.
+ * - `aria-controls` (section "aria-controls property") is a global property:
+ *   "Identifies the element (or elements) whose contents or presence are
+ *   controlled by the current element."
+ *
+ * Three more are left out, and the same text says why.
+ *
+ * - `aria-autocomplete` (section "aria-autocomplete property"): "The
+ *   aria-autocomplete property is not intended to indicate the presence of a
+ *   completion suggestion, and authors SHOULD NOT dynamically change its
+ *   value in order to communicate the presence of a suggestion." Setting it
+ *   while the list shows and removing it after is that. A text region that
+ *   offers completions the whole time it is edited may carry
+ *   `aria-autocomplete="list"` as a fixed attribute of its own; a document
+ *   that opens a list of blocks on one character is not that.
+ * - `aria-expanded`: the same section goes on, "authors SHOULD use the
+ *   aria-expanded state to communicate whether the element that presents the
+ *   suggestion collection is displayed", and the section "aria-expanded
+ *   state" lists the roles it is used in, where `textbox` is not one. So a
+ *   textbox has no attribute that says a list is open. That is said by the
+ *   announcement in `OptionList`.
+ * - `aria-haspopup`: the section "aria-autocomplete property" asks for it of
+ *   an element with `aria-autocomplete` set to `list`, "a value for
+ *   aria-haspopup that matches the role of the element that contains the
+ *   collection of suggested values". With no `aria-autocomplete` it is not
+ *   owed, and a document is not a control that opens a popup.
  *
  * The region's own role stays `textbox`, with `aria-multiline`. It is not a
  * `combobox`: that role's value is one line of text, and a document is not.
- * `aria-expanded` is not set, because WAI-ARIA 1.2 does not support it on
- * `textbox`. That the list has opened is said by the announcement.
- *
- * WAI-ARIA 1.2 allows each of the four on `textbox`, and asks for them
- * together: with `aria-autocomplete="list"`, `aria-controls` refers to the
- * element holding the suggestions and `aria-haspopup` matches its role; and
- * `aria-activedescendant` on a textbox refers to a descendant of the element
- * it controls.
  */
 export function optionListAttributes(
   id: string,
-  state: { open: boolean; options: readonly OptionListItem[]; activeId: string | null },
+  state: { open: boolean; options: readonly OptionListItem[]; activeId: string | null; navigating: boolean },
 ): OptionListTextAttributes {
   const showing = state.open && state.options.length > 0;
-  const active = showing && state.options.some((option) => option.id === state.activeId);
+  const active = showing && state.navigating && state.options.some((option) => option.id === state.activeId);
   return {
-    'aria-autocomplete': showing ? 'list' : undefined,
-    'aria-haspopup': showing ? 'listbox' : undefined,
     'aria-controls': showing ? id : undefined,
     'aria-activedescendant': active ? optionListOptionId(id, state.activeId!) : undefined,
   };
@@ -207,6 +264,14 @@ export interface OptionListPlacement {
  * An anchor outside the viewport is treated as sitting on the nearest edge,
  * so the list stays on screen when the line it belongs to has scrolled away.
  *
+ * `viewport` is a rectangle and not only a size. `OptionList` gives it
+ * `window.visualViewport` where the browser has one: `offsetLeft`,
+ * `offsetTop`, `width` and `height`. With an on-screen keyboard up, or the
+ * page pinch-zoomed, that is smaller than the layout viewport and may start
+ * part of the way into it, and a list placed by the layout viewport's height
+ * would sit behind the keyboard. The result is in the anchor's coordinates,
+ * which are the layout viewport's, and so is what `position: fixed` takes.
+ *
  * `gutter` is the least distance to the viewport's edge, 16 unless given,
  * and `gap` the distance to the anchor, 4 unless given: `--sp-4` and
  * `--sp-1`. The stylesheet holds the list's width to the viewport less two
@@ -224,7 +289,13 @@ export function placeOptionList({
 }: {
   anchor: OptionListAnchor;
   size: { width: number; height: number };
-  viewport: { width: number; height: number };
+  /**
+   * The part of the page a person can see, in the coordinates the anchor is
+   * in. `x` and `y` are 0 unless given: they are where the visual viewport
+   * starts inside the layout viewport, which is not 0 once the page is
+   * pinch-zoomed or an on-screen keyboard has pushed it up.
+   */
+  viewport: { x?: number; y?: number; width: number; height: number };
   /** The list's line runs right to left, so it ends at the anchor and does not start there. */
   rtl?: boolean;
   gutter?: number;
@@ -233,9 +304,11 @@ export function placeOptionList({
   minHeight?: number;
 }): OptionListPlacement {
   const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value));
+  const left = viewport.x ?? 0;
+  const top = viewport.y ?? 0;
 
-  const floor = gutter;
-  const ceiling = Math.max(floor, viewport.height - gutter);
+  const floor = top + gutter;
+  const ceiling = Math.max(floor, top + viewport.height - gutter);
   const anchorTop = clamp(anchor.y, floor, ceiling);
   const anchorBottom = clamp(anchor.y + anchor.height, floor, ceiling);
   const roomBelow = Math.max(0, ceiling - (anchorBottom + gap));
@@ -253,7 +326,7 @@ export function placeOptionList({
   const y = clamp(beside, floor, Math.max(floor, ceiling - height));
 
   const start = rtl ? anchor.x + anchor.width - size.width : anchor.x;
-  const x = clamp(start, gutter, Math.max(gutter, viewport.width - gutter - size.width));
+  const x = clamp(start, left + gutter, Math.max(left + gutter, left + viewport.width - gutter - size.width));
 
   return { x, y, placement, maxHeight: height < size.height ? height : null };
 }

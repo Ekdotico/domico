@@ -27,7 +27,9 @@ import { inertOutside } from './inertOutside.js';
  *   2. Tab and Shift+Tab cycle within the surface. `inert` alone would leave
  *      Tab falling off the end into the browser chrome, which for a keyboard
  *      reader is leaving the page.
- *   3. Escape calls `onClose`.
+ *   3. Escape calls `onClose`, unless its default was already prevented:
+ *      a control inside the surface that closes on Escape prevents it, and
+ *      one key then closes one thing. `MenuButton` does this.
  *   4. On close, the page is released first and focus returns to the trigger
  *      second — in that order, because an inert element cannot take focus.
  *
@@ -150,7 +152,10 @@ export function useModalSurface({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        latest.current.onClose();
+        // An Escape something inside has already answered, and said so by
+        // preventing the default: a menu, a tooltip, a list at the text
+        // cursor. It closed that; the next one closes the surface.
+        if (!event.defaultPrevented) latest.current.onClose();
         return;
       }
       // A chord with Tab in it belongs to the browser or the platform —

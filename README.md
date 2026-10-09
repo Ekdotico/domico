@@ -942,6 +942,8 @@ export function Editor() {
     setQuery(next);
     // Text can arrive with no key: a paste, dictation, an input method.
     setNavigating(false);
+    // A new filter starts at its first match, so that the status names the option Enter chooses.
+    setActiveId(null);
     // A "/" typed now is a new request, and so is the first after the last one went.
     // `includes`, because one input can carry more than one character.
     const typed = (event.nativeEvent as InputEvent).data ?? '';

@@ -2494,6 +2494,7 @@ await it('The documented pattern names no option while the query is typed, close
       const next = queryAtCursor(text.current);
       setQuery(next);
       setNavigating(false);
+      setActiveId(null);
       const typed = event.nativeEvent.data ?? '';
       if (typed.includes('/') || next === null) setDismissed(false);
     };
@@ -2633,11 +2634,12 @@ await it('The documented pattern names no option while the query is typed, close
 
   // A modifier pressed by itself ends nothing. Control silences a screen
   // reader, and a writer who then asks where they are is still on the option.
+  // Backspace was a new filter, which starts at its first match: Down is the second.
   await press('ArrowDown');
-  assert.equal(named(), 'slash-option-h3');
+  assert.equal(named(), 'slash-option-h2');
   for (const modifier of [{ key: 'Control', ctrlKey: true }, { key: 'Shift', shiftKey: true }, { key: 'Alt', altKey: true }, { key: 'CapsLock' }]) {
     assert.ok(!(await press(modifier)).defaultPrevented, `${modifier.key} was taken from the text`);
-    assert.equal(named(), 'slash-option-h3', `${modifier.key} by itself took the name off the active option`);
+    assert.equal(named(), 'slash-option-h2', `${modifier.key} by itself took the name off the active option`);
   }
   // Text that arrives with no key ends the move: a paste, dictation.
   // The `input` ends it by itself, before the cursor's move is reported.

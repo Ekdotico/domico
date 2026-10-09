@@ -34,6 +34,7 @@ import { useBeforePaint } from './viewport.js';
  *     onInput={() => {
  *       setQuery(queryAtCursor());
  *       setNavigating(false);
+ *       setActiveId(null);
  *     }}
  *     onKeyDown={(event) => {
  *       const result = open ? optionListKey(event, { options: shown, activeId }) : null;
@@ -330,7 +331,11 @@ export function OptionList({
     // taken as a mouse.
     const waiting = new Set<number>();
     const onPointerDown = (event: PointerEvent) => {
-      if (inside(event)) return;
+      if (inside(event)) {
+        // An id left by a touch whose lift was never reported is not this press.
+        waiting.delete(event.pointerId);
+        return;
+      }
       if (event.pointerType === 'touch' || event.pointerType === 'pen') waiting.add(event.pointerId);
       else latest.current.onDismiss('press-outside');
     };

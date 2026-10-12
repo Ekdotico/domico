@@ -2271,6 +2271,19 @@ button.ekd-sync-control:hover {
   caret-color: var(--fg-1);
   /* An address with no break in it wraps and does not widen the page. */
   overflow-wrap: break-word;
+  /* No kerning in the text a writer types, in any face on the surface: the
+     property is inherited, and a table cell in the sans needs it as much as
+     a paragraph in the serif. A run with no space in it is broken wherever
+     the line ends, and with kerning on Chromium shapes it again for each
+     line, so the cost grows with the square of its length: 32,000 asterisks
+     in one paragraph took 430 ms to lay out, at every key, and 100,000 took
+     1.4 s. With kerning off they take 1 ms and 4 ms. It is any character
+     that kerns against itself or its neighbour, and not the asterisk alone:
+     "w", "C", "3" and the quotation marks in the serif, "f", "s", "3" and
+     the brackets in the sans. Ligatures and the other features stay, and
+     `text-rendering` changes nothing here. This surface only: a page that
+     is read and not typed into keeps the reset's kerning. */
+  font-kerning: none;
 }
 /* The root, and any element that states the language itself. Not every
    descendant of a Greek document, which `:lang()` alone would match: the face

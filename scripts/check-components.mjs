@@ -1936,8 +1936,16 @@ await it('OptionList is a listbox that never takes focus: one option active, a p
   const selected = () => options().filter((o) => o.getAttribute('aria-selected') === 'true').map((o) => o.id);
   assert.deepEqual(selected(), ['slash-option-h1']);
   assert.ok(options().every((o) => ['true', 'false'].includes(o.getAttribute('aria-selected'))));
-  // Nothing in it is a Tab stop or a control: it cannot take focus.
-  assert.equal(box.querySelectorAll('[tabindex], button, a, input, select, textarea').length, 0, 'something in the list takes focus');
+  // Nothing in it is a control, and nothing in it is a Tab stop. The listbox
+  // says so itself: it scrolls once it holds more than `maxVisible` options,
+  // and Chromium and Firefox put a box that scrolls and holds nothing
+  // focusable in the Tab order by themselves, so Tab from the text went into
+  // the list. jsdom has no Tab order and no layout, so what is held here is
+  // the attribute; where Tab goes was read in Chromium, with 13 options.
+  assert.equal(box.querySelectorAll('button, a, input, select, textarea, [contenteditable]').length, 0, 'something in the list takes focus');
+  assert.equal(listbox.getAttribute('tabindex'), '-1', 'the listbox is a Tab stop where it scrolls');
+  assert.deepEqual([...box.querySelectorAll('[tabindex]')], [listbox], 'something else in the list has a tabindex');
+  assert.ok(!box.hasAttribute('tabindex'), 'the surface has a tabindex, and it does not scroll');
   // What the text region points at exists, and is what it says it is.
   assert.ok(document.getElementById(text.getAttribute('aria-controls')) === listbox, 'aria-controls does not name the listbox');
   assert.ok(document.getElementById(text.getAttribute('aria-activedescendant')) === options()[1], 'aria-activedescendant does not name the active option');
@@ -1984,6 +1992,19 @@ await it('OptionList is a listbox that never takes focus: one option active, a p
   assert.ok((await fire(box, 'mousedown')).defaultPrevented, 'a press on the edge of the list would move focus');
   assert.ok((await fire(box, 'pointerdown')).defaultPrevented);
   assert.equal(log.length, 1);
+  // Anywhere on the list, the listbox itself among them. `tabindex="-1"`
+  // makes the listbox a box a press can focus, on its scrollbar as well,
+  // which a box with no tabindex is not: in Chromium such a press took focus
+  // from the text unless its default was prevented. A press in jsdom moves no
+  // focus, so the prevented default is what is held, on every element.
+  for (const target of [box, ...box.querySelectorAll('*')]) {
+    const name = target.id || target.className;
+    for (const type of ['pointerdown', 'mousedown']) {
+      assert.ok((await fire(target, type)).defaultPrevented, `${type} on ${name} would move focus out of the text`);
+      assert.equal(document.activeElement, text, `${type} on ${name} moved focus`);
+    }
+  }
+  assert.equal(log.length, 1, 'a press that went down on the list chose an option or dismissed the list');
   // The context menu is the browser's and is not taken: what keeps a
   // right-click from moving the selection is the stylesheet, held below.
   assert.ok(!(await fire(row, 'contextmenu')).defaultPrevented, 'the context menu was prevented on an option');
@@ -2791,7 +2812,9 @@ await it('OptionList renders on the server, hydrates without a mismatch, and sho
   // read from the markup a server sends.
   const html = renderToString(list({}));
   assert.match(html, /^<div popover="manual" class="ekd-option-list">/);
-  assert.match(html, /<div id="slash" role="listbox" aria-label="Blocks" class="ekd-option-list-options" style="max-block-size:calc\(8 \* max\(var\(--sp-7\), 1lh \+ 2 \* var\(--sp-1\) \+ 2px\)\)">/);
+  // With its `tabindex`, which a server's markup needs as much as the
+  // hydrated list does: the browser decides the Tab order from the markup.
+  assert.match(html, /<div id="slash" role="listbox" aria-label="Blocks" tabindex="-1" class="ekd-option-list-options" style="max-block-size:calc\(8 \* max\(var\(--sp-7\), 1lh \+ 2 \* var\(--sp-1\) \+ 2px\)\)">/);
   // The cap is counted in rows that follow the text size: one line of the
   // row's text, in `lh`, where that is more than the fixed least height.
   // Counted in `--sp-7` alone it is 256px at every text size (WCAG 1.4.4).
@@ -2966,6 +2989,29 @@ await it('The editor and code stylesheets answer to the documented names, and im
   assert.match(code, /\.hljs-keyword[^}]*\{[^}]*font-weight:\s*var\(--fw-medium\)/);
   // A table scrolls in its own wrapper.
   assert.match(editor, /\.ekd-table-wrap[^}]*\{[^}]*overflow-x:\s*auto/);
+
+  // No kerning on the surface. A run with no space in it is broken where the
+  // line ends (`overflow-wrap`), and with kerning on Chromium lays such a run
+  // out in time that grows with the square of its length: 32,000 asterisks
+  // in a paragraph took 430 ms at every key, and 1 ms with kerning off. jsdom
+  // lays nothing out, so the declaration is held by name: on the root, whose
+  // value every block inherits, with nothing under it turning kerning back
+  // on by the property or by the feature. Measured in Chromium.
+  const rules = editor.replace(/\/\*[\s\S]*?\*\//g, '');
+  const root = rules.match(/(?:^|\n)\.ekd-editor \{([^}]*)\}/)?.[1];
+  assert.ok(root, 'editor.css has no rule for the root alone');
+  const declared = new Map(root.split(';').map((line) => line.trim()).filter(Boolean).map((line) => {
+    const colon = line.indexOf(':');
+    return [line.slice(0, colon).trim(), line.slice(colon + 1).trim()];
+  }));
+  assert.equal(declared.get('font-kerning'), 'none', 'the document surface does not turn kerning off, and a long run with no space in it freezes the page');
+  assert.equal(declared.get('overflow-wrap'), 'break-word', 'the document surface no longer wraps a run with no break in it');
+  assert.deepEqual(rules.match(/font-kerning:[^;}]*/g), ['font-kerning: none'], 'a rule under the document surface sets kerning again');
+  assert.ok(!/["']kern["']/.test(rules), 'a rule under the document surface sets the kerning feature by hand');
+  assert.ok(!/text-rendering/.test(rules), 'the document surface sets text-rendering, which changes nothing here');
+  for (const entry of ['base.css', 'components.css']) {
+    assert.ok(read(`../dist/styles/${entry}`).replace(/\/\*[\s\S]*?\*\//g, '').includes(root), `styles/${entry} does not carry the document surface as editor.css has it`);
+  }
 
   const manifest = JSON.parse(read('../package.json'));
   const all = { ...manifest.dependencies, ...manifest.peerDependencies, ...manifest.devDependencies };

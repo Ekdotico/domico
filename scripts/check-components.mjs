@@ -1970,9 +1970,13 @@ await it('OptionList is a listbox that never takes focus: one option active, a p
   // The live region is after the list and not in it, and it is the element
   // that was there while the list was closed: a region put in the document
   // as the list opens is a new one, and would be a new one again at closing.
+  // Elements are compared with `===` inside `assert.ok`, here and below.
+  // `assert.equal` of two elements that differ writes both out to say how,
+  // and an element of jsdom leads to its whole document: the process ran out
+  // of memory and was killed before it could name the assertion.
   assert.equal(view.container.querySelectorAll('[role="status"]').length, 1);
-  assert.equal(view.container.querySelector('[role="status"]'), live, 'opening the list replaced the status region');
-  assert.equal(box.nextElementSibling, live, 'the status region is not the element after the list');
+  assert.ok(view.container.querySelector('[role="status"]') === live, 'opening the list replaced the status region: the element that says the closing is not the one that was in the page');
+  assert.ok(box.nextElementSibling === live, 'the status region is not the element after the list');
   assert.ok(!live.hasAttribute('aria-live'), 'aria-live restates the role');
 
   // The active option follows the prop, and none is active when none is given.
@@ -2090,7 +2094,7 @@ await it('OptionList is a listbox that never takes focus: one option active, a p
   log.length = 0;
   await view.rerender(list({ open: false }));
   assert.ok(!document.getElementById('slash'), 'closing left the listbox behind');
-  assert.equal(view.container.querySelector('[role="status"]'), live, 'closing the list replaced the status region');
+  assert.ok(view.container.querySelector('[role="status"]') === live, 'closing the list replaced the status region: a region put in the page as the list closes is not certain to be spoken');
   await fire(document.body, 'pointerdown');
   await point(document.body, 'pointerdown', 'touch');
   await point(document.body, 'pointerup', 'touch');
@@ -2379,7 +2383,7 @@ await it('OptionList announces that it has closed, in the region that outlives i
   await view.rerender(list());
   await wait(120);
   await view.rerender(list({ open: false }));
-  assert.equal(region(), live, 'the region that says the closing is not the one that said the opening');
+  assert.ok(region() === live, 'the region that says the closing is not the one that said the opening');
   assert.equal(view.container.children.length, 1, 'a closed list left more than its region');
   assert.equal(live.textContent, '3 blocks. Text first.', 'the closing was said before it could have settled');
   await wait(250);
@@ -2420,13 +2424,62 @@ await it('OptionList announces that it has closed, in the region that outlives i
   await wait(250);
   assert.deepEqual(said, ['3 blocks. Text first.', '3 blocks. Text first.'], 'a list that opened again at once was announced as closed');
 
-  // The application's own words, read on the render that closes the list:
-  // what was chosen, after a choice.
+  // That list closes again before its count has settled a second time. The
+  // writer was told of it, and the closing that was taken back told them
+  // nothing, so this closing is said.
   said.length = 0;
-  await view.rerender(list({ open: false, closed: 'Text inserted.' }));
+  await view.rerender(list({ open: false }));
+  await wait(40);
+  await view.rerender(list());
+  await wait(20);
   await view.rerender(list({ open: false }));
   await wait(250);
-  assert.deepEqual(said, ['Text inserted.'], 'the text of the closing was not the one given as the list closed');
+  assert.deepEqual(said, ['List closed.'], 'a list the writer was told of closed without a word, after a closing that was taken back');
+  // Said once: the next list, closed before its count, is one nobody was told of.
+  said.length = 0;
+  await view.rerender(list());
+  await wait(20);
+  await view.rerender(list({ open: false }));
+  await wait(250);
+  assert.deepEqual(said, [], 'the closing of one list was owed again by the next');
+
+  // The application's own word for the closing, read on the one render in
+  // which `open` becomes false. The render after it gives another, or none.
+  await view.rerender(list());
+  await wait(120);
+  said.length = 0;
+  await view.rerender(list({ open: false, closed: 'Blocks closed.' }));
+  await view.rerender(list({ open: false }));
+  await wait(250);
+  assert.deepEqual(said, ['Blocks closed.'], 'the text of the closing was not the one given as the list closed');
+  // And a `closed` that arrives a render late is not read, as the README says.
+  await view.rerender(list());
+  await wait(120);
+  said.length = 0;
+  await view.rerender(list({ open: false }));
+  await view.rerender(list({ open: false, closed: 'Text inserted.' }));
+  await wait(250);
+  assert.deepEqual(said, ['List closed.'], 'a `closed` given after the list had closed was said');
+
+  // `closed` is not a way to announce a choice, and the README says so: a
+  // writer who chooses before the count has settled hears nothing of it,
+  // whatever the application gave. Held so that the two do not part.
+  said.length = 0;
+  await view.rerender(list());
+  await wait(20);
+  await view.rerender(list({ open: false, closed: 'Text inserted.' }));
+  await wait(250);
+  assert.deepEqual(said, [], 'a list that closed before its opening was said announced its `closed`: the README says it does not');
+  assert.equal(live.textContent, '');
+  const readme = (await import('node:fs')).readFileSync(new URL('../README.md', import.meta.url), 'utf8').replace(/\s+/g, ' ');
+  for (const sentence of [
+    '`closed` is the word for a closing, and not a way to announce a choice.',
+    'A `closed` given on a later render is not read.',
+    'An application that confirms a choice says so in a status region of its own',
+  ]) {
+    assert.ok(readme.includes(sentence), `the README no longer says: ${sentence}`);
+  }
+  assert.ok(!/closed=\{[^}]*inserted/.test(readme), 'the README passes the chosen block as `closed`, which is silent for a choice made at speed');
 
   // An empty text says nothing, and empties the region of the count.
   await view.rerender(list());
@@ -3118,24 +3171,37 @@ await it('The editor and code stylesheets answer to the documented names, and im
 
   // The prompt of an empty block, and of an empty caption, is drawn and not
   // said. Generated text is read as the text of the element, so a screen
-  // reader read an empty caption as "Caption". The rule gives it an empty
-  // alternative text, after the plain declaration for a browser that does
-  // not parse the `/`. jsdom reads no generated content and computes no
-  // accessible name, so the two declarations are held by name and in their
-  // order: the first alone is the fault, the second alone draws no prompt
-  // where it is not parsed, and the other way round the plain one wins
-  // everywhere. One rule, so that a caption cannot be given a prompt that is
-  // read. What a screen reader says of it has not been heard.
-  const blocks = [...rules.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => [selector.trim(), body]);
-  const prompts = blocks.filter(([selector]) => selector.includes('[data-placeholder]'));
-  const drawn = prompts.filter(([, body]) => /(?:^|[;\s])content\s*:/.test(body));
-  assert.deepEqual(drawn.map(([selector]) => selector), ['.ekd-editor [data-placeholder]::before'], 'the prompt of an empty block is drawn by more than one rule, or by none');
-  assert.deepEqual(
-    [...drawn[0][1].matchAll(/(?:^|[;\s])content\s*:\s*([^;]+);/g)].map(([, value]) => value.trim()),
-    ['attr(data-placeholder)', 'attr(data-placeholder) / ""'],
-    'the prompt of an empty block is read by a screen reader as the text of the block, or is not drawn where the alternative text is not parsed',
-  );
-  assert.equal(rules.match(/content\s*:[^;}]*data-placeholder[^;}]*/g).length, 2,'another rule draws a prompt from data-placeholder');
+  // reader read an empty caption as "Caption". The stylesheet gives it an
+  // empty alternative text. jsdom reads no generated content and computes
+  // no accessible name, so the shape is held by name, in two parts and in
+  // their order.
+  //
+  // The plain rule, with the plain declaration and no other: it is what
+  // draws the prompt in a browser that does not have the `/`. The
+  // alternative text is not a second declaration in it. Where `attr()` is a
+  // substitution function, a declaration that holds it is kept whatever
+  // else it holds, and fails only when the value is computed: it would win
+  // over the plain one and draw nothing.
+  const PROMPT = '.ekd-editor [data-placeholder]::before';
+  const escaped = PROMPT.replace(/[.[\]]/g, '\\$&');
+  const plain = new RegExp(`(?:^|\\n)${escaped} \\{([^}]*)\\}`).exec(rules);
+  assert.ok(plain, 'editor.css has no rule of its own that draws the prompt of an empty block');
+  const contents = (body) => [...body.matchAll(/(?:^|[;\s])content\s*:\s*([^;}]+)/g)].map(([, value]) => value.trim());
+  assert.deepEqual(contents(plain[1]), ['attr(data-placeholder)'],
+    'the plain rule for the prompt does not hold the plain declaration alone: without it no prompt is drawn where the alternative text is not known, and with the alternative text beside it a browser that keeps a declaration it cannot compute draws none');
+  // The rule that takes the prompt out of what is read: the same selector,
+  // inside a query about a string, which a browser answers when it parses
+  // the stylesheet. A query about `attr()` would be answered yes by a
+  // browser that keeps the declaration and cannot compute it.
+  const silent = new RegExp(`@supports \\(content: "a" / ""\\) \\{\\s*${escaped} \\{([^}]*)\\}\\s*\\}`).exec(rules);
+  assert.ok(silent, 'the prompt of an empty block has no empty alternative text inside `@supports (content: "a" / "")`: a screen reader reads it as the text of the block');
+  assert.deepEqual(contents(silent[1]), ['attr(data-placeholder) / ""'], 'the rule inside `@supports` does not give the prompt an empty alternative text');
+  // The same selector, so the later rule wins: the one in `@supports` is the later.
+  assert.ok(silent.index > plain.index, 'the plain rule for the prompt comes after the one in `@supports` and wins over it: the prompt is read everywhere');
+  // And these two are all: no third rule draws a prompt, read or not.
+  assert.equal(rules.match(/content\s*:[^;}]*data-placeholder[^;}]*/g).length, 2, 'another rule draws a prompt from data-placeholder');
+  const drawn = [[PROMPT, plain[1]]];
+  const guarded = silent[0];
   // The caption has no generated text of its own: its prompt is the rule above.
   assert.ok(!/\.ekd-table-caption[^{]*::?(?:before|after)/.test(rules), 'the caption of a table draws a prompt of its own');
   // In forced colours the prompt is the system's ink for text that is not
@@ -3146,6 +3212,7 @@ await it('The editor and code stylesheets answer to the documented names, and im
   for (const entry of ['base.css', 'components.css']) {
     const shipped = read(`../dist/styles/${entry}`).replace(/\/\*[\s\S]*?\*\//g, '');
     assert.ok(shipped.includes(drawn[0][1]), `styles/${entry} does not carry the prompt as editor.css has it`);
+    assert.ok(shipped.indexOf(guarded) > shipped.indexOf(drawn[0][1]), `styles/${entry} does not carry the prompt's empty alternative text after the plain rule`);
     assert.match(shipped, /\.ekd-editor \[data-placeholder\]::before \{\s*color:\s*GrayText;?\s*\}/, `styles/${entry} does not carry the prompt's colour in forced colours`);
   }
 

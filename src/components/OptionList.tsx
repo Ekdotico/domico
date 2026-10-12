@@ -122,13 +122,20 @@ import { useBeforePaint } from './viewport.js';
  * says nothing of having closed. Two closings are silent. One is of a list
  * whose opening was never said, because it closed before its count settled:
  * a writer who types " /usr/" is not told that a list they never heard of has
- * closed. The other is one the application gives an empty `closed` for. The
- * text is read on the render that closes the list, so an application can give
- * a closing its own words or none: after a choice, where what was chosen is
- * the news, it passes "" or a sentence that names the block. The component
- * does not tell a choice from a dismissal, since Enter is the application's
- * key, so with `closed` left alone a choice is followed by "List closed." as
- * Escape is. The text stays in the region until the list opens again, as the
+ * closed. The other is one the application gives an empty `closed` for.
+ *
+ * `closed` is the word for a closing and nothing more. It is read on the one
+ * render in which `open` becomes false, and a `closed` given on a later
+ * render is not read. It is not said at all for a list whose opening was not
+ * said. So it is not a way to announce a choice: a writer who chooses before
+ * the count has settled would hear nothing. The component does not tell a
+ * choice from a dismissal, since Enter is the application's key, so with
+ * `closed` left alone a choice is followed by "List closed." as Escape is.
+ * An application that confirms a choice says so in a status region of its
+ * own, and passes "" on the render that closes the list after a choice, so
+ * that the two are not said one over the other.
+ *
+ * The text stays in the region until the list opens again, as the
  * last label stays in the region of `SyncStatus`, and opening empties it, so
  * the next count is news. An `OptionList` that the application takes out of
  * the page as it closes takes the region with it, and nothing is said.
@@ -223,9 +230,12 @@ export interface OptionListProps {
   status: string;
   /**
    * Announced when the list closes, if its opening was announced. "List
-   * closed." unless given. Read on the render that closes the list, so it can
-   * differ from one closing to the next; an empty string says nothing, which
-   * is for a closing that follows a choice the application announces itself.
+   * closed." unless given. Read on the one render in which `open` becomes
+   * false; given on a later render it is not read. An empty string says
+   * nothing, which is for a closing that follows a choice the application
+   * confirms in a status region of its own. It is the word for a closing and
+   * not a way to announce a choice: a list that closes before its opening
+   * was announced says nothing, whatever is given here.
    */
   closed?: string;
   /** How long the announcement waits for the text to stop changing, in milliseconds. */
@@ -430,7 +440,10 @@ export function OptionList({
   const shown = announceActive ? options.map((option) => option.id).join(' ') : '';
   const [announced, setAnnounced] = useState('');
   const said = useRef({ count: '', active: '', shown: '' });
-  // Whether the region was given anything since the list last opened.
+  // Whether the writer was told of a list and has not yet been told that it
+  // closed. It is put back to false when a closing is given to the region,
+  // and not when the list closes: a closing that was taken back, because the
+  // list opened again inside the wait, has told nobody anything.
   const told = useRef(false);
   // Opening and closing, and nothing else: a render of a closed list must not
   // take back a closing that is waiting to be said.
@@ -442,12 +455,17 @@ export function OptionList({
     }
     // A list whose opening was never said closes unsaid, and so does a list
     // that was never open. `closed` is the one from the render that closed
-    // the list. An empty one empties the region.
+    // the list, and a later render's is not read. An empty one empties the
+    // region.
     const text = told.current ? latest.current.closed : '';
-    told.current = false;
     // After the same wait as a move in the list: a list that opens again
-    // inside it says nothing of having closed.
-    const timer = setTimeout(() => setAnnounced(text), ACTIVE_SETTLE_MS);
+    // inside it says nothing of having closed, and is still one the writer
+    // was told of, so its next closing is said whether or not its count had
+    // settled again.
+    const timer = setTimeout(() => {
+      told.current = false;
+      setAnnounced(text);
+    }, ACTIVE_SETTLE_MS);
     return () => clearTimeout(timer);
   }, [open]);
   useEffect(() => {

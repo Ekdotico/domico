@@ -1,5 +1,5 @@
 ---
-'@ekdotico/domico': patch
+'@ekdotico/domico': minor
 ---
 
 Three accessibility fixes, to `OptionList` and to the document surface, each found by a review of a consuming application's slash palette. No export, class or token is renamed or removed, and no prop changes its meaning. One optional prop is added, `closed`, and the markup of `OptionList` changes in one place, said under the first fix.
@@ -7,7 +7,7 @@ Three accessibility fixes, to `OptionList` and to the document surface, each fou
 **Fixed: nothing was announced when the option list closed.** A screen reader was told when the list opened and as its count changed, and was told nothing when it went without a choice: after Escape, after the cursor left the query, after a letter that ended the command. The status region was part of the list and left the page with it, so it could not say so.
 
 - The status region is now the element after the list and not a child of it, and it stays in the page while the list is closed. It is the same element open and closed. When `open` becomes false it is given `closed`, 150 milliseconds later.
-- `closed` is a new optional prop. Its default is "List closed.", which is a new text for the owner's approval. It is read on the one render in which `open` becomes false. A `closed` given on a later render is not read. An empty string says nothing.
+- `closed` is a new optional prop. Its default is "List closed.", which the owner approved on 12 October 2026. It is read on the one render in which `open` becomes false. A `closed` given on a later render is not read. An empty string says nothing.
 - Two closings are silent. A list whose opening was never announced, because it closed before its count settled, closes unannounced: a writer who types ` /usr/` is not told that a list they never heard of has closed. A list that opens again inside the 150 milliseconds says nothing of having closed, and if it then closes again before its count has settled a second time, that closing is said: the writer was told of the list and not that it went.
 - **`closed` is the word for a closing, and not a way to announce a choice.** Enter is the application's key, and a choice and a dismissal both reach the component as `open` becoming false. So with `closed` left alone, "List closed." follows a choice as it follows Escape, where the opening was announced, and nothing follows it where the writer chose before the count had settled. A sentence that names the chosen block, passed as `closed`, would be lost in that second case. An application that confirms a choice says so in a status region of its own, and passes `closed=""` on the render that closes the list after a choice, so that the two are not said one over the other. Whether a product needs that is for a person with a screen reader to hear, and step 12 of the README's script asks it.
 - The text stays in the region until the list opens again, as the last label stays in the region of `SyncStatus`. Opening empties it.

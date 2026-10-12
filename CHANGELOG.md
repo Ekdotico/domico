@@ -1,5 +1,29 @@
 # @ekdotico/domico
 
+## 0.28.1
+
+### Patch Changes
+
+- b4d59a7: Two fixes, one to `OptionList` and one to the document surface. No export, class or token is added, renamed or removed.
+
+  **Fixed: `OptionList` was a Tab stop once it scrolled.** The listbox has `overflow-y: auto`, and it scrolls when it holds more options than `maxVisible`, which is 8 unless given. Chromium and Firefox put a box that scrolls, with nothing in it that takes focus, in the Tab order by themselves. So with more than `maxVisible` options, Tab from the text moved focus into the list, although the control's contract is that it never has focus. With the documented pattern the text's `onBlur` then closed the list, and focus was left on nothing. An accessibility review of a consuming application found it.
+
+  - The listbox now carries `tabindex="-1"`, in the server's markup as well as after hydration. Tab from the text goes to the control after the text and Shift+Tab to the one before it, with the list open as with it closed. The surface round the listbox does not scroll (`overflow: hidden`) and is given no `tabindex`.
+  - A press is as it was. `tabindex="-1"` also makes the listbox a box that a press can focus, its scrollbar included, which a box with no `tabindex` is not. The default of `pointerdown` and of `mousedown` was already prevented over the whole list, and that is what stops it: nothing was added for it.
+  - Read in Chromium 153 with 13 options and `maxVisible` 8, real keys and a real mouse. Before: Tab from the text left focus on the listbox, or on nothing once the text's `onBlur` had closed the list. After: Tab goes to the button after the text and Shift+Tab to the button before it, and from the button after, Shift+Tab goes to the text. A press on the surface's padding, on the scrollbar, and on an option each leave focus and the selection in the text; a press on an option still chooses it; the wheel and a drag of the scrollbar's thumb still scroll the list.
+  - `check:components` now holds the attribute on the listbox and nowhere else in the list, in the server's markup too, and that the default of `pointerdown` and `mousedown` is prevented on every element of the list, the listbox itself among them. jsdom has no Tab order, so where Tab goes is not held by a check.
+
+  **Fixed: a long run of text with no space in it froze the editor.** On the document surface a run with no break in it wraps wherever the line ends (`overflow-wrap: break-word`, and `anywhere` in a table cell). With kerning on, Chromium lays such a run out in time that grows with the square of its length, at every key. A security review of the application found it with a paragraph of 100,000 asterisks.
+
+  - `.ekd-editor` now declares `font-kerning: none`. It is on the root, so every block under it inherits it: paragraphs, headings, list items, quotations, table cells, captions, callouts, and the table of contents. Nothing else on the surface changes: ligatures and the other font features are as they were, and no line of ordinary prose in the page that was compared broke at a different place. Words are wider or narrower by what their kerning pairs were: "AVATAR" in the serif at `--fs-md` is 57.4 pixels wide where it was 55.2.
+  - It is this surface only. The reset still sets `text-rendering: optimizeLegibility` on `body`, and a page that is read and not typed into keeps its kerning. A paragraph outside the surface that wraps a long run the same way is as slow as before.
+  - Measured in Chromium 153 with the built stylesheets and the application's own font files, one paragraph of one character, in milliseconds to lay out. Before: 27 at 8,000 asterisks, 106 at 16,000, 427 at 32,000 and 1,371 at 100,000, and the same again for each character typed after. After: 0.3, 0.5, 1.1 and 4.6. Underscores: 20, 80, 323 and 1,032 before, and 0.3, 0.5, 1.0 and 3.5 after.
+  - It is not the asterisk and the underscore alone, and not the serif alone. Of 124 characters and short patterns at 16,000 characters, 24 took 20 milliseconds or more in the serif, "w", "C", "3" and the quotation marks among them, and 13 in the sans, which is the face of a table cell: "f", "s", "3" and the brackets among them. With `font-kerning: none` none does, in either face. The mono was never slow.
+  - `font-kerning: none` is the smallest declaration that removes the cost. `text-rendering: optimizeSpeed` and `text-rendering: auto` change nothing in Chromium, and neither does turning ligatures off with kerning left on. `font-feature-settings: "kern" 0` removes it too, and replaces the features the reset sets. Ligatures do not need to go.
+  - `check:components` now holds `font-kerning: none` on the root rule of `styles/editor.css`, that `styles.css` and `styles/components.css` carry the same rule, and that no rule in the entry sets `font-kerning` again, sets the `kern` feature by hand, or sets `text-rendering`.
+
+  Not tested: Firefox and Safari, for both fixes. The list has still not been heard in a screen reader, and step 13 of the README's script, "What to test with a screen reader before shipping", is the one that covers Tab. The layout times are Chromium's alone; whether Firefox or Safari have the same cost with kerning on was not measured.
+
 ## 0.28.0
 
 ### Minor Changes

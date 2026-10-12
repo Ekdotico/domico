@@ -2383,13 +2383,41 @@ button.ekd-sync-control:hover {
 /* The prompt in an empty block. The editor sets `data-placeholder` on a block
    while it is empty and removes it at the first character. --fg-3, the
    quietest ink that is text. Floated and of no height, so the caret sits at
-   the start of the line and the prompt takes no press. */
+   the start of the line and the prompt takes no press.
+
+   The prompt is drawn and not said. Text a stylesheet generates is part of
+   the element's text for a screen reader, so an empty block was read as if
+   the prompt were written in it, and the caption of a table, whose prompt is
+   drawn by this rule too, as if its text were "Caption". The rule after this
+   one gives the generated text an empty alternative (CSS Generated Content
+   Level 3, "alternative text for accessibility"), which takes it out of what
+   is read.
+
+   It is a rule of its own, inside `@supports`, and not a second declaration
+   in this one. Where `attr()` is a substitution function, a declaration that
+   holds it is kept whatever else is in it, and is found wanting only when the
+   value is computed: a browser that has that `attr()` and not the `/` would
+   let the second declaration win and then draw nothing. The query asks about
+   a string, which is parsed at once and so answers truly. A browser that
+   does not have the `/` keeps the plain declaration, and there the prompt is
+   drawn and is read as before. The rule in `@supports` comes after this one
+   and has its selector, so it wins by order where it applies.
+
+   What the prompt says is the application's to say where a screen reader is
+   told it: in the description of the text region, or in `aria-placeholder`
+   on it.
+
+   The ink holds as text on the canvas and the two surfaces. It does not on
+   every ground a block can have: see the README, "The document surface". */
 .ekd-editor [data-placeholder]::before {
   content: attr(data-placeholder);
   float: inline-start;
   block-size: 0;
   color: var(--fg-3);
   pointer-events: none;
+}
+@supports (content: "a" / "") {
+  .ekd-editor [data-placeholder]::before { content: attr(data-placeholder) / ""; }
 }
 /* A block selected as a whole: a rule, a page break, a table of contents. */
 .ekd-editor :is([data-node-selected], .ProseMirror-selectednode) {
@@ -2532,6 +2560,11 @@ button.ekd-sync-control:hover {
     background: Mark;
     color: MarkText;
   }
+  /* The prompt of an empty block is not the writer's text, and here the ink
+     that told the two apart is gone: every text colour is forced to the
+     system's one. GrayText is the system's colour for text that is not live,
+     and what a browser gives the placeholder of its own fields here. */
+  .ekd-editor [data-placeholder]::before { color: GrayText; }
 }
 
 /* --- Code block ---------------------------------------------------------- */

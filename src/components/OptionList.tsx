@@ -112,8 +112,33 @@ import { useBeforePaint } from './viewport.js';
  * says `status`, or `empty` when there are no options, `announceAfterMs`
  * after the text last changed: 500 unless given. A person typing quickly
  * hears the count they stopped on and not each one on the way, and a count
- * that did not change is not said again. Closing empties the region, so the
- * next opening is announced. Both texts are the application's.
+ * that did not change is not said again. Both texts are the application's.
+ *
+ * **Its closing is announced too.** The region is a sibling of the list and
+ * not a part of it, and it stays in the document while the list is closed: a
+ * region that left with the list could say nothing of the list's going. When
+ * `open` becomes false the region is given `closed`, "List closed." unless
+ * given, 150 milliseconds later, so a list that opens again inside that time
+ * says nothing of having closed. Two closings are silent. One is of a list
+ * whose opening was never said, because it closed before its count settled:
+ * a writer who types " /usr/" is not told that a list they never heard of has
+ * closed. The other is one the application gives an empty `closed` for.
+ *
+ * `closed` is the word for a closing and nothing more. It is read on the one
+ * render in which `open` becomes false, and a `closed` given on a later
+ * render is not read. It is not said at all for a list whose opening was not
+ * said. So it is not a way to announce a choice: a writer who chooses before
+ * the count has settled would hear nothing. The component does not tell a
+ * choice from a dismissal, since Enter is the application's key, so with
+ * `closed` left alone a choice is followed by "List closed." as Escape is.
+ * An application that confirms a choice says so in a status region of its
+ * own, and passes "" on the render that closes the list after a choice, so
+ * that the two are not said one over the other.
+ *
+ * The text stays in the region until the list opens again, as the
+ * last label stays in the region of `SyncStatus`, and opening empties it, so
+ * the next count is news. An `OptionList` that the application takes out of
+ * the page as it closes takes the region with it, and nothing is said.
  *
  * Enter chooses the first match from the moment the list opens, and a writer
  * who cannot see the list has not been told which option that is. So `status`
@@ -158,8 +183,9 @@ import { useBeforePaint } from './viewport.js';
  * rendered outside a modal `<dialog>` cannot be pressed, so it is rendered
  * inside the dialog that holds the text.
  *
- * Closed, it renders nothing. On the server an open list renders unplaced
- * and not visible, and is placed before the first paint after hydration.
+ * Closed, it renders the status region and nothing else: no listbox, no
+ * option, no popover. On the server an open list renders unplaced and not
+ * visible, and is placed before the first paint after hydration.
  *
  * Nothing warns of misuse. The package has no development-only branch
  * anywhere, and this control does not add the first. Two mistakes are silent
@@ -202,6 +228,16 @@ export interface OptionListProps {
    * `announceActive` the count alone, ending in a full stop: "3 blocks.".
    */
   status: string;
+  /**
+   * Announced when the list closes, if its opening was announced. "List
+   * closed." unless given. Read on the one render in which `open` becomes
+   * false; given on a later render it is not read. An empty string says
+   * nothing, which is for a closing that follows a choice the application
+   * confirms in a status region of its own. It is the word for a closing and
+   * not a way to announce a choice: a list that closes before its opening
+   * was announced says nothing, whatever is given here.
+   */
+  closed?: string;
   /** How long the announcement waits for the text to stop changing, in milliseconds. */
   announceAfterMs?: number;
   /**
@@ -242,6 +278,7 @@ export function OptionList({
   maxVisible = 8,
   empty,
   status,
+  closed = 'List closed.',
   announceAfterMs = 500,
   announceActive,
   detailInName = true,
@@ -250,8 +287,8 @@ export function OptionList({
   const boxRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   // Read by listeners that outlive a render, so each sees the latest.
-  const latest = useRef({ anchor, onDismiss });
-  latest.current = { anchor, onDismiss };
+  const latest = useRef({ anchor, onDismiss, closed });
+  latest.current = { anchor, onDismiss, closed };
 
   const place = () => {
     const box = boxRef.current;
@@ -390,6 +427,10 @@ export function OptionList({
   // together could lose the count. What was last said of each is kept, so
   // neither is said twice running, and both are forgotten on closing so that
   // the same count is news again the next time the list opens.
+  //
+  // The region is outside the list and outlives it, so the closing can be
+  // said: a region that is removed says nothing, and one that is put in the
+  // document with its text already in it is not certain to be spoken.
   const text = options.length === 0 ? empty : status;
   const at = announceActive ? options.findIndex((option) => option.id === activeId) : -1;
   const activeKey = at >= 0 ? options[at]!.id : '';
@@ -399,9 +440,36 @@ export function OptionList({
   const shown = announceActive ? options.map((option) => option.id).join(' ') : '';
   const [announced, setAnnounced] = useState('');
   const said = useRef({ count: '', active: '', shown: '' });
+  // Whether the writer was told of a list and has not yet been told that it
+  // closed. It is put back to false when a closing is given to the region,
+  // and not when the list closes: a closing that was taken back, because the
+  // list opened again inside the wait, has told nobody anything.
+  const told = useRef(false);
+  // Opening and closing, and nothing else: a render of a closed list must not
+  // take back a closing that is waiting to be said.
+  useEffect(() => {
+    if (open) {
+      // What the last closing left is not this list's.
+      setAnnounced('');
+      return;
+    }
+    // A list whose opening was never said closes unsaid, and so does a list
+    // that was never open. `closed` is the one from the render that closed
+    // the list, and a later render's is not read. An empty one empties the
+    // region.
+    const text = told.current ? latest.current.closed : '';
+    // After the same wait as a move in the list: a list that opens again
+    // inside it says nothing of having closed, and is still one the writer
+    // was told of, so its next closing is said whether or not its count had
+    // settled again.
+    const timer = setTimeout(() => {
+      told.current = false;
+      setAnnounced(text);
+    }, ACTIVE_SETTLE_MS);
+    return () => clearTimeout(timer);
+  }, [open]);
   useEffect(() => {
     if (!open) {
-      setAnnounced('');
       said.current = { count: '', active: '', shown: '' };
       return;
     }
@@ -420,21 +488,40 @@ export function OptionList({
         memo.active = activeKey;
         // One write. The two are joined by a space and nothing else: the
         // words and their punctuation are the application's.
-        if (due.length > 0) setAnnounced(due.join(' '));
+        if (due.length > 0) {
+          told.current = true;
+          setAnnounced(due.join(' '));
+        }
       },
       filtered ? announceAfterMs : ACTIVE_SETTLE_MS,
     );
     return () => clearTimeout(timer);
   }, [open, text, shown, activeKey, activeLine, announceAfterMs]);
 
-  if (!open) return null;
+  // One element for as long as the control is in the page, open and closed.
+  // It is the second of two children on every render, so that React keeps
+  // the element when the list beside it comes and goes: the closed list is
+  // an empty first place, and not a place left out.
+  const region = (
+    <span className="ekd-option-list-announce" role="status">
+      {announced}
+    </span>
+  );
+  if (!open) {
+    return (
+      <>
+        {null}
+        {region}
+      </>
+    );
+  }
 
   const rows = Math.max(1, Math.floor(maxVisible));
   // The attribute as a string, which React 18 writes as given. Not
   // in its types until 19.
   const popover = { popover: 'manual' };
 
-  return (
+  const list = (
     <div
       {...popover}
       ref={boxRef}
@@ -491,9 +578,12 @@ export function OptionList({
       ) : (
         <p className="ekd-option-list-empty">{empty}</p>
       )}
-      <span className="ekd-option-list-announce" role="status">
-        {announced}
-      </span>
     </div>
+  );
+  return (
+    <>
+      {list}
+      {region}
+    </>
   );
 }

@@ -1150,15 +1150,64 @@ region says the active option itself, and `status` is the count alone.
 `announceAfterMs` after it last changed, which is 500 unless the application
 says otherwise. A writer who types three letters one after another hears the
 count they stopped on, and a key that leaves the count unchanged is not announced.
-Closing empties the region, so the next opening is announced again.
+Opening empties the region, so the next count is announced again.
 
-Both texts are the application's, and the Expression Guidelines apply to them
+**The closing is announced.** A writer who cannot see the list was told when
+it opened and was not told when it went: after Escape, after the cursor left
+the query, after a letter that ended the command. When `open` becomes false
+the same region is given `closed`, 150 milliseconds later. The text is "List
+closed." unless the application passes another.
+
+| What happened | What the region is given |
+|---|---|
+| The list closed, and its opening had been announced | `closed`, 150 milliseconds after it closed |
+| The list closed before its count had settled | Nothing. A writer who types ` /usr/` is not told that a list they never heard of has closed |
+| The list closed and opened again inside the 150 milliseconds | Nothing about the closing, and then the count |
+| That list then closed again, before its count had settled a second time | `closed`. The writer was told of this list and has not been told that it went |
+| The list closed with `closed=""` | Nothing, and the region is emptied |
+
+For this the region is not part of the list. It is the element after it, and
+it stays in the page while the list is closed, empty until the first closing
+that is announced. A region that left the page with the list could say nothing
+of the list's going. So keep `OptionList` in the page and change `open`, as
+the example does. An application that renders it only while the list is open
+takes the region out with the list, and nothing is said. The text stays in the
+region until the list opens again, as the last label stays in the region of
+`SyncStatus`.
+
+**`closed` is the word for a closing, and not a way to announce a choice.**
+It is read on the one render in which `open` becomes false. A `closed` given
+on a later render is not read. And it is not said at all for a list whose
+opening was not said, so a writer who chooses before the count has settled
+would hear nothing of a choice that was announced through it.
+
+The component does not tell a choice from a dismissal: Enter is the
+application's key, and both arrive as `open` becoming false. So with `closed`
+left alone, a choice is followed by "List closed." as Escape is. What a writer
+wants to hear after a choice is what was chosen. An application that confirms
+a choice says so in a status region of its own, and passes an empty `closed`
+on the render that closes the list after a choice, so that the two are not
+said one over the other:
+
+```tsx
+const [chose, setChose] = useState(false);
+// In `insert`: setChose(true), in the same update that closes the list.
+// In `onInput`: setChose(false).
+<OptionList closed={chose ? '' : undefined} … />
+```
+
+Step 12 of the script below is where to hear whether a product needs that.
+
+All three texts are the application's, and the Expression Guidelines apply to them
 as to any copy. `status` is the count and what is counted, in sentence case and
 with a singular form, and then the option Enter chooses: "1 block. Text
 first.", "3 blocks. Heading 1 first." `empty` follows the formula for an
 empty state, which is what the space is for and how to start: "No block
 matches. Delete a letter to see more." It does not say that the writer did
-something wrong.
+something wrong. `closed` is in the system feedback register: it describes
+what is complete, in sentence case and with a full stop, as "Document sealed."
+does. It is the one text here with a default, because it says the same thing
+in every product.
 
 **The active option, said by the status region.** This is off unless the
 application passes `announceActive`, a function from the option, its index
@@ -1326,8 +1375,10 @@ that prevented every Escape would leave the surface with none.
 chosen. It handles no key. It does not group options or draw icons. It does not
 choose an option on Tab, and an application that wants that reads Tab in its
 own handler. It does not close when focus leaves the text: the application
-closes it, as `onBlur` does above. Closed, it renders nothing, so no part of a
-closed list is in the accessibility tree.
+closes it, as `onBlur` does above. Closed, it renders its status region and
+nothing else, so no listbox, no option and no popover of a closed list is in
+the accessibility tree. The region is one `span` that is not drawn, and it is
+empty until a closing is announced.
 
 It does not warn of misuse. The package has no development-only code path, and
 this control does not add the first one. Two mistakes are silent, and are the
@@ -1408,23 +1459,35 @@ screen, is "not run" and not "pass".
     deleted, as the screen reader says any deletion, and then the status
     again. Silence after the deletion is a failure: the writer does not know
     the list is back.
-11. Press Escape. Expect the list to close, the cursor to be where it was, and
-    nothing to be said about the list: closing empties the status region, and
-    the package announces no closing. A screen reader may say nothing at all
-    here, or may say the text region or the line again. Both pass. Type a
-    letter: expect the letter and then silence. A count after that letter is a
-    failure, because the list has opened again. Read the line: expect the `/`
-    and the query as text. Type the trigger character again: expect step 1.
+11. Wait for the status, then press Escape. Expect the list to close, the
+    cursor to be where it was, and "List closed." or the application's own
+    `closed`, once. A screen reader may say the text region or the line as
+    well. Silence is a failure: the writer does not know the list has gone.
+    Type a letter: expect the letter and then silence. A count after that
+    letter is a failure, because the list has opened again. Read the line:
+    expect the `/` and the query as text. Type the trigger character again:
+    expect step 1. Then type the trigger character and press Escape at once,
+    before the status. Expect nothing about the list: a list that was not
+    announced as open is not announced as closed.
 12. Open the list and press Enter without moving. Expect the first option to
     be inserted, which is the one step 1 named. Open it again, press Down
     twice, and press Enter. Expect the third option. Record what is heard
-    after each Enter. The package says nothing when an option is chosen, so
-    what is heard is what the application's editor does with the cursor. If
-    that is silence, the writer cannot tell that the block is there, and the
-    application owes a status message of its own.
-13. Open the list and press Tab. Expect focus to go to the next control, and
-    that control to be said. Press Shift+Tab. Expect the text region to be
-    said, no status, and no list. Type a letter: expect the letter and no list.
+    after each Enter, and in what order. Do it twice: once after the status
+    has been heard, and once at speed, with Enter pressed before the status.
+    With `closed` left alone the package says "List closed." after a choice
+    as after Escape, where the status was heard, and nothing where it was not.
+    Anything else that is heard is what the application's editor does with
+    the cursor. If the editor says the new block, the two together may be
+    more than is wanted: pass an empty `closed` on the render that closes the
+    list after a choice. If the editor says nothing, "List closed." does not
+    tell the writer that the block is there, and `closed` is not the place to
+    say it, because it is silent at speed: the application owes a status
+    message of its own for the choice, in a region of its own.
+13. Open the list, wait for the status, and press Tab. Expect focus to go to
+    the next control, and that control to be said. Record whether "List
+    closed." is heard after it, and whether it is in the way. Press Shift+Tab.
+    Expect the text region to be said, and no list. Type a letter: expect the
+    letter and no list.
 14. Where the text is inside a dialog or another modal surface: open the list
     and press Escape. Expect the list to close and the dialog to stay, with
     nothing said about the dialog. Press Escape again. Expect the dialog to
@@ -1448,6 +1511,19 @@ screen, is "not run" and not "pass".
     option does not move, nothing is inserted from the list, the list does
     not close, and a dialog round the text does not close. Commit the word:
     expect the list to be filtered by it.
+17. The prompts of the document surface, which are drawn and not read. Open
+    an empty document and put the cursor in it. Expect the name and the
+    description of the text region, and the empty line as the screen reader
+    says any empty line. The prompt said as the first line of the document is
+    a failure, and means this browser does not take the empty alternative
+    text. Then insert a table and move the cursor into its empty caption,
+    which shows "Caption". Expect the word not to be said as text. Record
+    what is said on entering the caption: "figure", "caption", a blank line,
+    or nothing. If nothing that is heard tells the writer that this line is
+    the caption of the table, the application says so where a screen reader
+    is told it, in the description of the text region: that a table has a
+    caption under it. Type a caption, leave it and come back: expect its
+    text, once.
 
 Not covered by any test in the package: a screen reader, Firefox, Safari, a
 touch device, forced colours, and an input method that composes. The
@@ -1549,6 +1625,44 @@ them.
   A page that is read and not typed into keeps its kerning, so do not copy
   the declaration to one, and do not set `font-kerning` or the `kern` feature
   on anything under the root.
+- The prompt of an empty block is drawn and not said. It is text the
+  stylesheet generates from `data-placeholder`, and a screen reader reads
+  generated text as the text of the element, so an empty paragraph was read as
+  if the prompt were written in it. The stylesheet now gives it an empty
+  alternative text, `content: attr(data-placeholder) / ""`, in a rule of its
+  own inside `@supports (content: "a" / "")`, after the plain
+  `content: attr(data-placeholder)`. A browser that does not have the `/`
+  keeps the plain rule: the prompt is drawn there and is read as it was. So
+  the application says what the prompt says in a place a screen reader is
+  told it: the description of the text region, or `aria-placeholder` on it.
+  In forced colours the prompt is `GrayText`.
+- The prompt is `--fg-3`, and that ink does not hold as text on every ground
+  a block under the root can have. In the eight palettes it is 5.03:1 at its
+  least on `--bg-canvas`, 5.12:1 on `--bg-surface` and 4.60:1 on
+  `--bg-surface-2`, where text owes 4.5:1 (WCAG 1.4.3), and `check:contrast`
+  holds those three pairs. The rule is not scoped to a kind of block, and on
+  the grounds the package itself draws inside the surface the ink is short in
+  some palettes:
+
+  | Ground | Where it is | Short of 4.5:1 in |
+  |---|---|---|
+  | `--bg-inset` | A code block | Sepia light, 4.36 |
+  | `--info-soft` | A callout of type `info` | Sepia light, 4.29. Mono light, 4.33 |
+  | `--ok-soft` | A callout of type `tip` | Sepia light, 4.45 |
+  | `--warn-soft` | A callout of type `warning` | Sepia light, 4.34. Mono light, 4.48 |
+  | `--danger-soft` | A callout of type `danger` | Parchment light, 4.46. Sepia light, 4.08. Mono light, 4.24 |
+  | `--burgundy-soft` | A callout of type `quote` | Sepia light, 4.07. Mono light, 4.26 |
+  | `--accent-soft` | A selected table cell | Sepia light, 4.18. Sepia dark, 4.44 |
+
+  So an application that draws a prompt in a code block, in a callout or in a
+  selected cell gives it another ink there: `--fg-2` is 6.23:1 at its least on
+  all seven. A callout with no type is on `--bg-surface-2`, where the prompt
+  holds. No token was changed for this, and no check holds it:
+  `check:contrast` does not list `--fg-3` on these grounds.
+- The caption of a table takes its prompt the same way: `data-placeholder` on
+  the `ekd-table-caption` while it is empty. An empty caption is then an
+  empty caption to a screen reader, and not one whose text is "Caption". A
+  caption that has text is read once, as its text.
 
 A table scrolls inside its own wrapper at every width. Its styles are not
 `styles/table.css`, which draws a card with a sticky header and expects `thead`
@@ -1563,7 +1677,7 @@ package styles them.
 | `lang="el"` | The root, or any block or span | Text in Greek, set in the sans |
 | `h1`, `h2`, `h3`, `p`, `ul`, `ol`, `li`, `blockquote`, `hr` | Elements | The blocks, with no class |
 | `strong`, `em`, `u`, `s`, `code`, `sup`, `sub`, `a`, `mark` | Elements | The nine marks, with no class |
-| `data-placeholder="…"` | A block, while it is empty | The prompt shown in it |
+| `data-placeholder="…"` | A block or a caption, while it is empty | The prompt shown in it. Drawn, and not read by a screen reader |
 | `data-node-selected` | A block selected as a whole | An outline in the accent. `ProseMirror-selectednode` is answered too |
 | `class="ekd-table-wrap"` | The element round a `table` | The scroll container. `tableWrapper` is answered too |
 | `th`, `td` | Table cells | A header cell and a cell, in any row or column |

@@ -1209,6 +1209,16 @@ click that follows, so a finger that scrolls the list chooses nothing. The
 pointer makes an option active when it moves onto it, and not when the list
 scrolls under a pointer that is still.
 
+**Tab does not stop on the list.** The listbox scrolls once it holds more
+options than `maxVisible`. Chromium and Firefox put a box that scrolls, with
+nothing in it that takes focus, in the Tab order by themselves, so Tab from
+the text went into the list. The listbox carries `tabindex="-1"`, on the
+server's markup too, and Tab and Shift+Tab from the text go to the control
+after it and the control before it, with the list open as with it closed. The
+attribute also makes the listbox a box that a press can focus, its scrollbar
+included, and the prevented default above is what stops that. Read in Chromium
+with 13 options and with a mouse; not in Firefox or Safari.
+
 **A press outside closes the list**, through `onDismiss('press-outside')`. For
 a mouse that is the button going down. For a finger or a pen it is the lift,
 and only where the touch did not become a pan or a pinch: a reader who drags
@@ -1530,6 +1540,15 @@ them.
 - A document or a block marked `lang="el"` is set in the sans, because the
   serif has no Greek. A Greek phrase inside a document in another language is
   not caught and is drawn in a substituted face.
+- Kerning is off on the surface (`font-kerning: none` on the root, which every
+  block under it inherits). A run with no space in it wraps wherever the line
+  ends, and with kerning on Chromium lays such a run out in time that grows
+  with the square of its length: a paragraph of 32,000 asterisks took 430
+  milliseconds at every key, and 100,000 took 1.4 seconds. With kerning off
+  they take 1 and 4. Ligatures and the other font features are as they were.
+  A page that is read and not typed into keeps its kerning, so do not copy
+  the declaration to one, and do not set `font-kerning` or the `kern` feature
+  on anything under the root.
 
 A table scrolls inside its own wrapper at every width. Its styles are not
 `styles/table.css`, which draws a card with a sticky header and expects `thead`

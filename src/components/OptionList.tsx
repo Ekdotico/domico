@@ -82,6 +82,12 @@ import { useBeforePaint } from './viewport.js';
  * **It handles no key**, because it is never focused. Escape is the
  * application's key like the rest, and `optionListKey` answers it.
  *
+ * **It is not a Tab stop.** The listbox scrolls once it holds more than
+ * `maxVisible` options, and Chromium and Firefox put a box that scrolls and
+ * holds nothing focusable in the Tab order by themselves. So it carries
+ * `tabindex="-1"`: Tab and Shift+Tab from the text go to what is before and
+ * after the text in the page, with the list open as with it closed.
+ *
  * **A press does not move focus.** The default of `pointerdown` and of
  * `mousedown` is prevented over the whole list, so the text keeps its focus,
  * its selection and, on a phone, its keyboard. The option is chosen on the
@@ -445,6 +451,12 @@ export function OptionList({
           id={id}
           role="listbox"
           aria-label={label}
+          // Not a Tab stop. Chromium and Firefox make a box that scrolls and
+          // holds nothing focusable a Tab stop of their own accord, so a list
+          // of more than `rows` options took Tab from the text. -1 says no to
+          // that. It also makes the box one a press can focus, its scrollbar
+          // included, which is what the two handlers above prevent.
+          tabIndex={-1}
           className="ekd-option-list-options"
           // The one length that depends on a prop: `rows` rows. A row is
           // `--sp-7` at its least, and otherwise one line of its text with the

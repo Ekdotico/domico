@@ -2383,9 +2383,23 @@ button.ekd-sync-control:hover {
 /* The prompt in an empty block. The editor sets `data-placeholder` on a block
    while it is empty and removes it at the first character. --fg-3, the
    quietest ink that is text. Floated and of no height, so the caret sits at
-   the start of the line and the prompt takes no press. */
+   the start of the line and the prompt takes no press.
+
+   The prompt is drawn and not said. Text a stylesheet generates is part of
+   the element's text for a screen reader, so an empty block was read as if
+   the prompt were written in it, and the caption of a table, whose prompt is
+   drawn by this rule too, as if its text were "Caption". The second
+   declaration gives the generated text an empty alternative (CSS Generated
+   Content Level 3, "alternative text for accessibility"), which takes it out
+   of what is read. A browser that does not parse the `/` drops that
+   declaration and keeps the first, and there the prompt is read as before.
+   The order is the fix: the first alone is the fault, and the second alone
+   draws no prompt in such a browser. What the prompt says is the
+   application's to say where a screen reader is told it: in the description
+   of the text region, or in `aria-placeholder` on it. */
 .ekd-editor [data-placeholder]::before {
   content: attr(data-placeholder);
+  content: attr(data-placeholder) / "";
   float: inline-start;
   block-size: 0;
   color: var(--fg-3);
@@ -2532,6 +2546,11 @@ button.ekd-sync-control:hover {
     background: Mark;
     color: MarkText;
   }
+  /* The prompt of an empty block is not the writer's text, and here the ink
+     that told the two apart is gone: every text colour is forced to the
+     system's one. GrayText is the system's colour for text that is not live,
+     and what a browser gives the placeholder of its own fields here. */
+  .ekd-editor [data-placeholder]::before { color: GrayText; }
 }
 
 /* --- Code block ---------------------------------------------------------- */

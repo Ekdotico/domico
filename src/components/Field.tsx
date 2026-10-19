@@ -53,8 +53,10 @@ export function FieldShell({
   className?: string;
   /**
    * Keeps the label for a screen reader and takes it off the page, with the
-   * reset's `.sr-only`. `Select` alone offers it, for a control in the header
-   * of a block, where the block already says what is being chosen.
+   * reset's `.sr-only`. `Select` offers it, for a control in the header of a
+   * block, where the block already says what is being chosen; `Checkbox`
+   * offers it too, for a box in a row whose header says what it is about, and
+   * builds its own label (`FieldShell` is not under it).
    */
   labelHidden?: boolean;
   /** `small` is the size of a control in the header of a block. */

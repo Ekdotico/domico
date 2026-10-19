@@ -717,7 +717,10 @@ between two steps costs that rhythm to buy a few pixels nobody asked for.
 **When not to.** Do not interpolate, and do not `calc()` your way off the scale.
 Do not use a spacing step for a structural inset — `--gutter` is the page's
 outside inset and exists as its own token for that reason. Do not use spacing
-for a border width or an optical offset; those have their own tokens below.
+for a border width or an optical offset. There is no border-width token: a
+rule is a literal `1px`, as the Rule section above says, and the 2px outline
+of a table is drawn in `table.css` and is not a step to reach for. The optical
+offsets have their own tokens, under Optical below.
 
 ## Radius
 

@@ -415,7 +415,8 @@ the field is marked invalid and the number goes negative. Because
 component; a Server Component cannot pass it one.
 
 `TextField`, `PasswordField`, `OneTimeCodeField`, `TextArea`, and `Checkbox`
-each hand their native element to a `ref`.
+each hand their native element to a `ref`. `Checkbox` takes `labelHidden`, for a
+box in a row of a table, described under The table below.
 
 ```tsx
 <RadioGroup id="kind" name="kind" legend="Kind of feedback" required
@@ -680,6 +681,59 @@ inside a danger hairline. A read-only field has no ground of its own, so its
 value is `--fg-1` and its boundary `--rule-control` on whichever of
 `--bg-canvas`, `--bg-surface`, `--bg-surface-2`, and `--bg-raised` the form
 sits on. `pnpm check:contrast` measures each of those pairs.
+
+---
+
+## The table
+
+`Table`, `TableHead`, `TableBody`, `TableRow`, `TableHeaderCell` and `TableCell`
+are the native elements in a card that scrolls at narrow widths, with the
+styles in `styles/table.css`. `Table` takes a `caption` or a `label`, which
+names the scroll area for a keyboard and a screen reader.
+
+A header cell in `TableBody` is the header of its row. The stylesheet draws it
+as one: the padding, the rules and the hover wash of a body cell, at the
+heavier weight and the stronger ink, and without the small label type of a
+column header.
+
+```tsx
+<Table caption="What each role may do">
+  <TableHead>
+    <TableRow>
+      <TableHeaderCell scope="col">Role</TableHeaderCell>
+      <TableHeaderCell scope="col">Rename</TableHeaderCell>
+    </TableRow>
+  </TableHead>
+  <TableBody>
+    <TableRow>
+      <TableHeaderCell scope="row">Editors</TableHeaderCell>
+      <TableCell>
+        <Checkbox name="rename-editors" label="Editors can rename" labelHidden />
+      </TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+```
+
+`TableHeaderCell` takes the attributes of a `<th>`, and `TableCell` those of a
+`<td>`, so `scope`, `colSpan`, `rowSpan` and `headers` type-check. **Nothing is
+defaulted.** The same component is a column header in `TableHead` and a row
+header in `TableBody`, and it cannot tell which, so it would guess wrong
+somewhere. Say `scope="col"` or `scope="row"`. A browser works the scope out
+for a table with a single header row or a single header column, so leaving it
+off there is not a fault; a table with both, or with a row header past the
+first column, needs it (WCAG 1.3.1, technique H63). Use `colgroup` or
+`rowgroup` where one header covers several.
+
+`Checkbox` takes `labelHidden` for a box whose row header already says what it
+is about. The label is kept for a screen reader and is not drawn, as `Select`
+keeps its own, and it stays required: it is the box's name. The hidden words
+are positioned against their own label, so they stay inside it and cannot lie
+outside a scroll container that holds the box. A reset's `.sr-only` on a label
+inside a table cell, where nothing is positioned, did not stay inside the
+table's scroll area, and widened the page sideways. The label also shrinks to
+the box, so the empty line beside it does not toggle it, and keeps a 24px
+target (WCAG 2.5.8).
 
 ---
 

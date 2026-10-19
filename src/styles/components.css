@@ -2268,6 +2268,138 @@ button.ekd-sync-control:hover {
   .ekd-sync[data-state="syncing"] .ekd-sync-mark { animation: none; }
 }
 
+/* --- Avatar -------------------------------------------------------------- */
+/* Avatar and AvatarStack: a person as a picture, and the people who have a
+   document open as a row of them.
+
+   The picture is the person's initials in their collaborator colour: the slot
+   of --collab-N for the ground and --collab-N-ink for the letters, the pair
+   that check:collaborators holds at 4.5:1 in all eight palettes. Slot N is
+   mapped to its own two tokens by the ten rules below and nowhere else, so
+   a person is one colour wherever it is drawn; check:components reads each
+   rule for the slot it names. The letters are set in the sans: the serif has
+   no Greek (rule 4).
+
+   The circle is a minimum, not a size. It is at least --sp-6, --sp-7 or
+   --sp-8 across and square (aspect-ratio), and it grows with its letters, so
+   a reader who raises the text size gets a larger picture and not letters cut
+   off at the edge (WCAG 1.4.4). At the default size the letters are narrower
+   than the circle and every picture in a row is the same size.
+
+   The 2px ring is a border, not a box-shadow, for two reasons. It is
+   the gap between one picture and the next that overlaps it, and it is
+   --bg-surface because a stack is drawn in a header on a surface. And a
+   border is kept in forced colours, where a box-shadow is removed and a
+   circle whose ground is replaced would have no edge.
+
+   Nothing in this entry moves, so there is no motion to reduce. */
+.ekd-avatar {
+  --ekd-avatar-size: var(--sp-7);
+  /* With no slot class the picture is neutral: the sunken step and the primary
+     ink, the pair check:contrast lists for a hovered secondary button. That is
+     the count of the people who are not drawn, and the only picture that is
+     not a person. */
+  --ekd-avatar-solid: var(--bg-surface-2);
+  --ekd-avatar-ink: var(--fg-1);
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-inline-size: var(--ekd-avatar-size);
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--ekd-avatar-solid);
+  color: var(--ekd-avatar-ink);
+  border: 2px solid var(--bg-surface);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semi);
+  line-height: var(--lh-tight);
+  white-space: nowrap;
+  user-select: none;
+}
+.ekd-avatar--sm { --ekd-avatar-size: var(--sp-6); font-size: var(--fs-2xs); }
+.ekd-avatar--lg { --ekd-avatar-size: var(--sp-8); font-size: var(--fs-sm); }
+.ekd-avatar-slot-1  { --ekd-avatar-solid: var(--collab-1);  --ekd-avatar-ink: var(--collab-1-ink); }
+.ekd-avatar-slot-2  { --ekd-avatar-solid: var(--collab-2);  --ekd-avatar-ink: var(--collab-2-ink); }
+.ekd-avatar-slot-3  { --ekd-avatar-solid: var(--collab-3);  --ekd-avatar-ink: var(--collab-3-ink); }
+.ekd-avatar-slot-4  { --ekd-avatar-solid: var(--collab-4);  --ekd-avatar-ink: var(--collab-4-ink); }
+.ekd-avatar-slot-5  { --ekd-avatar-solid: var(--collab-5);  --ekd-avatar-ink: var(--collab-5-ink); }
+.ekd-avatar-slot-6  { --ekd-avatar-solid: var(--collab-6);  --ekd-avatar-ink: var(--collab-6-ink); }
+.ekd-avatar-slot-7  { --ekd-avatar-solid: var(--collab-7);  --ekd-avatar-ink: var(--collab-7-ink); }
+.ekd-avatar-slot-8  { --ekd-avatar-solid: var(--collab-8);  --ekd-avatar-ink: var(--collab-8-ink); }
+.ekd-avatar-slot-9  { --ekd-avatar-solid: var(--collab-9);  --ekd-avatar-ink: var(--collab-9-ink); }
+.ekd-avatar-slot-10 { --ekd-avatar-solid: var(--collab-10); --ekd-avatar-ink: var(--collab-10-ink); }
+/* A picture covers the letters and has a ground of its own, so a transparent
+   image does not show them through. If it fails to load the component takes
+   it out, and the letters are what is left. */
+.ekd-avatar-image {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  background: var(--bg-surface);
+}
+
+/* The stack. Every item takes the same negative start margin and the list
+   takes the matching start padding, so the first picture of every line sits
+   at the start edge and each later one overlaps the one before. That is what
+   lets the row wrap: a row wider than its container, at 320px with ten large
+   pictures, becomes two lines and not a horizontal scroll bar.
+
+   The overlap is small on purpose. The later picture is painted over the end
+   of the earlier one, and the letters are centred, so the overlap has to stop
+   short of where the letters end or the second letter is cut: 4px at the
+   medium and large sizes, 2px at the small one, where the letters take most
+   of the circle. The ring does the work of telling two pictures apart. */
+.ekd-avatar-stack {
+  --ekd-avatar-overlap: var(--sp-1);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: var(--sp-1);
+  margin: 0;
+  padding: 0;
+  padding-inline-start: var(--ekd-avatar-overlap);
+  list-style: none;
+  max-inline-size: 100%;
+}
+.ekd-avatar-stack--sm { --ekd-avatar-overlap: calc(var(--sp-1) / 2); }
+/* Positioned, so the hidden words below are contained by their own item: an
+   .sr-only with no positioned ancestor lays out against the page, and inside
+   a scroll container that is not one it widens the container (0.30.0). */
+.ekd-avatar-stack-item {
+  position: relative;
+  display: inline-flex;
+  margin-inline-start: calc(var(--ekd-avatar-overlap) * -1);
+}
+/* The reader's own picture, in the strongest ink, as well as in the words.
+   --fg-1 on --bg-surface is held by check:contrast at 4.5:1. */
+.ekd-avatar-stack-item[data-you="true"] .ekd-avatar { border-color: var(--fg-1); }
+/* The overlap is paint order, and a later picture is over an earlier one's
+   ring. Nothing in a stack takes focus today; an item that does is raised, so
+   its focus ring is not covered. */
+.ekd-avatar-stack-item:focus-within { z-index: 1; }
+/* The name and the role: present for a screen reader and absent from the page,
+   the technique of .sr-only in the reset, restated so this entry holds alone. */
+.ekd-avatar-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (forced-colors: active) {
+  .ekd-avatar { border-color: CanvasText; }
+}
+
 /* --- Editor -------------------------------------------------------------- */
 /* The surface a document is written on. Not a component: a stylesheet for
    markup the application's editor produces. `ekd-editor` goes on the editable

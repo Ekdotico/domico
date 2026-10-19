@@ -222,7 +222,9 @@ controls `button.css`, `dialog.css`, `tooltip.css`, and `form.css`, which is one
 entry for the fields, the radio group, the checkbox, and the form fault, since
 they share a label, a hint, and a message, and for the heading of an
 application page `page-heading.css`, and for the editor `toolbar.css`,
-`menu.css`, `option-list.css`, `sync-status.css`, `editor.css`, and `code.css`.
+`menu.css`, `option-list.css`, `sync-status.css`, `editor.css`, and `code.css`,
+and for the people in a document `avatar.css`, one entry for `Avatar` and
+`AvatarStack`.
 They are build
 outputs sliced
 from one source stylesheet; there is no per-component source file, so do not
@@ -292,6 +294,19 @@ together, and in forced colours as the system's selection. The list is placed
 by the component, at the cursor, in viewport coordinates written to the
 element's `style`; the stylesheet positions nothing and injects nothing. It
 does not move or fade, so it has no reduced-motion rule to keep.
+
+`avatar.css` is for `Avatar` and `AvatarStack`, the people who have a document
+open. A picture is a person's initials on their collaborator slot, `--collab-N`
+with `--collab-N-ink`, so one person is one colour in the caret, the selection
+and the header; the letters are `--font-sans`, which has Greek (rule 4). Every
+`Avatar` is named with `label` or hidden with `decorative`, and the types refuse
+a call that says neither. The stack is a named list, not focusable, since
+nothing in it does anything; each item holds its picture, hidden from a screen
+reader, and the name and role as text that is hidden from the page and kept
+inside the item, which is positioned so the words cannot escape a scroll
+container. The ring is a border, which forced colours keep. It does not move,
+so it has no reduced-motion rule to keep. `check:contrast` holds the initials
+at 4.5:1 and the edge of each picture at 3:1, for all ten slots.
 
 Two entries have no component behind them. `editor.css` styles the markup an
 editor produces under the class `ekd-editor`, and `code.css` a code block and

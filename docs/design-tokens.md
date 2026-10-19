@@ -495,6 +495,13 @@ name, in text, beside the caret; a list of who is present carries the name
 beside the swatch. A caret or a selection with a colour and no name anywhere is
 a defect whatever it measures.
 
+**The picture of a person is a use of these, and `Avatar` is the component.**
+Initials in `--collab-N-ink` on `--collab-N` are the label pair, measured at
+4.5:1, and the edge of the picture is the caret pair, measured at 3:1 on
+`--bg-surface` and `--bg-canvas`. `AvatarStack` carries the names as text in
+each item, which is the rule above. Both are listed in `check:contrast` for all
+ten slots.
+
 **When not to.** These are for people and for nothing else. Do not use a slot as
 a chart series, a tag colour, or a category — a colour that means "Maria" in the
 editor cannot also mean "overdue" in a list. Do not use one for the reader's own

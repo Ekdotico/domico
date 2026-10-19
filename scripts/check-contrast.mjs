@@ -176,12 +176,44 @@ const PAIRS = [
   // the token ever carries prose; darkening the light sources by about 3%
   // lightness is what that would take.
   ['fg-4', 'bg-surface-2', 3],
+  // The avatar, added at 0.31.0, listed below in AVATAR_PAIRS because it is
+  // ten slots and the same two pairs for each. Its other two are listed
+  // above: the count of the people who are not drawn is --fg-1 on
+  // --bg-surface-2, and the ring that marks the reader is --fg-1 on
+  // --bg-surface.
   // --fg-5 is decorative only — hairlines and separators — at 1.41:1 to 2.01:1.
   // No text threshold applies and none is claimed; 1.4.11 does not cover purely
   // decorative graphics either, so this is deliberately not in the list. Stated
   // here because the catalogue says it is decorative, and a reader checking
   // whether that claim is enforced should find the answer rather than silence.
 ];
+
+/**
+ * The avatar's two pairs for each of the ten collaborator slots.
+ *
+ * The initials are `--collab-N-ink` on `--collab-N`, as text, at 4.5:1. The
+ * picture's edge is `--collab-N` against the ring, which is `--bg-surface`,
+ * and against the canvas a stack may also sit on, as a graphical object at
+ * 3:1 (WCAG 2.2 SC 1.4.11). `check:collaborators` measures the same colours as
+ * a caret and a label; these are listed here as well so that this guard, which
+ * is the one that names what the shared components draw, holds the avatar's own
+ * pairs, and `check:components` reads this list back to confirm that each slot
+ * the stylesheet maps is a slot measured.
+ */
+const AVATAR_SLOTS = 10;
+const AVATAR_PAIRS = Array.from({ length: AVATAR_SLOTS }, (_, i) => i + 1).flatMap((n) => [
+  [`collab-${n}-ink`, `collab-${n}`, 4.5],
+  [`collab-${n}`, 'bg-surface', 3],
+  [`collab-${n}`, 'bg-canvas', 3],
+]);
+PAIRS.push(...AVATAR_PAIRS);
+
+// `--pairs` prints the list and stops, for the guards that need to know what is
+// measured and would otherwise copy it.
+if (process.argv.includes('--pairs')) {
+  console.log(JSON.stringify(PAIRS));
+  process.exit(0);
+}
 
 const read = (theme, mode) => {
   try {

@@ -2,7 +2,7 @@
 /**
  * Assemble the shipped stylesheets.
  *
- * Thirty-two entries, so a consumer can take as much or as little as it needs.
+ * Thirty-three entries, so a consumer can take as much or as little as it needs.
  * Tokens are separate again, so the values can be had without any of the
  * opinions.
  *
@@ -36,6 +36,7 @@
  *   styles/menu.css           the list a menu button opens
  *   styles/option-list.css    the list at the text cursor
  *   styles/sync-status.css
+ *   styles/avatar.css         the avatar and the avatar stack
  *   styles/editor.css         the document surface: styles for an editor's markup, no component
  *   styles/code.css           the code block and its syntax colours
  *
@@ -218,6 +219,7 @@ const COMPONENTS = [
   ['menu', ['Menu button'], 'the menu of a menu button'],
   ['option-list', ['Option list'], 'the option list'],
   ['sync-status', ['Sync status'], 'the sync status'],
+  ['avatar', ['Avatar'], 'the avatar and the avatar stack'],
   // Two entries with no component behind them. They style markup an editor
   // produces, and an application that shows code and has no editor takes the
   // second alone.

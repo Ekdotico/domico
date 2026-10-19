@@ -84,7 +84,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `option-list.css`, `sync-status.css`, `editor.css`, and `code.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `option-list.css`, `sync-status.css`, `avatar.css`, `editor.css`, and `code.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/icons` | The icon set: Lucide, vendored, at the house stroke weight |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
@@ -734,6 +734,174 @@ inside a table cell, where nothing is positioned, did not stay inside the
 table's scroll area, and widened the page sideways. The label also shrinks to
 the box, so the empty line beside it does not toggle it, and keeps a 24px
 target (WCAG 2.5.8).
+
+---
+
+## The avatar and the avatar stack
+
+`Avatar` is a person's picture. `AvatarStack` is a row of them for the people
+who have a document open, placed at one position in the document header. Both
+take their styles from `styles/avatar.css`, which `styles.css` and
+`styles/components.css` also carry.
+
+Until a person has a picture, the picture is their **initials on their
+collaborator colour**: the slot of `--collab-N` for the ground and
+`--collab-N-ink` for the letters, the same slot that colours their caret and
+selection in the document. The component has an image path ready, `src`, and
+builds no upload, no resizing and no fetching.
+
+```tsx
+import { Avatar, AvatarStack, avatarInitials } from '@ekdotico/domico/components';
+import '@ekdotico/domico/styles/avatar.css';
+
+<AvatarStack
+  label="People in this document"
+  people={[
+    { id: 'u1', name: 'Maria Papadopoulou', role: 'Editor', collaboratorSlot: 1, you: 'you' },
+    { id: 'u2', name: 'Nikos Georgiou', role: 'Viewer', collaboratorSlot: 2 },
+  ]}
+  max={4}
+  more={(hidden) => (hidden === 1 ? 'and 1 more person' : `and ${hidden} more people`)}
+/>
+
+<Avatar name="Maria Papadopoulou" collaboratorSlot={1} label="Maria Papadopoulou" />
+<Avatar name="Maria Papadopoulou" collaboratorSlot={1} decorative />
+```
+
+### Avatar
+
+| Prop | Type | Meaning |
+|---|---|---|
+| `collaboratorSlot` | `1` to `10` | The person's colour. Required. Anything else is a `RangeError` at render, since a picture with no colour would be drawn |
+| `name` or `initials` | `string` | One of them is required. `initials` are cut to two graphemes and drawn as given; otherwise the letters come from `name` |
+| `label` or `decorative` | `string` or `true` | One of them is required, and not both |
+| `src` | `string` | A picture, drawn over the letters. It has no alternative text of its own |
+| `size` | `'sm' \| 'md' \| 'lg'` | 24, 32 or 40 pixels at least (`--sp-6`, `--sp-7`, `--sp-8`). `md` is the default |
+
+Its other attributes pass through to the `<span>`. It is not a control and
+takes no focus.
+
+**Named or decorative: every call says which.** `label` makes the picture an
+image with that name, for an avatar that stands alone. `decorative` hides it
+from a screen reader, for one beside the person's name or in an `AvatarStack`,
+where the name is text and the letters would be read as a second, shorter
+name. There is no default, and the types refuse a call that gives neither: an
+unnamed picture draws exactly as a named one, so the omission would otherwise
+be silent.
+
+**Initials are cut by grapheme.** `avatarInitials(name)` is the first
+grapheme of the first word and of the last, capitalised, and of a single word
+its first grapheme. A Greek name (`Μαρία Παπαδοπούλου` is `ΜΠ`), a letter with
+an accent or a combining mark, a letter outside the Basic Multilingual Plane
+and a joined emoji are each one character, never cut through. Capitalising
+uses `toUpperCase`, the same in every locale, so the server and the browser
+draw the same letters. The letters are set in `--font-sans`, which has Greek.
+
+**An image replaces the letters.** `src` fills the circle over them, on a
+ground of its own so a transparent image does not show them through. If it
+fails to load, the component takes the image out and the letters are what is
+left. Pass a new `src` and it is tried afresh.
+
+**The circle is a minimum and grows with its letters.** A reader who raises
+the text size gets a larger picture and not letters cut off at its edge (WCAG
+1.4.4). At the default size the letters are narrower than the circle, so every
+picture in a row is the same size.
+
+### AvatarStack
+
+| Prop | Type | Meaning |
+|---|---|---|
+| `label` | `string` | The name of the list: "People in this document". Required |
+| `people` | `AvatarStackPerson[]` | In the order to draw them. An empty list renders nothing |
+| `max` | `number` | The most people drawn before the rest are counted. 4 unless set |
+| `more` | `(hidden: number) => string` | The words for the people not drawn. Required, and called only when someone is left out |
+| `size` | `'sm' \| 'md' \| 'lg'` | As `Avatar` |
+
+A person is `{ id, name, collaboratorSlot, role?, initials?, src?, you? }`.
+`id` is the key. `role` is read after the name, in the application's words.
+`you` is the application's word for the reader, set on the person who is the
+reader. Every word a screen reader hears is passed in, so the application owns
+its texts, in its own languages and with its own plurals. The package has no
+default for `label`, `more`, `you` or `role`.
+
+**What a screen reader reads.** A `<ul>` named by `label`, with `role="list"`
+written out because Safari drops the list from the accessibility tree once its
+markers are removed. Each person is a list item that holds the picture, which
+is `aria-hidden`, and a line of text that reads the name, the `you` words in
+parentheses if there are any, and then the role: "Maria Papadopoulou (you),
+Editor". The items are named for the people and the list for itself, so
+"People in this document, list, 3 items" is heard once and each name once. The
+people who are not drawn are one more item, and it reads `more(hidden)`. Its
+visible `+3` is `aria-hidden`.
+
+**The text is hidden from the page and kept inside its item.** Each item is
+`position: relative` and the words are `position: absolute` in it, so they lie
+within their own item and cannot widen a scroll container the stack is placed
+in, which is what a bare `.sr-only` did to a checkbox in a table cell in
+0.30.0. The stylesheet carries its own copy of the technique, so
+`styles/avatar.css` holds alone.
+
+**The stack is not focusable, and that is a decision.** A person in it has
+nothing to do in the application today. A Tab stop that does nothing is a stop
+the reader has to pass and a control that is not one (WCAG 4.1.2), and a
+screen reader reads every name in the list without it. So the stack is read in
+reading order, as a list, and a keyboard has nothing to reach. The day a person
+has an action, such as a link to their cursor, it is a new prop and a button
+inside the item. The stylesheet already raises an item that holds focus above
+its neighbours, so the overlap will not cover its ring.
+
+**What is drawn.** `max` pictures in the order given, then one more with the
+count (`+3`), in the sunken surface and the primary ink, the only picture with
+no person's colour. Each picture overlaps the one before by 4px (2px at `sm`),
+which stops short of the second letter. A person with `you` has a ring in
+`--fg-1` as well as the words. Neither the ring nor the colour is the only
+signal: the name is in the text. The row wraps, so ten large pictures at a
+width of 320px are two lines and not a horizontal scroll bar.
+
+A person's name is not shown on screen: the pictures are initials and a count.
+An application that wants a name on hover or press builds that on its own
+control, or waits for a prop that does it.
+
+**Motion.** Nothing moves, so there is nothing to reduce. The stylesheet has no
+transition and no animation, and `check:components` fails if one is added
+without a `prefers-reduced-motion` rule.
+
+**Forced colours.** The ring is a border and not a shadow, so it survives, and
+in forced colours it is `CanvasText`, which gives the circle an edge when its
+own ground is replaced.
+
+### Contrast
+
+The initials are `--collab-N-ink` on `--collab-N`, as text, at 4.5:1. The edge
+of the picture is `--collab-N` against `--bg-surface`, which is the ring, and
+against `--bg-canvas`, as a graphical object at 3:1 (SC 1.4.11). Both are listed
+for all ten slots in `check:contrast`, and the worst of each, in the palette
+that sets it:
+
+| Palette | Initials | Against the ring | Against the canvas |
+|---|---|---|---|
+| parchment light | 4.68:1 | 4.37:1 | 4.15:1 |
+| parchment dark | 5.22:1 | 4.76:1 | 5.08:1 |
+| library light | 4.68:1 | 4.68:1 | 4.48:1 |
+| library dark | 5.22:1 | 5.06:1 | 5.34:1 |
+| sepia light | 4.68:1 | 4.42:1 | 4.23:1 |
+| sepia dark | 5.22:1 | 4.88:1 | 5.20:1 |
+| mono light | 4.68:1 | 4.68:1 | 4.68:1 |
+| mono dark | 5.22:1 | 5.37:1 | 5.67:1 |
+
+The count is `--fg-1` on `--bg-surface-2` (11.35:1 at the lowest) and the ring of
+the reader is `--fg-1` on `--bg-surface` (12.33:1 at the lowest); both pairs were
+already listed. The ring is `--bg-surface`, so the stack reads best on a header
+that is a surface. On the canvas it is a faint halo, and the edge of each
+picture still holds 3:1.
+
+### Class names
+
+`ekd-avatar`, `ekd-avatar--sm`, `ekd-avatar--lg`, `ekd-avatar-slot-1` to
+`ekd-avatar-slot-10`, `ekd-avatar-letters`, `ekd-avatar-image`,
+`ekd-avatar-stack`, `ekd-avatar-stack--sm`, `ekd-avatar-stack-item` and
+`ekd-avatar-text`. They are for reading a page in a test and for an
+application's own selector, not for restyling: the colours are the person's.
 
 ---
 

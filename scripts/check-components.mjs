@@ -64,6 +64,7 @@ const {
   AccessGate, GateSubmitButton, NavDrawer, OnThisPage, OpeningSequence, DocMeta,
   Button, TextField, OneTimeCodeField, PasswordField, TextArea, RadioGroup, Checkbox, FormFault, Dialog, Tooltip,
   PageHeading, Select, Toolbar, ToolbarSeparator, ToggleButton, MenuButton, SyncStatus, QrCode,
+  Avatar, AvatarStack, avatarInitials,
   OptionList, optionListAttributes, optionListKey, optionListNavigating, optionListOptionId, placeOptionList,
 } = await import('../dist/src/components/index.js');
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
@@ -1704,6 +1705,353 @@ await it('SyncStatus has three states, and is announced when it settles and not 
   assert.equal(control().tagName, 'SPAN');
   assert.ok(!control().hasAttribute('tabindex') && !control().hasAttribute('role'));
   await view.unmount();
+});
+
+// --- The avatar -----------------------------------------------------------------
+// A person as a picture, and the people who have a document open as a list.
+// The letters, the name a screen reader hears, and the colour are each held
+// here, because each can be wrong while the picture still draws.
+await it('avatarInitials cuts a name by grapheme, in any script', () => {
+  assert.equal(avatarInitials('Maria Papadopoulou'), 'MP');
+  assert.equal(avatarInitials('Μαρία Παπαδοπούλου'), 'ΜΠ', 'Greek');
+  assert.equal(avatarInitials('ηλίας ράπτης'), 'ΗΡ', 'a lower-case Greek name is capitalised');
+  assert.equal(avatarInitials('Jean-Luc Picard'), 'JP', 'the first and the last word, not the first two');
+  assert.equal(avatarInitials('Ada Augusta King Lovelace'), 'AL');
+  assert.equal(avatarInitials('Madonna'), 'M', 'one word is one letter');
+  assert.equal(avatarInitials('  Ada   Lovelace '), 'AL', 'space around and inside is not a word');
+  assert.equal(avatarInitials(''), '');
+  assert.equal(avatarInitials(' \n\t '), '');
+  // A grapheme is more than a code unit and more than a code point.
+  assert.equal(avatarInitials('Émile Zola'), 'ÉZ');
+  assert.equal(avatarInitials('Émile Zola'), 'ÉZ', 'a letter keeps its combining accent');
+  assert.equal(avatarInitials('\u{1D49C}da Ng'), '\u{1D49C}N', 'a letter outside the BMP is not cut into surrogates');
+  assert.equal(avatarInitials('👩‍💻 Ada'), '👩‍💻A', 'a joined emoji is one character');
+  assert.equal(avatarInitials('🇬🇷 Ada'), '🇬🇷A', 'a flag is one character');
+  assert.equal(avatarInitials('ΑΘΗΝΑ'), 'Α');
+});
+
+await it('Avatar is named or decorative, draws its slot, and its letters or its image', async () => {
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const root = (view) => view.container.firstElementChild;
+
+  // Alone: an image with a name. The letters inside it are not read as well.
+  let view = await mount(h(Avatar, { name: 'Maria Papadopoulou', collaboratorSlot: 3, label: 'Maria Papadopoulou' }));
+  assert.equal(root(view).getAttribute('role'), 'img');
+  assert.equal(root(view).getAttribute('aria-label'), 'Maria Papadopoulou');
+  assert.ok(!root(view).hasAttribute('aria-hidden'));
+  assert.equal(root(view).textContent, 'MP');
+  assert.equal(root(view).className, 'ekd-avatar ekd-avatar-slot-3');
+  await view.unmount();
+
+  // Beside a name, or in a stack: hidden from a screen reader, no name, no role.
+  view = await mount(h(Avatar, { name: 'Μαρία Παπαδοπούλου', collaboratorSlot: 10, size: 'lg', decorative: true, id: 'a', className: 'mine' }));
+  assert.equal(root(view).getAttribute('aria-hidden'), 'true');
+  assert.ok(!root(view).hasAttribute('role') && !root(view).hasAttribute('aria-label'));
+  assert.equal(root(view).textContent, 'ΜΠ');
+  assert.equal(root(view).className, 'ekd-avatar ekd-avatar--lg ekd-avatar-slot-10 mine');
+  assert.equal(root(view).id, 'a', 'other attributes pass through');
+  assert.ok(!root(view).hasAttribute('tabindex'), 'a picture is not a Tab stop');
+  await view.unmount();
+
+  // Sizes: medium is the default and has no modifier, the other two have one.
+  view = await mount(h('div', null,
+    h(Avatar, { initials: 'A', collaboratorSlot: 1, decorative: true }),
+    h(Avatar, { initials: 'B', collaboratorSlot: 1, decorative: true, size: 'sm' }),
+    h(Avatar, { initials: 'C', collaboratorSlot: 1, decorative: true, size: 'md' })));
+  assert.deepEqual([...view.container.querySelectorAll('.ekd-avatar')].map((el) => el.className),
+    ['ekd-avatar ekd-avatar-slot-1', 'ekd-avatar ekd-avatar--sm ekd-avatar-slot-1', 'ekd-avatar ekd-avatar-slot-1']);
+  await view.unmount();
+
+  // The letters: the caller's initials, cut to two graphemes; the name's when
+  // there are none, or they are empty.
+  const letters = (props) => renderToStaticMarkup(h(Avatar, { collaboratorSlot: 1, decorative: true, ...props }))
+    .match(/<span class="ekd-avatar-letters">([^<]*)<\/span>/)[1];
+  assert.equal(letters({ initials: 'ΜΠ' }), 'ΜΠ');
+  assert.equal(letters({ initials: 'ΜΠΧΩ' }), 'ΜΠ', 'initials are cut to two');
+  assert.equal(letters({ initials: 'ÉŹQ' }), 'ÉŹ', 'by grapheme');
+  assert.equal(letters({ initials: 'x', name: 'Ada Lovelace' }), 'x', 'the caller\'s initials are not capitalised or replaced');
+  assert.equal(letters({ initials: '', name: 'Ada Lovelace' }), 'AL');
+  assert.equal(letters({ initials: '  ', name: 'Ada Lovelace' }), 'AL');
+  assert.equal(letters({ name: 'Ada Lovelace' }), 'AL');
+
+  // A slot outside the ten has no colour, and is refused rather than drawn.
+  for (const slot of [0, 11, -1, 1.5, NaN, undefined, '3']) {
+    assert.throws(
+      () => renderToStaticMarkup(h(Avatar, { name: 'Ada', collaboratorSlot: slot, decorative: true })),
+      (error) => error instanceof RangeError && /collaboratorSlot/.test(error.message),
+      `slot ${String(slot)} was drawn`,
+    );
+  }
+  for (let slot = 1; slot <= 10; slot++) {
+    assert.match(renderToStaticMarkup(h(Avatar, { name: 'Ada', collaboratorSlot: slot, decorative: true })), new RegExp(`ekd-avatar-slot-${slot}"`));
+  }
+
+  // An image is drawn over the letters, with no alternative text of its own,
+  // and the letters are what is left when it fails.
+  view = await mount(h(Avatar, { name: 'Ada Lovelace', collaboratorSlot: 2, src: '/a.png', decorative: true }));
+  let img = view.container.querySelector('img.ekd-avatar-image');
+  assert.equal(img.getAttribute('src'), '/a.png');
+  assert.equal(img.getAttribute('alt'), '', 'the picture names no one: the label or the text beside it does');
+  assert.equal(root(view).querySelector('.ekd-avatar-letters').textContent, 'AL', 'the letters are not removed for an image');
+  assert.ok(!img.hasAttribute('tabindex'));
+  await act(async () => img.dispatchEvent(new window.Event('error')));
+  assert.equal(view.container.querySelector('img'), null, 'a failed image was left on the picture');
+  assert.equal(root(view).textContent, 'AL');
+  // A different address is tried afresh.
+  await view.rerender(h(Avatar, { name: 'Ada Lovelace', collaboratorSlot: 2, src: '/b.png', decorative: true }));
+  img = view.container.querySelector('img');
+  assert.equal(img?.getAttribute('src'), '/b.png', 'a new src was not tried after the last one failed');
+  await view.rerender(h(Avatar, { name: 'Ada Lovelace', collaboratorSlot: 2, decorative: true }));
+  assert.equal(view.container.querySelector('img'), null);
+  await view.unmount();
+  // Without a document, as a server renders it.
+  assert.ok(renderToStaticMarkup(h(Avatar, { name: 'Ada', collaboratorSlot: 1, src: '/a.png', decorative: true })).includes('<img'));
+});
+
+await it('AvatarStack is a named list whose items say who and in what role, and are not focusable', async () => {
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const people = [
+    { id: 'u1', name: 'Maria Papadopoulou', role: 'Editor', collaboratorSlot: 1, you: 'you' },
+    { id: 'u2', name: 'Nikos Georgiou', role: 'Viewer', collaboratorSlot: 2 },
+    { id: 'u3', name: 'Ελένη Δήμου', collaboratorSlot: 3 },
+    { id: 'u4', name: 'Sam Lee', role: 'Editor', collaboratorSlot: 4, initials: 'SL' },
+    { id: 'u5', name: 'Ana Ruiz', role: 'Viewer', collaboratorSlot: 5 },
+    { id: 'u6', name: 'Tom Kay', role: 'Viewer', collaboratorSlot: 6 },
+    { id: 'u7', name: 'Una Fox', role: 'Viewer', collaboratorSlot: 7 },
+  ];
+  const calls = [];
+  const more = (n) => {
+    calls.push(n);
+    return n === 1 ? 'and 1 more person' : `and ${n} more people`;
+  };
+  const stack = (props) => h(AvatarStack, { label: 'People in this document', people, more, ...props });
+
+  const view = await mount(stack({ id: 'who', className: 'mine' }));
+  const list = view.container.querySelector('ul');
+  assert.equal(view.container.children.length, 1);
+  assert.equal(list.getAttribute('role'), 'list', 'Safari drops the list when its markers are removed');
+  assert.equal(list.getAttribute('aria-label'), 'People in this document');
+  assert.equal(list.id, 'who');
+  assert.equal(list.className, 'ekd-avatar-stack mine');
+
+  // Four people and the count of the other three, in the order given.
+  const items = [...list.children];
+  assert.ok(items.every((li) => li.tagName === 'LI' && li.className === 'ekd-avatar-stack-item'));
+  assert.equal(items.length, 5);
+  const said = (li) => li.querySelector('.ekd-avatar-text').textContent;
+  assert.deepEqual(items.map(said), [
+    'Maria Papadopoulou (you), Editor',
+    'Nikos Georgiou, Viewer',
+    'Ελένη Δήμου',
+    'Sam Lee, Editor',
+    'and 3 more people',
+  ]);
+  assert.deepEqual(calls.slice(-1), [3]);
+
+  // Every picture is hidden from a screen reader: the text beside it is the
+  // name, and a screen reader that read both would say it twice. The hidden
+  // words are inside their own item, which is what contains them.
+  for (const li of items) {
+    assert.equal(li.querySelector('.ekd-avatar').getAttribute('aria-hidden'), 'true');
+    assert.ok(li.querySelector('.ekd-avatar-text'), 'an item has no words');
+    assert.equal(li.querySelectorAll('.ekd-avatar-text').length, 1);
+    assert.ok(li.querySelector('.ekd-avatar-text').parentElement === li, 'the hidden words are not a child of their item');
+  }
+  assert.deepEqual(
+    items.slice(0, 4).map((li) => li.querySelector('.ekd-avatar-letters').textContent),
+    ['MP', 'NG', 'ΕΔ', 'SL'], 'letters: derived, derived, Greek, given',
+  );
+  assert.deepEqual(
+    items.slice(0, 4).map((li) => /ekd-avatar-slot-(\d+)/.exec(li.querySelector('.ekd-avatar').className)[1]),
+    ['1', '2', '3', '4'],
+  );
+  // The count is drawn and not read; its words are the application's.
+  const last = items[4];
+  assert.equal(last.querySelector('.ekd-avatar-letters').textContent, '+3');
+  assert.equal(last.querySelector('.ekd-avatar').getAttribute('aria-hidden'), 'true');
+  assert.ok(!/ekd-avatar-slot/.test(last.querySelector('.ekd-avatar').className), 'the count took a person\'s colour');
+
+  // The reader is marked by the application's word, in the text and in a
+  // hook for the ring. No one else is.
+  assert.equal(items[0].getAttribute('data-you'), 'true');
+  assert.deepEqual(items.slice(1).map((li) => li.hasAttribute('data-you')), [false, false, false, false]);
+
+  // Nothing in it is a control: read in order, as a list, with no Tab stop.
+  assert.equal(list.querySelectorAll('a, button, input, select, textarea, [tabindex], [role="button"], [role="link"]').length, 0);
+  // And the one accessible name is the list's: nothing inside is named in a
+  // way that would repeat it.
+  assert.equal(list.querySelectorAll('[aria-label], [aria-labelledby], img, [role="img"]').length, 0);
+
+  // A smaller picture is a modifier on every picture, the count's included.
+  await view.rerender(stack({ size: 'sm' }));
+  assert.ok([...view.container.querySelectorAll('.ekd-avatar')].every((el) => el.classList.contains('ekd-avatar--sm')));
+  assert.ok(view.container.querySelector('ul').classList.contains('ekd-avatar-stack--sm'), 'the small stack has the small overlap');
+  await view.rerender(stack({ size: 'lg' }));
+  assert.ok([...view.container.querySelectorAll('.ekd-avatar')].every((el) => el.classList.contains('ekd-avatar--lg')));
+  assert.equal(view.container.querySelector('ul').className, 'ekd-avatar-stack');
+
+  // `max` is how many people are drawn; the rest are counted, in the words
+  // of the application, and `more` is asked only when someone is not drawn.
+  const texts = (props) => {
+    calls.length = 0;
+    const html = renderToStaticMarkup(stack(props));
+    return { html, said: [...html.matchAll(/<span class="ekd-avatar-text">([^<]*)<\/span>/g)].map((m) => m[1]) };
+  };
+  assert.equal(texts({ max: 2 }).said.length, 3);
+  assert.deepEqual(calls, [5]);
+  assert.match(texts({ max: 2 }).said[2], /and 5 more people/);
+  assert.equal(texts({ max: 6 }).said.slice(-1)[0], 'and 1 more person', 'the count of one is the application\'s to word');
+  assert.deepEqual(texts({ max: 7 }).said.length, 7);
+  assert.deepEqual(calls, [], 'the words for the others were asked for when no one was left out');
+  assert.equal(texts({ max: 100 }).said.length, 7);
+  assert.equal(texts({ max: Infinity }).said.length, 7);
+  assert.equal(texts({ max: 0 }).said.length, 1, 'max 0 is the count alone');
+  assert.deepEqual(texts({ max: 2.9 }).said.length, 3, 'max is a whole number of people');
+  assert.equal(texts({}).said.length, 5, 'the default is four');
+  assert.equal(texts({ max: NaN }).said.length, 5, 'NaN is not a maximum');
+  assert.equal(texts({ max: -3 }).said.length, 5, 'a negative maximum is not one');
+  // And what is not drawn is not read: a person past the maximum is not in the list.
+  assert.ok(!texts({ max: 2 }).html.includes('Sam Lee'));
+
+  // One person, and none. An empty list is not announced as a list of nothing.
+  assert.equal(texts({ people: [people[1]] }).said.length, 1);
+  assert.equal(renderToStaticMarkup(stack({ people: [] })), '');
+  // A role is absent without a comma, and `you` without a role is not followed by one.
+  const only = texts({ people: [{ id: 'a', name: 'Ada', collaboratorSlot: 1, you: 'you' }, { id: 'b', name: 'Bo', collaboratorSlot: 2 }] }).said;
+  assert.deepEqual(only, ['Ada (you)', 'Bo']);
+  await view.unmount();
+
+  // A slot outside the ten is the application's fault, and the stack says so.
+  assert.throws(
+    () => renderToStaticMarkup(stack({ people: [{ id: 'x', name: 'Ada', collaboratorSlot: 11 }] })),
+    RangeError,
+  );
+
+  // A picture is the person's own, and a failed one is not the stack's concern.
+  const shown = await mount(stack({ people: [{ id: 'p', name: 'Ada Lovelace', collaboratorSlot: 2, src: '/a.png' }] }));
+  assert.equal(shown.container.querySelector('.ekd-avatar img').getAttribute('src'), '/a.png');
+  assert.equal(shown.container.querySelector('.ekd-avatar img').getAttribute('alt'), '');
+  assert.equal(shown.container.querySelector('li').textContent, 'ALAda Lovelace');
+  await shown.unmount();
+});
+
+await it('The avatar is typed so that an unnamed picture, a missing colour and a mute stack do not compile', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const tsc = spawnSync(
+    process.execPath,
+    [
+      'node_modules/typescript/bin/tsc', '--noEmit', '--strict', '--skipLibCheck', '--jsx', 'react-jsx',
+      '--module', 'esnext', '--moduleResolution', 'bundler', '--target', 'es2022', '--lib', 'es2022,dom',
+      'scripts/fixtures/avatar-types.tsx',
+    ],
+    { cwd: root, encoding: 'utf8' },
+  );
+  assert.equal(tsc.status, 0, `scripts/fixtures/avatar-types.tsx does not compile:\n${tsc.stdout}${tsc.stderr}`);
+});
+
+await it('avatar.css maps each slot to its own colour and ink, keeps its ring, wraps, and holds nothing that moves', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const strip = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = strip(readFileSync(new URL('../dist/styles/avatar.css', import.meta.url), 'utf8'));
+  const block = (selector) => {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(?:^|\\})\\s*${escaped}\\s*\\{([^}]*)\\}`).exec(css)?.[1];
+  };
+
+  // Ten slots, each mapped to its own two tokens and to no other: a rule that
+  // named slot 7's ink for slot 6 would draw, and would pass nothing that is
+  // measured about the pair it actually drew.
+  const slotRules = [...css.matchAll(/\.ekd-avatar-slot-(\d+)\s*\{([^}]*)\}/g)];
+  assert.deepEqual(slotRules.map((m) => Number(m[1])), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'avatar.css does not map slots 1 to 10, once each');
+  for (const [, n, body] of slotRules) {
+    assert.match(body, new RegExp(`--ekd-avatar-solid:\\s*var\\(--collab-${n}\\);`), `slot ${n} is not on --collab-${n}`);
+    assert.match(body, new RegExp(`--ekd-avatar-ink:\\s*var\\(--collab-${n}-ink\\);`), `slot ${n} is not in --collab-${n}-ink`);
+  }
+
+  // And each of those pairs is one `check:contrast` measures, at its threshold.
+  const pairs = JSON.parse(
+    spawnSync(process.execPath, ['scripts/check-contrast.mjs', '--pairs'], { cwd: root, encoding: 'utf8' }).stdout,
+  );
+  const threshold = (fg, bg) => pairs.find(([a, b]) => a === fg && b === bg)?.[2];
+  for (let n = 1; n <= 10; n++) {
+    assert.ok(threshold(`collab-${n}-ink`, `collab-${n}`) >= 4.5, `check:contrast does not hold the initials of slot ${n} at 4.5:1`);
+    assert.ok(threshold(`collab-${n}`, 'bg-surface') >= 3, `check:contrast does not hold slot ${n} against the ring`);
+    assert.ok(threshold(`collab-${n}`, 'bg-canvas') >= 3, `check:contrast does not hold slot ${n} against the canvas`);
+  }
+  // The neutral count, and the ring that marks the reader.
+  assert.ok(threshold('fg-1', 'bg-surface-2') >= 4.5, 'the count\'s pair is not measured');
+  assert.ok(threshold('fg-1', 'bg-surface') >= 4.5, 'the reader\'s ring is not measured');
+
+  // The picture: a minimum that grows with its letters, a square, the sans
+  // (the serif has no Greek), tokens for its ring, and no shadow for it.
+  const picture = block('.ekd-avatar');
+  assert.ok(picture, 'avatar.css has no rule for a picture');
+  assert.match(picture, /min-inline-size:\s*var\(--ekd-avatar-size\)/, 'the circle is a fixed size, and cuts the letters of a reader who raised the text size');
+  assert.ok(!/(?:^|[;\s])(?:inline-size|width|block-size|height)\s*:/.test(picture), 'the circle has a fixed size');
+  assert.match(picture, /aspect-ratio:\s*1;/);
+  assert.match(picture, /font-family:\s*var\(--font-sans\)/, 'the letters are not in the sans, which has Greek');
+  assert.match(picture, /border:\s*2px solid var\(--bg-surface\)/, 'the ring is not the border in --bg-surface');
+  assert.ok(!/box-shadow/.test(css), 'the ring is a shadow, which forced colours remove');
+  assert.match(picture, /border-radius:\s*var\(--radius-pill\)/);
+  assert.match(picture, /overflow:\s*hidden/);
+  assert.match(picture, /background:\s*var\(--ekd-avatar-solid\)/);
+  assert.match(picture, /color:\s*var\(--ekd-avatar-ink\)/);
+  assert.match(block('.ekd-avatar--sm'), /--ekd-avatar-size:\s*var\(--sp-6\)/);
+  assert.match(picture, /--ekd-avatar-size:\s*var\(--sp-7\)/);
+  assert.match(block('.ekd-avatar--lg'), /--ekd-avatar-size:\s*var\(--sp-8\)/);
+  for (const sized of ['.ekd-avatar', '.ekd-avatar--sm', '.ekd-avatar--lg']) {
+    assert.match(block(sized), /font-size:\s*var\(--fs-(?:2xs|xs|sm)\)/, `${sized} has no type token`);
+  }
+  assert.match(block('.ekd-avatar-image'), /object-fit:\s*cover/);
+  assert.match(block('.ekd-avatar-image'), /background:\s*var\(--bg-surface\)/, 'a transparent image shows the letters through');
+  assert.match(css, /@media \(forced-colors: active\)\s*\{\s*\.ekd-avatar\s*\{\s*border-color:\s*CanvasText;/, 'in forced colours the circle has no edge');
+
+  // The stack: it wraps, so ten large pictures at 320px are two lines and not
+  // a scroll bar, and each item is positioned, which contains its hidden words.
+  const stackRule = block('.ekd-avatar-stack');
+  assert.match(stackRule, /flex-wrap:\s*wrap/);
+  assert.match(stackRule, /list-style:\s*none/);
+  assert.match(stackRule, /max-inline-size:\s*100%/);
+  // The overlap is one number, taken by the items as a margin and by the list as
+  // the padding that matches it, or the first picture is pulled out of the container.
+  assert.match(stackRule, /--ekd-avatar-overlap:\s*var\(--sp-1\)/, 'the overlap is not 4px');
+  assert.match(block('.ekd-avatar-stack--sm'), /--ekd-avatar-overlap:\s*calc\(var\(--sp-1\) \/ 2\)/, 'the small overlap is not 2px');
+  assert.match(stackRule, /padding-inline-start:\s*var\(--ekd-avatar-overlap\)/, 'the first picture is pulled out of the container by the overlap');
+  const item = block('.ekd-avatar-stack-item');
+  assert.match(item, /position:\s*relative/, 'the hidden words are not contained by their item');
+  assert.match(item, /margin-inline-start:\s*calc\(var\(--ekd-avatar-overlap\) \* -1\)/, 'the pictures do not overlap, or the list does not take the matching padding');
+  assert.match(block('.ekd-avatar-stack-item:focus-within'), /z-index:\s*1/, 'a later picture covers the focus ring of an earlier one');
+  assert.match(block('.ekd-avatar-stack-item[data-you="true"] .ekd-avatar'), /border-color:\s*var\(--fg-1\)/);
+  const words = block('.ekd-avatar-text');
+  assert.ok(words, 'the hidden words of an item are not hidden by this entry alone');
+  for (const declaration of [/position:\s*absolute/, /width:\s*1px/, /height:\s*1px/, /overflow:\s*hidden/, /clip:\s*rect\(0, 0, 0, 0\)/]) {
+    assert.match(words, declaration);
+  }
+
+  // Tokens, not literals: no colour, no font size, no font family but a token.
+  assert.ok(!/#[0-9a-f]{3,8}\b|\b(?:rgb|hsl|oklch)a?\(/i.test(css), 'avatar.css carries a literal colour');
+  assert.ok(!/font-size:\s*[^;]*\d(?:px|pt)\b/.test(css), 'avatar.css sets a type size in pixels');
+  assert.ok(!/var\([^)]*,/.test(css), 'avatar.css writes a fallback into var()');
+  assert.ok(!/text-transform/.test(css), 'avatar.css applies case');
+  // Nothing moves, so there is nothing to reduce; the day something does, the
+  // reduced-motion query comes with it.
+  if (/transition|animation/.test(css)) {
+    assert.match(css, /prefers-reduced-motion:\s*reduce/, 'avatar.css moves and does not respect a request for reduced motion');
+  }
+
+  // The same rules are in the two aggregates, and the entry is exported.
+  for (const entry of ['base.css', 'components.css']) {
+    const shipped = strip(readFileSync(new URL(`../dist/styles/${entry}`, import.meta.url), 'utf8'));
+    assert.ok(shipped.includes(picture.trim()), `styles/${entry} does not carry the avatar`);
+    assert.ok(shipped.includes(item.trim()), `styles/${entry} does not carry the avatar stack`);
+  }
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(manifest.exports['./styles/avatar.css'], './dist/styles/avatar.css');
 });
 
 // --- The option list ------------------------------------------------------------

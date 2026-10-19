@@ -104,6 +104,12 @@ export {
   type OptionListTextAttributes,
 } from './optionListHelpers.js';
 
+// A person as a picture, and the people who have a document open as a row of
+// them. Initials on the person's collaborator colour, with room for an image
+// later; the application passes every word a screen reader hears.
+export { Avatar, avatarInitials, type AvatarProps, type AvatarSize } from './Avatar.js';
+export { AvatarStack, type AvatarStackPerson, type AvatarStackProps } from './AvatarStack.js';
+
 /** @supersedes UnlockScreen, ResearchUnlockScreen */
 export { AccessGate } from './AccessGate.js';
 /** @supersedes UnlockSubmitButton */

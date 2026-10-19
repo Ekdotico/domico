@@ -140,16 +140,42 @@ export function RadioGroup({
  * and the message sit under the label and are named by `aria-describedby`;
  * `error` marks the box `aria-invalid`, which a checkbox does take. `ref`
  * reaches the input.
+ *
+ * `labelHidden` keeps the label for a screen reader and takes it off the page,
+ * as `Select`'s does, for a box in a row of a table whose header already says
+ * what it is about:
+ *
+ *   <TableHeaderCell scope="row">Editors</TableHeaderCell>
+ *   <TableCell>
+ *     <Checkbox name="rename-editors" label="Editors can rename" labelHidden />
+ *   </TableCell>
+ *
+ * The label is still required, since it is the box's name, and it is still the
+ * `<label>` the box sits in. The hidden words are positioned against that
+ * label, so they stay inside the control and cannot lie outside an `overflow`
+ * container that holds it (a table's scroll wrapper), where the reset's
+ * `.sr-only` alone, with no positioned ancestor, was found to widen the page.
+ * The label shrinks to the box with the 24px target of WCAG 2.5.8, so the
+ * empty line beside the box does not toggle it. A `hint` and an `error` are
+ * still drawn under the box; a box that has either is rarely one that wants
+ * its label hidden.
  */
 export const Checkbox = forwardRef<
   HTMLInputElement,
-  FieldProps & Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'placeholder' | 'aria-invalid' | 'children'>
->(function Checkbox({ label, hint, error, id, className, 'aria-describedby': describedby, ...input }, ref) {
+  FieldProps &
+    Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'placeholder' | 'aria-invalid' | 'children'> & {
+      /** Keeps the label for a screen reader and takes it off the page. */
+      labelHidden?: boolean;
+    }
+>(function Checkbox(
+  { label, hint, error, id, className, labelHidden, 'aria-describedby': describedby, ...input },
+  ref,
+) {
   const ownId = useId();
   const fieldId = id ?? ownId;
   return (
     <div className={['ekd-choice-field', className].filter(Boolean).join(' ')}>
-      <label className="ekd-choice">
+      <label className={labelHidden ? 'ekd-choice ekd-choice--bare' : 'ekd-choice'}>
         <input
           {...input}
           ref={ref}
@@ -163,7 +189,7 @@ export const Checkbox = forwardRef<
             describedby,
           )}
         />
-        <span className="ekd-choice-label">{label}</span>
+        <span className={labelHidden ? 'ekd-choice-label sr-only' : 'ekd-choice-label'}>{label}</span>
       </label>
       {hint != null ? (
         <p id={hintId(fieldId)} className="ekd-field-hint">

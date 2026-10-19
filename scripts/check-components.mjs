@@ -294,6 +294,75 @@ await it('Table', async () => {
   await view.unmount();
 });
 
+// A row header: the same element as a column header, in the body. The scope
+// reaches the DOM, the cell types accept the attributes of their own element,
+// and the stylesheet draws a `th` in `tbody` as the header of its row.
+await it('TableHeaderCell in a body row is the header of the row', async () => {
+  const view = await mount(
+    h(Table, { caption: 'Roles' },
+      h(TableHead, null, h(TableRow, null,
+        h(TableHeaderCell, { scope: 'col' }, 'Role'),
+        h(TableHeaderCell, { scope: 'col' }, 'Rename'))),
+      h(TableBody, null,
+        h(TableRow, null,
+          h(TableHeaderCell, { scope: 'row' }, 'Editors'),
+          h(TableCell, null, 'Yes')),
+        h(TableRow, null, h(TableCell, { colSpan: 2 }, 'No other roles')),
+        h(TableRow, null, h(TableHeaderCell, null, 'Viewers'), h(TableCell, null, 'No'))),
+    ),
+  );
+  const [col] = view.container.querySelectorAll('thead th');
+  const [rowHeader, bareHeader] = view.container.querySelectorAll('tbody th');
+  assert.equal(col.getAttribute('scope'), 'col');
+  assert.equal(rowHeader.getAttribute('scope'), 'row', 'scope was not passed to the th');
+  assert.equal(view.container.querySelector('tbody td[colspan]')?.getAttribute('colspan'), '2');
+  // Nothing is defaulted: a cell does not know where it stands.
+  assert.ok(!bareHeader.hasAttribute('scope'), 'a scope was invented for a header cell that was given none');
+  await view.unmount();
+
+  // The type is held by the compiler, against the built declarations.
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const tsc = spawnSync(
+    process.execPath,
+    [
+      'node_modules/typescript/bin/tsc', '--noEmit', '--strict', '--skipLibCheck', '--jsx', 'react-jsx',
+      '--module', 'esnext', '--moduleResolution', 'bundler', '--target', 'es2022', '--lib', 'es2022,dom',
+      'scripts/fixtures/table-types.tsx',
+    ],
+    { cwd: root, encoding: 'utf8' },
+  );
+  assert.equal(tsc.status, 0, `scripts/fixtures/table-types.tsx does not compile:\n${tsc.stdout}${tsc.stderr}`);
+
+  // jsdom applies no stylesheet, so the rules are read. A `th` in `tbody` takes
+  // each rule a body cell takes, and the weight and ink of a row header.
+  const { readFileSync } = await import('node:fs');
+  const css = readFileSync(new URL('../dist/styles/table.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const block = (selector) => {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(?:^|\\})\\s*${escaped}\\s*\\{([^}]*)\\}`).exec(css)?.[1];
+  };
+  const cells = block('.tbl-wrap tbody :is(td, th)');
+  assert.ok(cells, 'table.css does not give a th in tbody the padding of a body cell');
+  assert.match(cells, /padding:\s*9px 14px/);
+  assert.match(cells, /overflow-wrap:\s*anywhere/);
+  for (const selector of [
+    '.tbl-wrap tbody tr :is(td, th):first-child',
+    '.tbl-wrap tbody tr :is(td, th):last-child',
+    '.tbl-wrap tbody tr:last-child :is(td, th)',
+    '.tbl-wrap tbody tr:hover :is(td, th)',
+  ]) {
+    assert.ok(block(selector), `table.css does not carry ${selector}`);
+  }
+  const header = block('.tbl-wrap tbody th');
+  assert.ok(header, 'table.css has no rule for a row header');
+  assert.match(header, /font-weight:\s*var\(--fw-semi\)/);
+  assert.match(header, /color:\s*var\(--fg-1\)/);
+  assert.match(header, /text-align:\s*start/, 'a user agent centres a th');
+  assert.ok(!/position:|background:|letter-spacing:/.test(header), 'a row header took the column header’s treatment');
+});
+
 // --- Tabs -------------------------------------------------------------------
 await it('Tabs', async () => {
   const view = await mount(
@@ -917,6 +986,48 @@ await it('RadioGroup and Checkbox', async () => {
   assert.equal(box.getAttribute('aria-invalid'), 'true');
   assert.equal(document.getElementById(box.getAttribute('aria-describedby'))?.textContent, 'Not available.');
   await view.unmount();
+});
+
+// A box in a row of a table is named by what the row's header says, and the
+// words beside it would repeat that. The label stays, for a screen reader, and
+// is the containing block of its own hidden words.
+await it('Checkbox labelHidden keeps the label for a screen reader, inside the control', async () => {
+  const ref = React.createRef();
+  const view = await mount(
+    h('div', null,
+      h(Checkbox, { id: 'shown', name: 'a', label: 'Shown' }),
+      h(Checkbox, { ref, id: 'quiet', name: 'b', label: 'Editors can rename', labelHidden: true, hint: 'Hint.' }),
+    ),
+  );
+  const shown = document.getElementById('shown');
+  const quiet = document.getElementById('quiet');
+  assert.ok(ref.current === quiet, 'a Checkbox with a hidden label dropped its ref');
+
+  // Still named by its label, which is still the element the box sits in.
+  assert.equal(quiet.labels.length, 1);
+  assert.equal(quiet.labels[0].textContent, 'Editors can rename');
+  assert.equal(quiet.closest('label'), quiet.labels[0]);
+  assert.equal(document.getElementById(quiet.getAttribute('aria-describedby'))?.textContent, 'Hint.');
+
+  // The words are .sr-only, and their label is the one that is positioned
+  // (`ekd-choice--bare`), so they cannot lie outside an overflow container.
+  const words = quiet.labels[0].querySelector('.ekd-choice-label');
+  assert.ok(words.classList.contains('sr-only'), 'the label is drawn');
+  assert.ok(quiet.labels[0].classList.contains('ekd-choice--bare'), 'the hidden words have no positioned label');
+
+  // And the default is unchanged: a visible label, no modifier.
+  assert.ok(!shown.labels[0].classList.contains('ekd-choice--bare'));
+  assert.ok(!shown.labels[0].querySelector('.sr-only'), 'a label was hidden that was not asked to be');
+  await view.unmount();
+
+  // jsdom lays out nothing, so the rule that holds the words in is read.
+  const { readFileSync } = await import('node:fs');
+  const css = readFileSync(new URL('../dist/styles/form.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const bare = /\.ekd-choice--bare\s*\{([^}]*)\}/.exec(css)?.[1];
+  assert.ok(bare, 'form.css has no rule for a checkbox with a hidden label');
+  assert.match(bare, /position:\s*relative/, 'the hidden words are not contained by their label');
+  assert.match(bare, /inline-size:\s*fit-content/, 'the whole line toggles the box');
+  assert.match(bare, /min-inline-size:\s*var\(--sp-6\)/, 'the target is under 24px');
 });
 
 // --- FormFault ------------------------------------------------------------------

@@ -1,4 +1,11 @@
-import { useId, type HTMLAttributes, type ReactNode, type TableHTMLAttributes } from 'react';
+import {
+  useId,
+  type HTMLAttributes,
+  type ReactNode,
+  type TableHTMLAttributes,
+  type TdHTMLAttributes,
+  type ThHTMLAttributes,
+} from 'react';
 
 export interface TableProps extends TableHTMLAttributes<HTMLTableElement> {
   /**
@@ -86,10 +93,26 @@ export function TableRow(props: HTMLAttributes<HTMLTableRowElement>) {
   return <tr {...props} />;
 }
 
-export function TableHeaderCell(props: HTMLAttributes<HTMLTableCellElement>) {
+/**
+ * A header cell, in `TableHead` or in `TableBody`. In `TableBody` it is the
+ * header of its row, and the stylesheet draws it as one: the body cell's
+ * padding and rules, at header weight, so a row's name reads as the name of the
+ * row and not as one more value in it.
+ *
+ * `scope` and the other `<th>` attributes pass through, and nothing is
+ * defaulted, because the cell cannot know where it stands: it is the same
+ * element in a column head and in a row. Say `scope="col"` or `scope="row"`.
+ * A browser works the scope out for a table with one header row or one header
+ * column, which is why leaving it off is not wrong there; where a table has
+ * both, or a row header past the first column, the browser guesses, and a
+ * screen reader reads the guess aloud (WCAG 1.3.1, technique H63). `colgroup`
+ * and `rowgroup` are for a header that spans several.
+ */
+export function TableHeaderCell(props: ThHTMLAttributes<HTMLTableCellElement>) {
   return <th {...props} />;
 }
 
-export function TableCell(props: HTMLAttributes<HTMLTableCellElement>) {
+/** A data cell. `colSpan`, `rowSpan` and `headers` pass through to the `<td>`. */
+export function TableCell(props: TdHTMLAttributes<HTMLTableCellElement>) {
   return <td {...props} />;
 }

@@ -76,18 +76,25 @@ export function LogoMark({
 }
 
 /**
- * Mark plus wordmark. The tile contrasts with whatever canvas it lands on,
- * which is a question for the stylesheet rather than for this component.
+ * The lockup: the tile stands in for the E, and the wordmark reads "kdotico"
+ * after it. The tile contrasts with whatever canvas it lands on, which is a
+ * question for the stylesheet rather than for this component. The stylesheet
+ * also sizes the tile to the wordmark's em and seats it on the baseline, so
+ * `size` is only the width the SVG claims before CSS loads.
  *
- * The mark is decorative here: the wordmark beside it already says
- * "Ekdotico", and a named mark made a screen reader announce the brand twice
- * ("Ekdotico mark, image, Ekdotico") on every page header.
+ * A screen reader hears "Ekdotico" once, from the hidden span. The tile and
+ * the visible letters are hidden from it, because "kdotico" read on its own
+ * is a different word, and a name split across a mark and a span is read as
+ * two words by some readers ("E, kdotico").
  */
 export function Logo({ size = 22 }: { size?: number }) {
   return (
     <div className="logo">
       <LogoMark size={size} className="logo-mark logo-mark--tile" variant="solid" title="" />
-      <span className="logo-wordmark">Ekdotico</span>
+      <span className="logo-wordmark" aria-hidden="true">
+        kdotico
+      </span>
+      <span className="sr-only">Ekdotico</span>
     </div>
   );
 }

@@ -755,20 +755,31 @@
   }
 }
 
+/* The tile is the wordmark's E. It is one em square, so it scales with the
+   letters, and the lockup aligns on the baseline: a replaced element's
+   baseline is its bottom edge, so the tile stands on the line and then drops
+   by the depth of the serif's descender overshoot, which reads as a capital
+   standing level with the "k" and "d" ascenders. Both offsets are optical
+   figures in em measured against Crimson Pro; there is no scale step for a
+   glyph's sidebearing. Font size lives on the lockup so the tile's em and the
+   letters' em are the same em. */
 .logo {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  align-items: baseline;
+  font-family: var(--font-serif);
+  font-size: var(--fs-md);
+  line-height: 1;
   color: var(--fg-1);
 }
 .logo-mark {
-  width: 22px;
-  height: 22px;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  margin-inline-end: 0.06em;
+  transform: translateY(0.13em);
   color: var(--fg-1);
 }
 .logo-wordmark {
-  font-family: var(--font-serif);
-  font-size: var(--fs-md);
   font-weight: var(--fw-regular);
   /* Rounded to the scale from an unnamed -0.01em. At fs-md the difference from
      --tr-tight is under a twentieth of a pixel. A wordmark that tracks with the

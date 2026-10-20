@@ -1,6 +1,6 @@
 {
   "name": "@ekdotico/domico",
-  "version": "0.32.0",
+  "version": "0.33.0",
   "private": false,
   "description": "Domico — the Ekdotico house style: design tokens, base styles, shared components, and the Expression Guidelines with their machine-readable vocabulary and prohibited terms.",
   "license": "AGPL-3.0-only",

@@ -17,7 +17,7 @@
  * presentation attributes are deliberately not compared.
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -127,35 +127,33 @@ if (strays.length > 0) {
   );
 }
 
-// The logo mark is drawn twice: as three subpaths for every static rendering,
-// and as one continuous path for the stroke-draw animation, which needs a
-// single element for getTotalLength to measure. Two spellings of one mark is
-// precisely the drift this script exists to prevent, so the continuous form is
-// derived-and-compared rather than trusted. It must be the subpaths in order,
-// with the descender retraced so the pen returns to the junction rather than
-// lifting.
+// The logo mark is one filled path, the epsilon, held in Logo.tsx and repeated
+// in every SVG under assets/logo. A file that carried an older or hand-adjusted
+// path would ship a different mark under the same name, which is the drift this
+// script exists to prevent, so each file's glyph is compared with the
+// component's. (The PNGs are rendered from these SVGs, so they follow.)
 const logo = readFileSync(join(ROOT, 'src/components/Logo.tsx'), 'utf8');
-const subpaths = [...logo.matchAll(/^ {2}'(M [^']+)',$/gm)].map((m) => m[1]);
-const continuous = logo.match(/^ {2}'(M 72 375[^']+)';$/m)?.[1];
+const epsilon = logo.match(/^ {2}'(M[^']+Z)';$/m)?.[1];
+const logoFiles = [
+  'assets/logo/logo-mark.svg',
+  'assets/logo/logo-mark-branded.svg',
+  ...readdirSync(join(ROOT, 'assets/logo/SVG'), { recursive: true })
+    .filter((f) => String(f).endsWith('.svg'))
+    .map((f) => `assets/logo/SVG/${f}`),
+];
 
-if (subpaths.length !== 3 || !continuous) {
+if (!epsilon) {
   failures.push(
-    `Logo.tsx: expected three SUBPATHS and one CONTINUOUS path, found ${subpaths.length} and ` +
-      `${continuous ? 'one' : 'none'}. If they were restructured, update this check with them.`,
+    'Logo.tsx: expected one EPSILON path. If the mark was restructured, update this check with it.',
   );
 } else {
-  // Each subpath after the first begins with a moveto to a point the pen has
-  // already reached, so only the drawing commands carry over.
-  const drop = (d) => d.replace(/^M [\d.]+ [\d.]+\s*/, '');
-  const [, stem, close] = subpaths;
-  const expected = `${subpaths[0]} ${drop(stem)} L 252 320 ${drop(close)}`;
-  const flat = (s) => s.replace(/\s+/g, ' ').trim();
-  if (flat(continuous) !== flat(expected)) {
+  const drifted = logoFiles.filter(
+    (f) => !readFileSync(join(ROOT, f), 'utf8').includes(`d="${epsilon}"`),
+  );
+  if (drifted.length > 0) {
     failures.push(
-      'Logo.tsx: CONTINUOUS is not the concatenation of SUBPATHS.\n' +
-        `      continuous: ${continuous}\n` +
-        `      expected:   ${expected}\n` +
-        '      The animated mark and the static mark have to be the same mark.',
+      `logo files whose glyph is not Logo.tsx's EPSILON: ${drifted.join(', ')}.\n` +
+        '      Every file of the mark has to carry the same mark.',
     );
   }
 }
@@ -168,5 +166,5 @@ if (failures.length > 0) {
 
 console.log(
   `check:icons — ${checked} vendored icons match lucide-static verbatim, ` +
-    'and the logo mark is identical in both its forms',
+    'and every file of the logo mark carries the same epsilon',
 );

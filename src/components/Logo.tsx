@@ -1,106 +1,67 @@
 /**
- * The Ekdotico mark. 512×512 viewBox; path data is byte-identical to the
- * source SVGs under assets/logo/SVG/.
+ * The Ekdotico mark: an epsilon, the initial of εκδοτικό. 360×360 viewBox; the
+ * path data is the "Glyph · epsilon" layer of the Logo & Iconography Figma file
+ * (node 91:22), byte-identical to the source SVGs under assets/logo/SVG/.
  *
  * This is the only custom SVG icon in the system. Every other icon comes from
  * Lucide at 1.5px stroke, 16px default.
  *
- * Five render modes:
- *   "ink" (default) — stroke uses currentColor and there is no tile, so the
- *     mark adapts to whatever theme surrounds it.
+ * Four render modes:
+ *   "ink" (default) — the glyph fills with currentColor and there is no tile,
+ *     so the mark adapts to whatever theme surrounds it.
  *   "solid" — a tile that contrasts with whatever canvas it lands on, chosen
  *     by the stylesheet. What `Logo` uses, and the right default for chrome.
- *   "dark-solid" — brand-fixed plum tile with a cream stroke, pinned. For a
+ *   "dark-solid" — brand-fixed plum tile with a cream glyph, pinned. For a
  *     surface whose mode is known and fixed regardless of the reader's, such
  *     as an Open Graph image or a print template.
  *   "light-solid" — the inverse, pinned the same way.
- *   "draw" — one continuous path instead of three, for stroke-drawing the mark
- *     on. See CONTINUOUS below.
+ *
+ * There was a fifth, "draw", while the mark was an arch drawn in one stroke:
+ * the opening sequence traced it on. The epsilon is a filled shape with no line
+ * to trace, so the sequence fades the mark in instead and the variant is gone.
  *
  * The solid variants draw from brand tokens rather than theme tokens: the tile
  * must look the same in all four themes, which is the whole point of a mark.
- * Colours are applied through `style` rather than as `fill`/`stroke`
- * attributes because an SVG presentation attribute will not resolve var().
+ * Colours are applied through `style` rather than as `fill` attributes because
+ * an SVG presentation attribute will not resolve var().
  *
  * "solid" resolves through --logo-tile-bg and --logo-tile-ink, which
- * components.css aliases to one of the two pinned pairs per mode. `Logo` used
- * to make that choice from useRenderedMode, which is the one question no
- * server can answer — Auto defers to a preference that never leaves the
- * reader's machine — so the mark rendered its light-canvas tile on a dark page
- * until hydration. A stylesheet has no such gap: it resolves at paint.
+ * components.css aliases to one of the two pinned pairs per mode. A stylesheet
+ * resolves at paint, so the tile is right before hydration.
  *
- * Nothing here reads the document any more, so this module is not a client
- * component.
+ * Nothing here reads the document, so this module is not a client component.
  */
 
-import type { Ref } from 'react';
+export type LogoMarkVariant = 'ink' | 'solid' | 'dark-solid' | 'light-solid';
 
-export type LogoMarkVariant = 'ink' | 'solid' | 'dark-solid' | 'light-solid' | 'draw';
-
-const VARIANT_TOKENS: Record<
-  Exclude<LogoMarkVariant, 'ink' | 'draw'>,
-  { fill: string; stroke: string }
-> = {
-  solid: { fill: 'var(--logo-tile-bg)', stroke: 'var(--logo-tile-ink)' },
-  'dark-solid': { fill: 'var(--logo-tile-dark-bg)', stroke: 'var(--logo-tile-dark-ink)' },
-  'light-solid': { fill: 'var(--logo-tile-light-bg)', stroke: 'var(--logo-tile-light-ink)' },
+const VARIANT_TOKENS: Record<Exclude<LogoMarkVariant, 'ink'>, { tile: string; glyph: string }> = {
+  solid: { tile: 'var(--logo-tile-bg)', glyph: 'var(--logo-tile-ink)' },
+  'dark-solid': { tile: 'var(--logo-tile-dark-bg)', glyph: 'var(--logo-tile-dark-ink)' },
+  'light-solid': { tile: 'var(--logo-tile-light-bg)', glyph: 'var(--logo-tile-light-ink)' },
 };
 
-/**
- * The mark as three subpaths — the ordinary form, and what every static
- * rendering uses.
- */
-const SUBPATHS = [
-  'M 72 375 C 72 160 200 160 252 320',
-  'M 252 320 L 252 360',
-  'M 252 320 C 304 160 435 160 435 348',
-];
-
-/**
- * The same mark as ONE continuous path, for stroke-drawing.
- *
- * A dash-offset animation runs on a single path element, because
- * `getTotalLength()` measures one element and `stroke-dashoffset` advances one
- * dash pattern. Three subpaths animate as three independent strokes appearing
- * at once, which is not the same effect at all.
- *
- * The difference from SUBPATHS is only the pen route: the descender is drawn
- * down to 252,360 and back up to 252,320 so the pen returns to the junction
- * before the second curve, rather than lifting. Retracing a segment under a
- * round cap and a round join renders identically to drawing it once, and the
- * 180-degree reversal at the tip resolves to the same round terminal the
- * separate subpath ends with. This is not a redrawing: it is the path the
- * documentation and preview loaders have both been animating in production.
- */
-const CONTINUOUS =
-  'M 72 375 C 72 160 200 160 252 320 L 252 360 L 252 320 C 304 160 435 160 435 348';
+/** The epsilon. One filled path; check:icons asserts every asset file carries it unchanged. */
+const EPSILON =
+  'M127.205 84.1134C148.271 75.5337 179.041 70.9811 201.906 72.0587C210.172 72.489 218.407 73.3638 226.576 74.6792C243.851 77.3086 260.715 81.4464 277.042 72.4254C279.224 71.3647 282.843 69.1726 284.324 72.4263C285.345 74.6712 281.774 78.4691 280.774 80.3563C272.504 95.9746 273.639 115.958 279.234 132.299C279.768 133.859 281.375 138.39 280.686 139.776C279.273 140.373 273.949 141.167 273.053 139.792C265.818 128.268 258.512 117.649 248.947 107.847C228.219 86.6039 182.78 73.8295 158.884 96.4161C143.888 110.591 146.162 150.846 145.942 170.3C157.437 170.101 168.839 170.418 180.471 170.311C194.426 170.181 210.291 170.691 221.145 160.561C227.155 154.951 227.415 151.506 230.044 144.195C232.202 143.897 235.46 144.037 237.625 144.196C237.846 149.334 236.896 153.793 236.672 158.714C236.304 166.831 235.84 175.366 236.137 183.468C236.207 185.735 236.42 189.271 236.276 191.44L236.332 191.716C236.541 195.541 236.603 202.401 237.384 205.973C237.618 208.34 237.881 211.872 237.93 214.261L229.95 213.902C228.058 203.344 223.159 196.235 213.176 191.575C202.593 186.634 198.363 186.824 187.086 186.029C173.417 185.065 159.774 185.818 146.173 185.274C146.366 189.307 145.919 193.013 145.987 196.931C146.337 217.06 143.429 247.159 159.404 262.002C162.41 264.267 166.6 268.198 169.925 269.741C178.874 273.894 190.442 274.726 200.216 274.18C210.839 273.586 220.841 271.139 230.019 265.843C239.072 260.619 246.962 255.674 253.818 247.636C261.508 238.935 267.2 228.52 273.945 219.109C275.33 217.177 279.377 217.673 281.084 219.116C281.557 220.625 278.629 228.85 278.085 231.011C273.767 248.16 272.944 271.112 285.429 285.205C284.232 287.483 283.88 287.871 281.647 289.286C274.925 286.638 268.44 283.541 261.082 282.725C246.978 281.16 231.137 284.865 217.189 286.684C209.133 287.664 201.021 288.129 192.905 288.075C174.799 287.954 153.953 283.498 136.288 279.061C133.105 278.261 129.874 276.767 126.888 275.882C124.986 276.624 123.755 277.214 121.938 278.146C121.251 278.377 119.581 278.983 118.956 279.098C113.263 281.181 81.0012 289.876 76.511 288.876C76.102 288.785 75.9096 288.749 75.7094 288.356C75.1167 287.193 74.7068 283.725 75.0648 282.478C75.1421 282.209 83.5254 278.873 84.6563 278.226C93.0422 273.43 97.5927 264.83 100.019 255.803C104.691 238.416 104.58 219.594 105.108 201.732C105.685 182.22 105.728 162.916 104.766 143.408C104.44 136.786 104.284 130.11 103.541 123.517C102.463 113.952 101.007 103.812 96.8846 95.0137C94.2029 89.2906 89.4324 84.1847 83.9949 80.9082C81.7336 79.5455 75.8828 78.3025 74.8631 76.298C74.3938 75.3757 74.5519 74.2551 74.9076 73.3241C75.2107 72.531 75.6858 71.231 76.5554 70.9227C80.6504 69.4706 113.028 77.9714 119.013 80.0862C121.829 81.0811 124.485 82.8437 127.205 84.1134Z';
 
 export function LogoMark({
   size = 22,
   className,
   variant = 'ink',
   title = 'Ekdotico mark',
-  pathRef,
 }: {
   size?: number;
   className?: string;
   variant?: LogoMarkVariant;
   /** Accessible name. Pass an empty string to mark the SVG decorative. */
   title?: string;
-  /**
-   * Handle on the drawn path, so an animation can measure it. Only meaningful
-   * with variant="draw", which is the only variant that renders a single path.
-   * Typed as `Ref` rather than `RefObject` so the same declaration satisfies
-   * React 18 and React 19, whose `useRef(null)` return types differ.
-   */
-  pathRef?: Ref<SVGPathElement>;
 }) {
-  const tile = variant === 'ink' || variant === 'draw' ? null : VARIANT_TOKENS[variant];
+  const colours = variant === 'ink' ? null : VARIANT_TOKENS[variant];
   const decorative = title === '';
 
   return (
     <svg
-      viewBox="0 0 512 512"
+      viewBox="0 0 360 360"
       width={size}
       height={size}
       className={className}
@@ -108,20 +69,8 @@ export function LogoMark({
       aria-hidden={decorative || undefined}
       aria-label={decorative ? undefined : title}
     >
-      {tile && <rect width="512" height="512" style={{ fill: tile.fill }} />}
-      <g
-        fill="none"
-        strokeWidth={28}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ stroke: tile ? tile.stroke : 'currentColor' }}
-      >
-        {variant === 'draw' ? (
-          <path ref={pathRef} d={CONTINUOUS} />
-        ) : (
-          SUBPATHS.map((d) => <path key={d} d={d} />)
-        )}
-      </g>
+      {colours && <rect width="360" height="360" style={{ fill: colours.tile }} />}
+      <path d={EPSILON} style={{ fill: colours ? colours.glyph : 'currentColor' }} />
     </svg>
   );
 }

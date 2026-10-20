@@ -88,7 +88,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/icons` | The icon set: Lucide, vendored, at the house stroke weight |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
-| `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, and `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord |
+| `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord, and `attachImageResize` for the handle on an image block |
 | `@ekdotico/domico/fonts` | Font loading configuration for the three locked families |
 | `@ekdotico/domico/mermaid` | Mermaid `themeVariables` for all eight palettes |
 | `@ekdotico/domico/mermaid/accessibility` | Reads `accTitle` and `accDescr` out of a diagram source, and blanks the directive lines in place |
@@ -929,7 +929,7 @@ depends on none.
 
 | Stylesheet | What it styles |
 |---|---|
-| `styles/editor.css` | The document surface: prose, the nine marks, lists, a table, a page break, a table of contents |
+| `styles/editor.css` | The document surface: prose, the nine marks, lists, a table, an image block and its handle, a page break, a table of contents |
 | `styles/code.css` | A code block, its header, and the syntax colours |
 
 ```tsx
@@ -1818,6 +1818,138 @@ underlined. `hljs-addition` and `hljs-deletion` take the success wash and the
 danger wash. `hljs-operator`, `hljs-punctuation`, `hljs-params`, `hljs-subst`,
 `hljs-tag`, `hljs-formula`, and `hljs-code` are left in the ink of the code.
 
+### The image block
+
+A picture in the document, with a caption, a width, and a handle on its end
+edge that sets the width. The stylesheet draws it and `attachImageResize` makes
+the handle work. Nothing here uploads, loads, or stores a picture, and nothing
+imports an editor: the block is markup that an editor's node view writes, and
+the helper is given two elements.
+
+```html
+<figure class="ekd-image">
+  <div class="ekd-image-frame" contenteditable="false" style="--ekd-image-width: 50%">
+    <img class="ekd-image-img" src="…" width="1600" height="900" alt="Plate 3, the north front">
+    <div class="ekd-image-resize" aria-label="Image width"></div>
+  </div>
+  <figcaption class="ekd-image-caption" data-placeholder="Caption (optional)">Plate 3</figcaption>
+</figure>
+```
+
+| The editor writes | On | What it is |
+|---|---|---|
+| `class="ekd-image"` | A `figure` | The block. `data-node-selected` outlines it, as it does any block |
+| `data-state="uploading"` or `data-state="unavailable"` | The block | A block with no picture in it, and why. The `img` is not drawn in either |
+| `class="ekd-image-frame"` | The first child | The picture's box, and the handle's. Its width is the block's width |
+| `--ekd-image-width: 50%` | The frame, in `style` | The width, as a percentage of the text column. `attachImageResize` writes it |
+| `data-resizing` | The frame, while it is dragged | An outline round the frame, and the handle held down |
+| `class="ekd-image-img"` | An `img` in the frame | The picture, with the card's hairline and radius |
+| `class="ekd-image-status"` | An element in the frame | The words for the two states: "Uploading the image…", "This image is no longer available." The application's words |
+| `class="ekd-image-resize"` | An element in the frame | The handle, at the end edge of the frame |
+| `class="ekd-image-caption"` | A `figcaption` after the frame | The caption, drawn as a table's caption. `data-placeholder` is its prompt while it is empty |
+
+**The width.** A share of the text column, whole numbers from 10 to 100. The
+stylesheet reads it from `--ekd-image-width` and clamps it: never below a
+tenth of the column, never below `--sp-7` (the room the handle needs), never
+past the column, whatever a document says. Where the property is not set the
+block fills the column. It is one property on one element and it is a value,
+not a token; an application sets it and does not declare a token for it. The
+frame starts at the start edge of the column, so the end edge follows a pointer
+one to one. Give the `img` its `width` and `height` attributes: the picture
+keeps its proportions and the page does not move when it loads.
+
+**The handle is a slider.** One number, set by moving along a line, so it is
+`role="slider"` with `aria-valuemin`, `aria-valuemax`, `aria-valuenow`,
+`aria-valuetext`, and a Tab stop. It is drawn on its own ground
+(`--bg-raised`) with a boundary in `--rule-control`, so it is seen on a
+picture of any colour, and its grip is two lines, a shape and not a hue. It
+is `--sp-6` wide and `--sp-7` tall, above the 24px of WCAG 2.5.8, and it is
+inside the frame: at the full width it adds nothing to the width of the page,
+which holds at 320px. The focus ring is two rings, the accent and the ground
+between it and the handle, so that against a picture of any colour one of
+the ring's two edges can be seen. There is no motion but a hover
+colour, and a reader who asked for none gets that without the fade. In forced
+colours the handle is `Canvas` and `ButtonText` and the ring is `Highlight`. It
+is not printed.
+
+```ts
+import { attachImageResize, IMAGE_RESIZE_EVENT, type ImageResizeEvent } from '@ekdotico/domico/a11y';
+
+// In a node view's constructor:
+const resize = attachImageResize({ handle, frame, width: node.attrs.width });
+handle.addEventListener(IMAGE_RESIZE_EVENT, (event) => {
+  const { width, phase } = (event as ImageResizeEvent).detail;
+  if (phase === 'commit') view.dispatch(view.state.tr.setNodeMarkup(getPos(), undefined, { ...node.attrs, width }));
+});
+// In its update(): resize.update(node.attrs.width). In its destroy(): resize.destroy().
+```
+
+`attachImageResize({ handle, frame, width, min?, max?, step?, pageStep?, valueText? })`
+returns `{ update(width), destroy() }`. It sets `role`, `aria-orientation`,
+the three value attributes and a `tabindex` where there is none, and it writes
+`--ekd-image-width` on the frame. It sets no `aria-label`: what the handle is
+called is the application's words, and a slider with no name is the
+application's fault. `valueText` says the value to a screen reader and
+defaults to the number and a percent sign. The width the frame is a share of
+is the width of the frame's parent, read when a drag begins.
+
+| Move | Result |
+|---|---|
+| Pointer: press the handle and drag toward the end of the line | The width follows the pointer, to the nearest whole percent, from 10 to 100. Mouse, touch and pen, by pointer capture, so the drag follows the pointer off the handle |
+| Escape, while dragging | The width goes back and the drag ends |
+| Right Arrow or Up Arrow | 5 wider. In a right to left block Left Arrow widens and Right Arrow narrows, as a native range input does |
+| Left Arrow or Down Arrow | 5 narrower |
+| Page Up and Page Down | 25 wider and 25 narrower |
+| Home and End | 10 and 100 |
+
+A key lands on a multiple of the step, so a width a drag left at 53 goes to
+55. A key on the handle goes no further: the editor round it does not move
+its caret.
+
+Each change is an `ekd-image-resize` CustomEvent on the handle, which bubbles,
+with a detail of type `ImageResizeDetail`: `{ width, phase, source }`.
+
+| `phase` | When | What to do |
+|---|---|---|
+| `move` | During a drag | Nothing. The width is shown and is not decided. Writing it to the document at each move writes it to every collaborator at each move |
+| `commit` | A key; the end of a drag that changed the width | Write `width` to the node |
+| `cancel` | A drag ended where it began, or was abandoned: Escape, or the pointer taken away | Nothing. The width has been put back |
+
+`source` is `pointer` or `keyboard`. Beside the helper, `clampImageWidth`,
+`imageWidthForKey`, and `imageWidthForDrag` are the arithmetic with no element
+in it, and `IMAGE_WIDTH_MIN`, `IMAGE_WIDTH_MAX`, `IMAGE_WIDTH_STEP`,
+`IMAGE_WIDTH_PAGE_STEP`, `IMAGE_WIDTH_PROPERTY` and `IMAGE_RESIZE_EVENT` are
+the numbers and the names. The module touches nothing when it is loaded, so a
+server module may import it.
+
+**Dragging is not the only way, and the keys are not the other.** WCAG 2.5.7
+(Dragging Movements) asks for a way to set the width with a single pointer
+and no drag, and the arrow keys are for a keyboard. The handle does not
+supply that, and the block's own controls must: a `Select` of widths, 25, 50,
+75, and 100, beside the alt text and the caption. It sets the same property
+and writes the same attribute. A block that has the handle and no such
+control fails 2.5.7.
+
+What the application owes:
+
+- A name on the handle, through `aria-label` or `aria-labelledby`, in its
+  words: "Image width".
+- `contenteditable="false"` on the frame, so that the handle and the picture
+  are not text. Where the editor takes a key for itself, stop it at the handle.
+- No handle for a reader who cannot change the document. The block without it
+  is the same block.
+- The alt text, which is a field of its own and not an attribute the reader
+  never sees. An image with nothing to say has an empty `alt`, not a missing
+  one.
+- `aria-busy="true"` on the frame while the picture is on its way, and the
+  status words in an element with `role="status"` that is in the page before
+  they change. `data-state` is a drawing and says nothing to a screen reader.
+
+The two states are told apart by the edge as well as the words: a solid edge
+while the picture is on its way, and a dashed one when it will not come. Both
+are the sunken surface with the status in `--fg-1`, which `check:contrast`
+holds at 4.5:1, and neither moves.
+
 ### The document surface
 
 `ekd-editor` goes on the editable root. Under it, the blocks and the marks are
@@ -1907,6 +2039,8 @@ package styles them.
 | `class="ekd-column-resize"` | An element inside a cell | The handle on the column's edge. `column-resize-handle` is answered too |
 | `data-column-resizing` | The root, while a column is dragged | The resize cursor. `resize-cursor` is answered too |
 | `class="ekd-table-caption"` | A `figcaption` or `p` after the wrapper | The caption under a table |
+| `class="ekd-image"`, `data-state` | A `figure` | An image block, and the two states it has no picture in. Its names are tabled in "The image block" |
+| `class="ekd-image-resize"` | An element in the block's frame | The handle on the block's end edge, a slider that `attachImageResize` makes work |
 | `class="ekd-page-break"` | A block, with the label as its text | A page break |
 | `class="ekd-toc"` | A `nav`, named by its title | The table of contents |
 | `class="ekd-toc-title"` | A `p` or a heading in it | Its title |

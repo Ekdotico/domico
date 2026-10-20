@@ -3682,6 +3682,502 @@ await it('The editor and code stylesheets answer to the documented names, and im
   assert.equal(manifest.dependencies, undefined, 'a runtime dependency was added');
 });
 
+// --- The image block ------------------------------------------------------------
+// The block is drawn by `styles/editor.css` and its handle is made to work by
+// `attachImageResize`. jsdom lays nothing out and applies no stylesheet, so the
+// helper is run against a column whose width the test gives it, and the
+// stylesheet is read by name, as the editor's other rules are.
+const {
+  attachImageResize, clampImageWidth, imageWidthForKey, imageWidthForDrag,
+  IMAGE_RESIZE_EVENT, IMAGE_WIDTH_PROPERTY, IMAGE_WIDTH_MIN, IMAGE_WIDTH_MAX, IMAGE_WIDTH_STEP, IMAGE_WIDTH_PAGE_STEP,
+} = await import('../dist/src/a11y/index.js');
+
+/** A block as an editor writes it, with the column (the figure) 400px wide. */
+const imageBlock = (attributes = '', columnPx = 400) => {
+  document.body.innerHTML = `
+    <figure class="ekd-image" id="block">
+      <div class="ekd-image-frame" id="frame">
+        <img class="ekd-image-img" alt="A plate" src="data:,">
+        <div class="ekd-image-resize" id="handle" ${attributes}></div>
+      </div>
+      <figcaption class="ekd-image-caption">Plate 3</figcaption>
+    </figure>`;
+  const $ = (id) => document.getElementById(id);
+  Object.defineProperty($('block'), 'clientWidth', { value: columnPx, configurable: true });
+  const events = [];
+  $('handle').addEventListener(IMAGE_RESIZE_EVENT, (e) => events.push(e.detail));
+  return { block: $('block'), frame: $('frame'), handle: $('handle'), events };
+};
+
+/** A pointer event. jsdom has the constructor and no pointer capture, so capture is recorded. */
+const pointer = (target, type, init) => {
+  const event = new window.PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, isPrimary: true, button: 0, ...init });
+  target.dispatchEvent(event);
+  return event;
+};
+const recordCapture = (handle) => {
+  const calls = [];
+  const held = new Set();
+  handle.setPointerCapture = (id) => { calls.push(['set', id]); held.add(id); };
+  handle.hasPointerCapture = (id) => held.has(id);
+  handle.releasePointerCapture = (id) => { calls.push(['release', id]); held.delete(id); };
+  return calls;
+};
+
+await it('attachImageResize makes the handle a named slider and writes the width where the stylesheet reads it', () => {
+  const { frame, handle } = imageBlock('aria-label="Image width"');
+  const control = attachImageResize({ handle, frame, width: 50 });
+  assert.equal(handle.getAttribute('role'), 'slider');
+  assert.equal(handle.getAttribute('aria-orientation'), 'horizontal');
+  assert.equal(handle.getAttribute('aria-valuemin'), '10');
+  assert.equal(handle.getAttribute('aria-valuemax'), '100');
+  assert.equal(handle.getAttribute('aria-valuenow'), '50');
+  assert.equal(handle.getAttribute('aria-valuetext'), '50%');
+  assert.equal(handle.getAttribute('tabindex'), '0', 'a slider that cannot be focused cannot be moved by a keyboard');
+  assert.equal(frame.style.getPropertyValue(IMAGE_WIDTH_PROPERTY), '50%');
+  assert.equal(IMAGE_WIDTH_PROPERTY, '--ekd-image-width');
+  // What it is called is the application's words, and the helper keeps them.
+  assert.equal(handle.getAttribute('aria-label'), 'Image width');
+  control.destroy();
+
+  // It invents no name for a handle that was given none, and keeps a tabindex it was given.
+  const bare = imageBlock('tabindex="-1"');
+  attachImageResize({ handle: bare.handle, frame: bare.frame, width: 100 });
+  assert.ok(!bare.handle.hasAttribute('aria-label') && !bare.handle.hasAttribute('aria-labelledby'), 'the helper wrote a name of its own');
+  assert.equal(bare.handle.getAttribute('tabindex'), '-1');
+
+  // The words for the value are the application's, and are written again at each width.
+  const worded = imageBlock();
+  const words = attachImageResize({ handle: worded.handle, frame: worded.frame, width: 25, valueText: (w) => `${w} of 100` });
+  assert.equal(worded.handle.getAttribute('aria-valuetext'), '25 of 100');
+  words.update(75);
+  assert.equal(worded.handle.getAttribute('aria-valuetext'), '75 of 100');
+});
+
+await it('The handle takes the arrow keys, Page Up and Page Down, Home and End, in steps, and says each as a commit', () => {
+  const { block, frame, handle, events } = imageBlock('aria-label="Image width"');
+  attachImageResize({ handle, frame, width: 50 });
+  const press = (init) => key(handle, init);
+  const widthNow = () => handle.getAttribute('aria-valuenow');
+
+  assert.equal([IMAGE_WIDTH_MIN, IMAGE_WIDTH_MAX, IMAGE_WIDTH_STEP, IMAGE_WIDTH_PAGE_STEP].join(), '10,100,5,25');
+
+  let e = press({ key: 'ArrowRight' });
+  assert.equal(widthNow(), '55');
+  assert.deepEqual(events.at(-1), { width: 55, phase: 'commit', source: 'keyboard' });
+  assert.ok(e.defaultPrevented, 'the editor round the block moves its caret as well');
+  press({ key: 'ArrowLeft' });
+  assert.equal(widthNow(), '50');
+  press({ key: 'ArrowUp' });
+  assert.equal(widthNow(), '55');
+  press({ key: 'ArrowDown' });
+  assert.equal(widthNow(), '50');
+  press({ key: 'PageUp' });
+  assert.equal(widthNow(), '75');
+  press({ key: 'PageDown' });
+  assert.equal(widthNow(), '50');
+  press({ key: 'End' });
+  assert.equal(widthNow(), '100');
+  press({ key: 'Home' });
+  assert.equal(widthNow(), '10');
+  assert.equal(frame.style.getPropertyValue(IMAGE_WIDTH_PROPERTY), '10%', 'the stylesheet is not told');
+  assert.equal(handle.getAttribute('aria-valuetext'), '10%');
+
+  // At an end the key is still the slider's, and nothing is said.
+  const before = events.length;
+  e = press({ key: 'ArrowLeft' });
+  assert.ok(e.defaultPrevented);
+  assert.equal(events.length, before, 'a key that changed nothing sent an event');
+  press({ key: 'End' });
+  const atEnd = events.length;
+  press({ key: 'ArrowRight' });
+  assert.equal(events.length, atEnd);
+
+  // A key that is not the slider's, and a chord, are left to the page.
+  for (const init of [{ key: 'a' }, { key: 'Tab' }, { key: 'ArrowRight', ctrlKey: true }, { key: 'ArrowRight', metaKey: true }, { key: 'ArrowRight', altKey: true }]) {
+    const sent = events.length;
+    e = press(init);
+    assert.ok(!e.defaultPrevented, `${JSON.stringify(init)} was taken`);
+    assert.equal(events.length, sent);
+  }
+
+  // The event bubbles, so a node view can listen on its own element.
+  let seen = null;
+  block.addEventListener(IMAGE_RESIZE_EVENT, (event) => { seen = event.detail; });
+  press({ key: 'Home' });
+  press({ key: 'ArrowRight' });
+  assert.deepEqual(seen, { width: 15, phase: 'commit', source: 'keyboard' });
+
+  // A key stops at the handle: the editor's own key handler is not run.
+  let reached = false;
+  block.addEventListener('keydown', () => { reached = true; });
+  press({ key: 'ArrowRight' });
+  assert.ok(!reached, 'an arrow key on the handle went on to the editor');
+});
+
+await it('A key lands on a multiple of the step, and in a right to left block Left widens', () => {
+  const { frame, handle, events } = imageBlock();
+  const control = attachImageResize({ handle, frame, width: 53 });
+  key(handle, { key: 'ArrowRight' });
+  assert.equal(events.at(-1).width, 55, 'a width of 53 went to 58');
+  control.update(53);
+  key(handle, { key: 'ArrowLeft' });
+  assert.equal(events.at(-1).width, 50, 'a width of 53 went to 48');
+  control.update(53);
+  key(handle, { key: 'PageUp' });
+  assert.equal(events.at(-1).width, 75);
+
+  handle.style.direction = 'rtl';
+  control.update(50);
+  key(handle, { key: 'ArrowLeft' });
+  assert.equal(events.at(-1).width, 55, 'Left does not widen a right to left block');
+  key(handle, { key: 'ArrowRight' });
+  assert.equal(events.at(-1).width, 50, 'Right does not narrow a right to left block');
+  key(handle, { key: 'ArrowUp' });
+  assert.equal(events.at(-1).width, 55, 'Up is not the same in both directions');
+  key(handle, { key: 'ArrowDown' });
+  assert.equal(events.at(-1).width, 50);
+
+  // The same, without a handle.
+  assert.equal(imageWidthForKey('ArrowRight', 50, { rtl: true }), 45);
+  assert.equal(imageWidthForKey('ArrowRight', 50), 55);
+  assert.equal(imageWidthForKey('Home', 50), 10);
+  assert.equal(imageWidthForKey('End', 50), 100);
+  assert.equal(imageWidthForKey('PageDown', 10), 10);
+  assert.equal(imageWidthForKey('PageUp', 90), 100);
+  assert.equal(imageWidthForKey('Enter', 50), null);
+  assert.equal(imageWidthForKey('ArrowRight', 40, { step: 10, max: 60 }), 50);
+  assert.equal(imageWidthForKey('ArrowRight', 60, { step: 10, max: 60 }), 60);
+});
+
+await it('A drag along the line sets the width as the share of the column the pointer has moved, and says it only when it ends', () => {
+  const { frame, handle, events } = imageBlock('aria-label="Image width"');
+  const capture = recordCapture(handle);
+  attachImageResize({ handle, frame, width: 50 });
+  const widthNow = () => handle.getAttribute('aria-valuenow');
+
+  const down = pointer(handle, 'pointerdown', { clientX: 100 });
+  assert.ok(down.defaultPrevented, 'the press selects the text under it');
+  assert.deepEqual(capture, [['set', 1]], 'the drag does not follow the pointer off the handle');
+  assert.ok(frame.hasAttribute('data-resizing'));
+  assert.equal(document.activeElement, handle, 'a press on the handle does not leave focus where it was');
+
+  // 40px of a 400px column is 10 points.
+  pointer(handle, 'pointermove', { clientX: 140 });
+  assert.equal(widthNow(), '60');
+  assert.equal(frame.style.getPropertyValue(IMAGE_WIDTH_PROPERTY), '60%');
+  assert.deepEqual(events, [{ width: 60, phase: 'move', source: 'pointer' }]);
+  pointer(handle, 'pointermove', { clientX: 140 });
+  assert.equal(events.length, 1, 'a move that changed nothing was said');
+  pointer(handle, 'pointermove', { clientX: 5000 });
+  assert.equal(widthNow(), '100', 'a drag past the column widened the block past it');
+  pointer(handle, 'pointermove', { clientX: -5000 });
+  assert.equal(widthNow(), '10', 'a drag past the start made the block narrower than a tenth');
+  pointer(handle, 'pointermove', { clientX: 160 });
+  assert.equal(widthNow(), '65');
+
+  // Another pointer is not this drag.
+  pointer(handle, 'pointermove', { clientX: 300, pointerId: 2 });
+  pointer(handle, 'pointerup', { clientX: 300, pointerId: 2 });
+  assert.equal(widthNow(), '65');
+  assert.ok(frame.hasAttribute('data-resizing'));
+  // The keys do not move a width that is being dragged, and a remote change does not fight it.
+  key(handle, { key: 'ArrowRight' });
+  assert.equal(widthNow(), '65');
+
+  pointer(handle, 'pointerup', { clientX: 160 });
+  assert.deepEqual(events.at(-1), { width: 65, phase: 'commit', source: 'pointer' });
+  assert.equal(events.filter((e) => e.phase === 'commit').length, 1, 'a drag was committed more than once');
+  assert.ok(!frame.hasAttribute('data-resizing'));
+  assert.deepEqual(capture.at(-1), ['release', 1]);
+  const after = events.length;
+  pointer(handle, 'pointermove', { clientX: 10 });
+  assert.equal(events.length, after, 'the handle follows a pointer that is up');
+  assert.equal(widthNow(), '65');
+
+  // The same, without a handle.
+  assert.equal(imageWidthForDrag(50, 40, 400), 60);
+  assert.equal(imageWidthForDrag(50, -40, 400), 40);
+  assert.equal(imageWidthForDrag(50, 40, 400, { rtl: true }), 40);
+  assert.equal(imageWidthForDrag(50, 9999, 400), 100);
+  assert.equal(imageWidthForDrag(50, -9999, 400), 10);
+  assert.throws(() => imageWidthForDrag(50, 10, 0), RangeError);
+});
+
+await it('Escape, a cancelled pointer, and a drag that ends where it began put the width back and write nothing', () => {
+  const { frame, handle, events } = imageBlock();
+  recordCapture(handle);
+  const control = attachImageResize({ handle, frame, width: 50 });
+  const widthNow = () => handle.getAttribute('aria-valuenow');
+
+  pointer(handle, 'pointerdown', { clientX: 100 });
+  pointer(handle, 'pointermove', { clientX: 180 });
+  assert.equal(widthNow(), '70');
+  const e = key(handle, { key: 'Escape' });
+  assert.ok(e.defaultPrevented, 'Escape went on to close what the block is in');
+  assert.equal(widthNow(), '50');
+  assert.equal(frame.style.getPropertyValue(IMAGE_WIDTH_PROPERTY), '50%');
+  assert.ok(!frame.hasAttribute('data-resizing'));
+  assert.deepEqual(events.at(-1), { width: 50, phase: 'cancel', source: 'pointer' });
+  pointer(handle, 'pointerup', { clientX: 180 });
+  assert.ok(!events.some((x) => x.phase === 'commit'), 'a drag that was cancelled was committed');
+
+  pointer(handle, 'pointerdown', { clientX: 100 });
+  pointer(handle, 'pointermove', { clientX: 180 });
+  pointer(handle, 'pointercancel', { clientX: 180 });
+  assert.equal(widthNow(), '50', 'the browser took the pointer and the width stayed where it had got to');
+  assert.deepEqual(events.at(-1), { width: 50, phase: 'cancel', source: 'pointer' });
+
+  pointer(handle, 'pointerdown', { clientX: 100 });
+  pointer(handle, 'pointermove', { clientX: 180 });
+  pointer(handle, 'lostpointercapture', { clientX: 180 });
+  assert.equal(widthNow(), '50');
+  assert.ok(!frame.hasAttribute('data-resizing'));
+
+  // There and back again is no change, and is not written.
+  pointer(handle, 'pointerdown', { clientX: 100 });
+  pointer(handle, 'pointermove', { clientX: 180 });
+  pointer(handle, 'pointermove', { clientX: 100 });
+  pointer(handle, 'pointerup', { clientX: 100 });
+  assert.deepEqual(events.at(-1), { width: 50, phase: 'cancel', source: 'pointer' });
+  assert.ok(!events.some((x) => x.phase === 'commit'));
+
+  // A remote change is shown between drags and not during one.
+  control.update(30);
+  assert.equal(widthNow(), '30');
+  pointer(handle, 'pointerdown', { clientX: 100 });
+  control.update(80);
+  assert.equal(widthNow(), '30', 'a change from elsewhere moved the block under the pointer');
+  pointer(handle, 'pointerup', { clientX: 100 });
+  control.update(80);
+  assert.equal(widthNow(), '80');
+  control.update(900);
+  assert.equal(widthNow(), '100');
+  assert.throws(() => control.update(Number.NaN), RangeError);
+});
+
+await it('A drag is not begun by a right button, a second finger, or a column with no width, and in a right to left block it runs the other way', () => {
+  const { frame, handle } = imageBlock();
+  attachImageResize({ handle, frame, width: 50 });
+  assert.ok(!pointer(handle, 'pointerdown', { clientX: 100, button: 2 }).defaultPrevented, 'a right button began a drag');
+  assert.ok(!pointer(handle, 'pointerdown', { clientX: 100, isPrimary: false, pointerId: 7 }).defaultPrevented, 'a second finger began a drag');
+  assert.ok(!frame.hasAttribute('data-resizing'));
+
+  const flat = imageBlock('', 0);
+  attachImageResize({ handle: flat.handle, frame: flat.frame, width: 50 });
+  assert.ok(!pointer(flat.handle, 'pointerdown', { clientX: 100 }).defaultPrevented, 'a column with no width began a drag');
+
+  const rtl = imageBlock();
+  rtl.handle.style.direction = 'rtl';
+  attachImageResize({ handle: rtl.handle, frame: rtl.frame, width: 50 });
+  pointer(rtl.handle, 'pointerdown', { clientX: 300 });
+  pointer(rtl.handle, 'pointermove', { clientX: 260 });
+  assert.equal(rtl.handle.getAttribute('aria-valuenow'), '60', 'a drag toward the end of the line, which is the left, does not widen');
+  pointer(rtl.handle, 'pointerup', { clientX: 260 });
+});
+
+await it('destroy removes every listener, and the limits are held', () => {
+  const { frame, handle, events } = imageBlock();
+  recordCapture(handle);
+  const control = attachImageResize({ handle, frame, width: 50 });
+  pointer(handle, 'pointerdown', { clientX: 100 });
+  control.destroy();
+  assert.ok(!frame.hasAttribute('data-resizing'), 'a drag was left in progress');
+  key(handle, { key: 'ArrowRight' });
+  pointer(handle, 'pointerdown', { clientX: 100 });
+  pointer(handle, 'pointermove', { clientX: 200 });
+  assert.equal(events.length, 0, 'a handle that was destroyed still sends');
+  assert.equal(handle.getAttribute('aria-valuenow'), '50');
+
+  assert.equal(clampImageWidth(3), 10);
+  assert.equal(clampImageWidth(150), 100);
+  assert.equal(clampImageWidth(54.6), 55);
+  assert.equal(clampImageWidth(20, { min: 25 }), 25);
+  assert.throws(() => clampImageWidth(Number.NaN), RangeError);
+  assert.throws(() => clampImageWidth(Infinity), RangeError);
+  assert.throws(() => clampImageWidth(50, { min: 60, max: 40 }), RangeError, 'a minimum above the maximum');
+  assert.throws(() => clampImageWidth(50, { max: 140 }), RangeError, 'a block wider than the column');
+  assert.throws(() => clampImageWidth(50, { min: 0 }), RangeError, 'a block no wider than nothing');
+  assert.throws(() => imageWidthForKey('ArrowRight', 50, { step: 0 }), RangeError);
+  assert.throws(() => attachImageResize({ handle, frame, width: 50, min: 90, max: 20 }), RangeError);
+});
+
+await it('The helper has no side effect on load, and its types are held against the built declarations', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const root = fileURLToPath(new URL('..', import.meta.url));
+
+  // Loaded where there is no window or document, as a server module is.
+  const bare = spawnSync(
+    process.execPath,
+    ['--input-type=module', '--eval', "const m = await import('./dist/src/a11y/index.js'); if (typeof m.attachImageResize !== 'function') process.exit(3);"],
+    { cwd: root, encoding: 'utf8' },
+  );
+  assert.equal(bare.status, 0, `the a11y entry does not load without a document:\n${bare.stderr}`);
+
+  const tsc = spawnSync(
+    process.execPath,
+    [
+      'node_modules/typescript/bin/tsc', '--noEmit', '--strict', '--skipLibCheck', '--module', 'esnext',
+      '--moduleResolution', 'bundler', '--target', 'es2022', '--lib', 'es2022,dom', 'scripts/fixtures/image-resize-types.ts',
+    ],
+    { cwd: root, encoding: 'utf8' },
+  );
+  assert.equal(tsc.status, 0, `scripts/fixtures/image-resize-types.ts does not compile:\n${tsc.stdout}${tsc.stderr}`);
+});
+
+await it('The image block is styled by the documented names, in tokens, and holds the target, the focus ring, the states and the media queries', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+  const strip = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = strip(read('../dist/styles/editor.css'));
+  const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const block = (selector, source = css) => new RegExp(`(?:^|\\})\\s*${escape(selector)}\\s*\\{([^}]*)\\}`).exec(source)?.[1];
+  const must = (selector, source) => {
+    const body = block(selector, source);
+    assert.ok(body !== undefined, `editor.css has no rule for ${selector}`);
+    return body;
+  };
+  /** The body of each `@media (query) { … }`, braces counted. */
+  const media = (query) => {
+    const bodies = [];
+    for (let at = css.indexOf(`@media ${query} {`); at >= 0; at = css.indexOf(`@media ${query} {`, at + 1)) {
+      let depth = 0;
+      let start = css.indexOf('{', at);
+      for (let i = start; i < css.length; i++) {
+        if (css[i] === '{') depth++;
+        if (css[i] === '}' && --depth === 0) { bodies.push(css.slice(start + 1, i)); break; }
+      }
+    }
+    return bodies.join('\n');
+  };
+
+  // The section the rules above are in, for the checks that are about all of it.
+  const start = css.indexOf('.ekd-image {');
+  const end = css.indexOf('.ekd-editor .callout-body');
+  assert.ok(start > 0 && end > start, 'the image block is not in the editor stylesheet');
+  const section = css.slice(start, end);
+
+  // The frame: a share of the column, clamped here, with no fallback written into var().
+  const frame = must('.ekd-image-frame');
+  assert.match(frame, /position:\s*relative;/, 'the handle has nothing to be placed on');
+  assert.match(frame, /inline-size:\s*clamp\(max\(10%, var\(--sp-7\)\), var\(--ekd-image-width\), 100%\);/, 'the width is not clamped to a tenth of the column and the room the handle needs, and to the column');
+  assert.match(frame, /max-inline-size:\s*100%;/, 'a frame can be wider than the column');
+  assert.ok(!/var\(--ekd-image-width\s*,/.test(css), 'the width has a fallback written into var()');
+  const img = must('.ekd-image-img');
+  assert.match(img, /inline-size:\s*100%;/);
+  assert.match(img, /block-size:\s*auto;/, 'a picture is stretched to the height of its box');
+  assert.match(img, /max-inline-size:\s*100%;/);
+  assert.match(img, /border:\s*1px solid var\(--rule-soft\);/);
+  assert.match(img, /border-radius:\s*var\(--radius-lg\);/);
+  assert.match(img, /display:\s*block;/);
+
+  // The caption is the table's caption: one rule for both.
+  assert.match(css, /\.ekd-table-caption,\s*\.ekd-image-caption\s*\{[^}]*color:\s*var\(--fg-2\);/, 'the image caption is not drawn as the table caption is');
+
+  // The handle: placed at the end edge in logical properties, inside the frame, 24px at the least.
+  const handle = must('.ekd-image-resize');
+  assert.match(handle, /position:\s*absolute;/);
+  assert.match(handle, /inset-inline-end:\s*var\(--sp-1\);/, 'the handle is not on the inline-end edge, inside the frame: at the full width it widens the page');
+  assert.match(handle, /inline-size:\s*var\(--sp-6\);/);
+  assert.match(handle, /block-size:\s*var\(--sp-7\);/);
+  const tokens = read('../tokens/generated/tokens.css');
+  const px = (name) => Number(new RegExp(`${escape(name)}:\\s*(\\d+(?:\\.\\d+)?)px`).exec(tokens)?.[1]);
+  assert.ok(px('--sp-6') >= 24, 'the handle is narrower than the 24px of WCAG 2.5.8');
+  assert.ok(px('--sp-7') >= 24, 'the handle is shorter than the 24px of WCAG 2.5.8');
+  assert.match(handle, /touch-action:\s*none;/, 'a touch on the handle scrolls the page instead of dragging it');
+  assert.match(handle, /cursor:\s*ew-resize;/);
+  assert.match(handle, /background:\s*var\(--bg-raised\);/, 'the handle has no ground of its own, and cannot be seen on every picture');
+  assert.match(handle, /color:\s*var\(--fg-2\);/);
+  assert.match(handle, /border:\s*1px solid var\(--rule-control\);/);
+  assert.match(handle, /user-select:\s*none;/);
+  assert.ok(!/(?:^|[;\s])(?:left|right|margin-left|margin-right|padding-left|padding-right)\s*:/.test(section), 'the block uses a physical side, and is wrong in a right to left document');
+  // The grip is two lines, a shape, and not a colour.
+  assert.match(must('.ekd-image-resize::before'), /border-inline:\s*2px solid currentColor;/, 'the grip is not drawn in lines');
+  // Hover and drag, in inks that are measured.
+  assert.match(must('.ekd-image-resize:hover,\n.ekd-image-frame[data-resizing] .ekd-image-resize'), /background:\s*var\(--bg-surface-2\);\s*color:\s*var\(--fg-1\);/);
+  assert.match(must('.ekd-image-frame[data-resizing] .ekd-image-resize'), /border-color:\s*var\(--fg-1\);/);
+  assert.match(must('.ekd-image-frame[data-resizing]'), /outline:\s*2px solid var\(--accent\);/);
+  // The focus ring is two rings: the accent, and the ground between it and the handle.
+  const focus = must('.ekd-image-resize:focus-visible');
+  assert.match(focus, /outline:\s*2px solid var\(--accent\);/, 'the handle has no focus ring');
+  assert.match(focus, /outline-offset:\s*2px;/);
+  assert.match(focus, /box-shadow:\s*0 0 0 2px var\(--bg-raised\);/, 'the ring has no second edge, and is lost on a picture of its colour');
+  assert.ok(!/:focus\s*\{|outline:\s*none|outline:\s*0/.test(section), 'a rule removes the focus ring');
+
+  // The two states with no picture.
+  const states = '.ekd-image:is([data-state="uploading"], [data-state="unavailable"])';
+  const stated = must(`${states} .ekd-image-frame`);
+  assert.match(stated, /background:\s*var\(--bg-surface-2\);/);
+  assert.match(stated, /border:\s*1px solid var\(--rule-control\);/);
+  assert.match(stated, /min-block-size:\s*var\(--sp-10\);/);
+  assert.match(stated, /padding-inline-end:\s*calc\(var\(--sp-6\) \+ var\(--sp-3\)\);/, 'the status runs under the handle');
+  assert.match(must('.ekd-image[data-state="unavailable"] .ekd-image-frame'), /border-style:\s*dashed;/, 'uploading and unavailable differ by colour or by nothing');
+  assert.match(must(`${states} .ekd-image-img`), /display:\s*none;/, 'a picture that is not there is drawn');
+  const status = must('.ekd-image-status');
+  assert.match(status, /font-family:\s*var\(--font-sans\);/);
+  assert.match(status, /color:\s*var\(--fg-1\);/);
+  assert.match(status, /overflow-wrap:\s*anywhere;/, 'a status in a narrow block widens the page');
+
+  // Tokens only, in everything the block draws: no colour literal, and no length
+  // but the hairline and the two-pixel ring that the other rules also write.
+  assert.ok(!/#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch)\(/.test(section), 'the block writes a colour');
+  for (const [length] of section.matchAll(/(?<![\w-])\d+(?:\.\d+)?px/g)) {
+    assert.ok(['1px', '2px'].includes(length), `the block writes the length ${length}`);
+  }
+  assert.ok(!/text-transform|font-size:\s*\d|transition:[^;]*\d+m?s\b|cubic-bezier|var\(--[\w-]+\s*,/.test(section), 'the block writes a literal, or a fallback');
+  assert.ok(!/@keyframes|animation\s*:/.test(section), 'the block moves, and has a reduced-motion rule to keep');
+
+  // Reduced motion, forced colours, print.
+  assert.match(media('(prefers-reduced-motion: reduce)'), /\.ekd-image-resize\s*\{\s*transition:\s*none;\s*\}/, 'the handle moves for a reader who asked for no motion');
+  assert.match(handle, /transition:\s*background var\(--dur-fast\) var\(--ease-soft\);/);
+  const forced = media('(forced-colors: active)');
+  assert.match(forced, /\.ekd-image-resize\s*\{[^}]*background:\s*Canvas;[^}]*color:\s*ButtonText;[^}]*border-color:\s*ButtonText;/, 'the handle has no ground or border in forced colours');
+  assert.match(forced, /\.ekd-image-resize:focus-visible\s*\{[^}]*outline-color:\s*Highlight;[^}]*box-shadow:\s*none;/, 'the ring is not the system\'s in forced colours');
+  assert.match(forced, /\.ekd-image-frame\[data-resizing\]\s*\{\s*outline-color:\s*Highlight;/);
+  assert.match(forced, /\.ekd-image:is\(\[data-state="uploading"\], \[data-state="unavailable"\]\) \.ekd-image-frame\s*\{\s*border-color:\s*CanvasText;/);
+  assert.match(media('print'), /\.ekd-image-resize\s*\{\s*display:\s*none;\s*\}/, 'the handle is printed');
+
+  // Every pair of inks that the block draws is one `check:contrast` measures,
+  // at the threshold the use owes: 4.5:1 for text, 3:1 for a boundary or a mark.
+  const pairs = JSON.parse(spawnSync(process.execPath, ['scripts/check-contrast.mjs', '--pairs'], { cwd: root, encoding: 'utf8' }).stdout);
+  const threshold = (fg, bg) => pairs.find(([a, b]) => a === fg && b === bg)?.[2];
+  for (const [fg, bg, owed, what] of [
+    ['fg-2', 'bg-raised', 4.5, 'the grip'],
+    ['rule-control', 'bg-raised', 3, 'the boundary of the handle'],
+    ['accent', 'bg-raised', 3, 'the focus ring against the ground between it and the handle'],
+    ['fg-1', 'bg-surface-2', 4.5, 'the handle under the pointer, and the status'],
+    ['fg-2', 'bg-canvas', 4.5, 'the caption'],
+    ['fg-3', 'bg-canvas', 4.5, 'the prompt of an empty caption'],
+    ['rule-control', 'bg-canvas', 3, 'the edge of a block with no picture'],
+  ]) {
+    assert.ok(threshold(fg, bg) >= owed, `check:contrast does not hold ${what}: --${fg} on --${bg} at ${owed}:1`);
+  }
+
+  // The same rules are in every entry that carries the editor.
+  for (const entry of ['base.css', 'components.css']) {
+    const shipped = strip(read(`../dist/styles/${entry}`));
+    for (const selector of ['.ekd-image-frame', '.ekd-image-resize', '.ekd-image-resize:focus-visible']) {
+      assert.equal(block(selector, shipped), block(selector), `styles/${entry} does not carry ${selector} as editor.css has it`);
+    }
+  }
+
+  // The README says what the code does: every class, the state, the property,
+  // and every name the helper exports.
+  const readme = read('../README.md');
+  for (const name of [
+    'ekd-image', 'ekd-image-frame', 'ekd-image-img', 'ekd-image-status', 'ekd-image-caption', 'ekd-image-resize',
+    'data-state="uploading"', 'data-state="unavailable"', 'data-resizing', '--ekd-image-width',
+    'attachImageResize', 'clampImageWidth', 'imageWidthForKey', 'imageWidthForDrag', 'IMAGE_RESIZE_EVENT',
+    'ImageResizeDetail', 'ekd-image-resize', 'WCAG 2.5.7', 'WCAG 2.5.8',
+  ]) {
+    assert.ok(readme.includes(name), `the README does not say ${name}`);
+  }
+});
+
 // --- The QR code --------------------------------------------------------------
 // The fixture is another encoder's output, and three of them agreed on it. A
 // matrix this package wrote for itself would hold nothing.

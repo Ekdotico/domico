@@ -13,6 +13,8 @@
  *                     Tab cycle, Escape, and focus returned in the right order
  *   isShortcut        a ⌘/Ctrl chord that means one thing on every platform
  *   shortcutLabel     the same chord, for the screen and aria-keyshortcuts
+ *   attachImageResize the handle on an image block: a slider that is dragged
+ *                     or moved by the keys, and says each width as an event
  */
 
 export { inertOutside } from './inertOutside.js';
@@ -23,3 +25,20 @@ export {
   type ModalSurfaceOptions,
 } from './useModalSurface.js';
 export { isShortcut, shortcutLabel, type ShortcutLabel } from './shortcut.js';
+export {
+  attachImageResize,
+  clampImageWidth,
+  imageWidthForKey,
+  imageWidthForDrag,
+  IMAGE_RESIZE_EVENT,
+  IMAGE_WIDTH_PROPERTY,
+  IMAGE_WIDTH_MIN,
+  IMAGE_WIDTH_MAX,
+  IMAGE_WIDTH_STEP,
+  IMAGE_WIDTH_PAGE_STEP,
+  type ImageResizeControl,
+  type ImageResizeDetail,
+  type ImageResizeEvent,
+  type ImageResizeOptions,
+  type ImageWidthLimits,
+} from './imageResize.js';

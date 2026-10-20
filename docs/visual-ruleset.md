@@ -316,6 +316,17 @@ answers to a name such as `selectedCell`, that is a name a table plugin writes
 and gives an application no way to change. The package's own name is listed
 first and is the one to use.
 
+The image block is in `editor.css` and is the one place in it where a name in
+the contract is a control: its handle is a slider, `attachImageResize` from
+`@ekdotico/domico/a11y` makes it work, and the stylesheet draws it. The handle
+is `--sp-6` by `--sp-7`, above the 24px of WCAG 2.5.8, on `--bg-raised` with a
+`--rule-control` boundary so it shows on a picture of any colour, with a grip
+of two lines and a focus ring of two rings. It is inside the frame, in logical
+properties, so it adds nothing to the width of the page at 320px. It has no
+motion but a hover colour, which reduced motion removes. The width has a way
+to be set without a drag (WCAG 2.5.7) in the application's own controls, not
+in the package: the README says what is owed.
+
 The chrome is shared for the same reason the components are. The passcode page,
 the navigation drawer, the on-this-page rail, and the opening sequence were each
 two or three copies that had drifted: a gate that described its error and not

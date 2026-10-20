@@ -2638,13 +2638,152 @@ button.ekd-sync-control:hover {
   pointer-events: none;
 }
 .ekd-editor:is([data-column-resizing], .resize-cursor) { cursor: col-resize; }
-.ekd-table-caption {
+.ekd-table-caption,
+.ekd-image-caption {
   margin-block-start: var(--sp-2);
   font-family: var(--font-sans);
   font-size: var(--fs-sm);
   line-height: var(--lh-normal);
   color: var(--fg-2);
   text-align: start;
+}
+
+/* An image block: a figure holding a frame and a caption. The frame holds the
+   picture, a line of status for the two states it has no picture in, and the
+   handle on its end edge. The names are the contract; the README tables them.
+
+   The width is a percentage of the text column, set by the application, or by
+   `attachImageResize`, as `--ekd-image-width` on the frame. It is read here,
+   and clamped here: never below a tenth of the column, never below the room
+   the handle needs, never past the column, whatever a document says. Where
+   the property is not set, the declaration is not valid when it is computed,
+   and the frame fills the column. So there is no fallback written into the
+   `var()`: the unset state is the full width and has nothing to agree with.
+   The frame starts at the start edge of the column, so a drag of the handle
+   moves the edge by as much as the pointer moved.
+
+   The caption is the table caption's: the same sans, size and ink, for the
+   same reason. It runs the width of the column, not of the picture, so that a
+   caption under a narrow picture is not a column of single words.
+
+   The handle is a slider (see `attachImageResize`). Its target is --sp-6 wide
+   (24px, WCAG 2.5.8) and taller, drawn on its own ground so that it can be
+   seen on any picture, and kept inside the frame, so that at the full width
+   it adds nothing to the width of the page at 320px. The grip is two lines,
+   which a reader who sees no colour still sees; the focus ring is two rings,
+   the accent and the ground between it and the handle, so that the ring is
+   held against a picture of any colour by one of its two edges.
+
+   Two states have no picture: `data-state="uploading"` and
+   `data-state="unavailable"`, on the block. The picture is not drawn in
+   either, and the status says why, in the application's words. The two are
+   told apart by the edge as well as the words: solid while it arrives, dashed
+   when it will not. */
+.ekd-image {
+  text-align: start;
+}
+.ekd-image-frame {
+  position: relative;
+  box-sizing: border-box;
+  inline-size: clamp(max(10%, var(--sp-7)), var(--ekd-image-width), 100%);
+  max-inline-size: 100%;
+  min-block-size: var(--sp-7);
+}
+.ekd-image-img {
+  display: block;
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  block-size: auto;
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+}
+.ekd-image-status {
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.ekd-image:is([data-state="uploading"], [data-state="unavailable"]) .ekd-image-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--sp-10);
+  padding: var(--sp-3);
+  padding-inline-end: calc(var(--sp-6) + var(--sp-3));
+  background: var(--bg-surface-2);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--radius-lg);
+}
+.ekd-image[data-state="unavailable"] .ekd-image-frame { border-style: dashed; }
+.ekd-image:is([data-state="uploading"], [data-state="unavailable"]) .ekd-image-img { display: none; }
+.ekd-image-frame[data-resizing] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-lg);
+}
+.ekd-image-resize {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: 50%;
+  inset-inline-end: var(--sp-1);
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  inline-size: var(--sp-6);
+  block-size: var(--sp-7);
+  padding: 0;
+  background: var(--bg-raised);
+  color: var(--fg-2);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--radius-md);
+  cursor: ew-resize;
+  /* A touch that starts on the handle is a drag of the handle, and does not
+     scroll the page. */
+  touch-action: none;
+  user-select: none;
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.ekd-image-resize::before {
+  content: "";
+  inline-size: var(--sp-2);
+  block-size: var(--sp-4);
+  border-inline: 2px solid currentColor;
+}
+.ekd-image-resize:hover,
+.ekd-image-frame[data-resizing] .ekd-image-resize {
+  background: var(--bg-surface-2);
+  color: var(--fg-1);
+}
+.ekd-image-frame[data-resizing] .ekd-image-resize { border-color: var(--fg-1); }
+.ekd-image-resize:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--bg-raised);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ekd-image-resize { transition: none; }
+}
+@media (forced-colors: active) {
+  .ekd-image-resize {
+    background: Canvas;
+    color: ButtonText;
+    border-color: ButtonText;
+  }
+  .ekd-image-resize:focus-visible {
+    outline-color: Highlight;
+    box-shadow: none;
+  }
+  .ekd-image-frame[data-resizing] { outline-color: Highlight; }
+  .ekd-image:is([data-state="uploading"], [data-state="unavailable"]) .ekd-image-frame { border-color: CanvasText; }
+}
+@media print {
+  .ekd-image-resize { display: none; }
 }
 
 /* A callout in the document reads at the document's size, in its face. */

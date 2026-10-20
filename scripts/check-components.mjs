@@ -687,7 +687,11 @@ await it('OpeningSequence', async () => {
   assert.equal(overlay?.getAttribute('aria-hidden'), 'true');
   assert.ok(overlay.classList.contains('is-covering'));
   assert.ok(document.getElementById('page').hasAttribute('inert'), 'the covered page is reachable');
-  assert.equal(overlay.querySelector('path')?.getAttribute('pathLength'), '1');
+  // The mark fades in rather than being traced, so it is the ordinary filled
+  // glyph: one path, decorative, with no stroke length set on it.
+  assert.equal(overlay.querySelectorAll('.opening-sequence-mark path').length, 1);
+  assert.equal(overlay.querySelector('.opening-sequence-mark')?.getAttribute('aria-hidden'), 'true');
+  assert.equal(overlay.querySelector('path')?.getAttribute('pathLength'), null);
   assert.equal(window.sessionStorage.getItem('ekd:intro-shown'), '1');
   // The font wait is capped at 400ms, and the sequence then runs 40ms.
   await act(async () => new Promise((resolve) => setTimeout(resolve, 600)));

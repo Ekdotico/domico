@@ -8,7 +8,7 @@
   "logo-tile-dark-ink": {
     "$value": "oklch(93.691% 0.0247 91.62)",
     "$type": "color",
-    "$description": "Cream stroke on the dark tile."
+    "$description": "Cream glyph on the dark tile."
   },
   "logo-tile-light-bg": {
     "$value": "oklch(95.877% 0.0127 86.83)",
@@ -18,6 +18,6 @@
   "logo-tile-light-ink": {
     "$value": "oklch(28.427% 0.0036 106.63)",
     "$type": "color",
-    "$description": "Primary ink stroke on the light tile."
+    "$description": "Primary ink glyph on the light tile."
   }
 }

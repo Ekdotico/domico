@@ -59,7 +59,7 @@ export function logoAssetPath(
 /**
  * Standalone marks and wordmarks, outside the sized grid.
  *
- * There is one logo and it is the hand-drawn mark. A Greek wordmark used to sit
+ * There is one logo and it is the epsilon mark. A Greek wordmark used to sit
  * here as well, described as a brand asset in its own right rather than a
  * localisation of the Latin one; it was removed because it was never finished.
  * It set its letterforms in live `<text>`, so what it drew depended on a webfont
@@ -82,6 +82,6 @@ export const logoRules = [
   'Do not recolour the mark outside the three variants. The tile colours are brand-fixed tokens and do not follow the theme.',
   'Do not stretch, rotate, outline, or add effects. No shadow, no glow, no gradient.',
   'Keep clear space around the mark of at least a quarter of its width.',
-  'Below 32px use the solid tile variants: the stroke weight is too fine to read on a busy ground at smaller sizes.',
+  'Below 32px use the solid tile variants: the serifs are too fine to read on a busy ground at smaller sizes.',
   'Never reconstruct the mark from the path data in LogoMark. Use the component or a file.',
 ] as const;

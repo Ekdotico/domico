@@ -1181,12 +1181,12 @@
 }
 
 /* --- Opening sequence ---------------------------------------------------- */
-/* OpeningSequence: the mark draws on as one stroke, the wordmark fades in over
+/* OpeningSequence: the mark fades in and settles, the wordmark fades in over
    the tail of it, a hold, and the overlay fades away — about 1.6s in all, the
    figures the three surfaces already shared.
 
    Every duration is derived from --dur-slow. The catalogue's durations are
-   interface transitions and none can express a 900ms draw, so the sequence is
+   interface transitions and none can express a 900ms entrance, so the sequence is
    proportioned from one of them and keeps its proportions if the token moves.
    The five are scoped to this element and are not tokens.
 
@@ -1223,15 +1223,15 @@
 .opening-sequence.is-playing {
   animation: ekd-opening-out var(--intro-fade) var(--ease-soft) var(--intro-hold) forwards;
 }
-/* stroke-dasharray and -dashoffset inherit, so stating them on the <svg>
-   reaches the path without depending on the mark's element structure. 1, not a
-   length: the component sets pathLength="1" on the path. */
+/* The mark fades in and settles a step upward. It used to be traced on as a
+   stroke, which the epsilon, a filled shape, cannot be; --intro-draw keeps its
+   name and its length so the wordmark and the hold land where they did. */
 .opening-sequence-mark {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
+  opacity: 0;
+  transform: translateY(var(--sp-2));
 }
 .opening-sequence.is-playing .opening-sequence-mark {
-  animation: ekd-opening-draw var(--intro-draw) var(--ease-soft) forwards;
+  animation: ekd-opening-mark var(--intro-draw) var(--ease-soft) forwards;
 }
 .opening-sequence-wordmark {
   font-family: var(--font-serif);
@@ -1246,8 +1246,8 @@
 @keyframes ekd-opening-out {
   to { opacity: 0; }
 }
-@keyframes ekd-opening-draw {
-  to { stroke-dashoffset: 0; }
+@keyframes ekd-opening-mark {
+  to { opacity: 1; transform: none; }
 }
 @keyframes ekd-opening-in {
   to { opacity: 1; }

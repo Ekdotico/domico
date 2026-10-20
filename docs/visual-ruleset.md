@@ -126,7 +126,7 @@ asset and nowhere else.
 
 But prefer not to need the exception at all: **a mark whose letterforms depend on
 a webfont resolving is not a mark.** Outline the glyphs to paths. There is one
-logo and it is the hand-drawn mark, which is paths throughout; a Greek wordmark
+logo and it is the epsilon mark, which is paths throughout; a Greek wordmark
 that set its name in live `<text>` was deleted rather than finished, because what
 it drew depended on the context it was placed in.
 
@@ -695,7 +695,7 @@ trust.
 | 1 | The Latin wordmark sets one node in live `<text>` rather than outlined paths | 4 | `domico/assets/logo/logo-wordmark.svg` |
 
 It is what remains of a pair. The Greek wordmark had the same fault and was deleted
-rather than outlined: there is one logo, the hand-drawn mark, and it is paths
+rather than outlined: there is one logo, the epsilon mark, and it is paths
 throughout. The Latin wordmark is kept for now and carries the defect, so anything
 that places it depends on a webfont resolving in that context.
 

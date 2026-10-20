@@ -5,7 +5,7 @@ import { inertOutside } from '../a11y/inertOutside.js';
 import { LogoMark } from './Logo.js';
 
 /**
- * The opening sequence: the Ekdotico mark draws on as one stroke, the wordmark
+ * The opening sequence: the Ekdotico mark fades in and settles, the wordmark
  * fades in over the tail of it, a short hold, and the overlay fades away.
  *
  *   <OpeningSequence />          // once, first in the layout's body
@@ -34,10 +34,11 @@ import { LogoMark } from './Logo.js';
  *   the reconciler on the next render.
  * - **Starts when the fonts are ready or after 400ms**, whichever is first, so
  *   a cold cache cannot hold the page behind the overlay.
- * - **No animation library.** `pathLength="1"` normalises the mark's one path,
- *   so the stylesheet draws it with two keyframes and nothing to measure —
- *   praktico's approach. The length of the sequence is read back off the
- *   computed animation rather than restated here.
+ * - **No animation library.** The stylesheet fades the mark in with one
+ *   keyframe and nothing to measure. It used to trace the arch on as a stroke;
+ *   the epsilon is a filled shape with no line to trace, so it fades. The
+ *   length of the sequence is read back off the computed animation rather
+ *   than restated here.
  *
  * Styles ship in `@ekdotico/domico/styles/opening-sequence.css`, and every
  * duration there is derived from `--dur-slow`.
@@ -68,7 +69,6 @@ function toMs(value: string): number {
 
 export function OpeningSequence({ sessionKey = DEFAULT_SESSION_KEY }: { sessionKey?: string } = {}) {
   const overlayRef = useRef<HTMLDivElement>(null);
-  const pathRef = useRef<SVGPathElement>(null);
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
@@ -107,7 +107,6 @@ export function OpeningSequence({ sessionKey = DEFAULT_SESSION_KEY }: { sessionK
       restore();
     };
     overlay.classList.add('is-covering');
-    pathRef.current?.setAttribute('pathLength', '1');
 
     let cancelled = false;
     let started = false;
@@ -143,13 +142,7 @@ export function OpeningSequence({ sessionKey = DEFAULT_SESSION_KEY }: { sessionK
 
   return (
     <div ref={overlayRef} className="opening-sequence" aria-hidden="true">
-      <LogoMark
-        variant="draw"
-        size={160}
-        title=""
-        pathRef={pathRef}
-        className="opening-sequence-mark"
-      />
+      <LogoMark size={160} title="" className="opening-sequence-mark" />
       <div className="opening-sequence-wordmark">Ekdotico</div>
     </div>
   );

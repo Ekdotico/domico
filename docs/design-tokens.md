@@ -657,7 +657,7 @@ only sanctioned interpolation.
 | Token          | Value                                                | At 375px | At 1000px | At 1600px |
 | -------------- | ---------------------------------------------------- | -------- | --------- | --------- |
 | `--fs-display` | `clamp(var(--fs-xl), 1.6vw + 0.9rem, var(--fs-4xl))` | 24px     | 30px      | 40px      |
-| `--fs-lede`    | `clamp(var(--fs-md), 1vw + 0.75rem, var(--fs-lg))`   | 17px     | 17px      | 20px      |
+| `--fs-lede`    | `clamp(var(--fs-md), 1vw + 0.75rem, var(--fs-lg))`   | 17px     | 20px      | 20px      |
 
 `--fs-display` is a page's one display heading, such as the title of a
 marketing hero, which has to hold a full sentence on a phone and on a wide
@@ -666,8 +666,11 @@ Pair `--fs-display` with `--lh-tight` and `--fs-lede` with `--lh-prose`.
 
 **How a fluid size is built, and how to add one.** Both ends of the `clamp()`
 are steps of the scale, written as `var()` references so they move with it.
-Only the slope in the middle (`vw` plus a `rem` offset) is a literal, and it is
-chosen so the size reaches its ceiling near 1600px, not before. The
+Only the slope in the middle (`vw` plus a `rem` offset) is a literal. It sets
+where the size starts to grow and where it stops: `--fs-display` leaves its
+floor near 600px and reaches its ceiling near 1600px, and `--fs-lede` grows
+between about 500px and 800px, so most laptops already set it at its full
+size. Check a new slope at 375, 1000 and 1600px before proposing it. The
 `rem` offset keeps the size responsive to a reader's own font setting, which a
 bare `vw` would ignore. A new fluid size is a token in `tokens/source/type.json`
 built the same way, proposed and approved before it is used, never a `clamp()`

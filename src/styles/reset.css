@@ -91,9 +91,10 @@ a:where(:not([class])):focus-visible {
 
 /* A diagonal arrow at the link's top-right corner, so a link reads as one
    before the pointer reaches it. It is Lucide's arrow-up-right, the same
-   geometry as ArrowUpRightIcon, drawn as a mask filled with currentColor so it
-   follows the link through hover and every theme. A pseudo-element with empty
-   content is not read aloud, and an inline-block is not underlined.
+   geometry as ArrowUpRightIcon, drawn as a mask filled with the theme's
+   primary colour at rest as well as on hover, so the arrow marks a link in
+   every theme while the text stays the paragraph's colour. A pseudo-element
+   with empty content is not read aloud, and an inline-block is not underlined.
 
    The stroke is heavier than the house 1.5: at a little over half an em the
    house weight renders under a pixel and the arrow breaks up. In forced colours
@@ -105,7 +106,7 @@ a:where(:not([class]))::after {
   height: 0.55em;
   margin-inline-start: 0.12em;
   vertical-align: 0.3em;
-  background-color: currentColor;
+  background-color: var(--accent);
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7h10v10'/%3E%3Cpath d='M7 17 17 7'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 @media (forced-colors: active) {

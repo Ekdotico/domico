@@ -929,7 +929,7 @@ depends on none.
 
 | Stylesheet | What it styles |
 |---|---|
-| `styles/editor.css` | The document surface: prose, the nine marks, lists, a table, an image block and its handle, a page break, a table of contents |
+| `styles/editor.css` | The document surface: prose, the nine marks, lists, a table, an image block and its handle, footnotes, a page break, a table of contents |
 | `styles/code.css` | A code block, its header, and the syntax colours |
 
 ```tsx
@@ -1950,6 +1950,61 @@ while the picture is on its way, and a dashed one when it will not come. Both
 are the sunken surface with the status in `--fg-1`, which `check:contrast`
 holds at 4.5:1, and neither moves.
 
+### Footnotes
+
+A marker in the running text and the list of notes at the end of the document.
+Four names, all styles: nothing here numbers a note, links a marker to its
+entry, or moves the reader, and nothing imports an editor. The editor writes the
+markup and the stylesheet draws it.
+
+```html
+<p>The plate was cut in 1790<sup><a class="ekd-footnote-ref" href="#fn-1" id="fnref-1">1</a></sup>.</p>
+<section class="ekd-footnotes">
+  <ol>
+    <li class="ekd-footnote" id="fn-1">Dated by the watermark.
+Second line of the note.</li>
+  </ol>
+</section>
+```
+
+| The editor writes | On | What it is |
+|---|---|---|
+| `class="ekd-footnote-ref"` | An `a` inside a `sup`, with the number as its text | The marker, a link in the running text |
+| `class="ekd-footnotes"` | A `section` at the end of the document, holding an `ol` | The notes, set apart from the body |
+| `class="ekd-footnote"` | Each `li` of that `ol` | One note: editable text, its line breaks kept as written |
+| `data-footnote-target` | A `li.ekd-footnote`, for a moment | The note the reader has jumped to |
+
+**The marker** reads as a link: the accent, underlined, and a step heavier, as a
+link in the document is, and a heavier underline under the pointer. Inside a
+highlight it takes the ink of the text, as every link does. It is the
+superscript's own size and adds nothing to the line: the `sup` rule gives it no
+height. **Its target is 24 by 24 CSS pixels** (`--sp-6`, WCAG 2.5.8), drawn as an
+out-of-flow `::after` centred on the number, so it takes no room and the whole
+square takes the press, in a left to right or a right to left line and at any
+text size. Two markers side by side share their squares, and a separator between
+them (a comma, a space) is the writer's. The focus ring is the system's: the
+accent, 2px, offset 2px, `--radius-xs`, written on the marker so that it does not
+depend on the reset being loaded.
+
+**The list** is set off by a rule in `--rule-strong`, the document's section
+boundary, and by space above it, and is a size down (`--fs-base`) in the
+document's face. The numbers are the `ol`'s own, decimal, so the Nth note is
+numbered N and the marker whose text is N points at it: give the `ol` no `start`,
+`type` or `reversed`, write the markers in the order of the notes, and keep the
+notes in that order. A note keeps its line breaks as typed (`white-space:
+pre-wrap`), whether they are `br` elements or newline characters in the text, and
+an address in it wraps and does not widen the page.
+
+**The target** is a wash in `--accent-soft` with `--fg-1` over it, which
+`check:contrast` holds at 4.5:1 in the eight palettes. It fades in and out over
+`--dur-slow` when the application sets and removes `data-footnote-target`, and
+it is up to the application to remove it a moment after the jump. A reader who
+asked for no motion gets the wash without the fade. In forced colours, where a
+wash is not drawn, it is a 2px `Highlight` outline. Moving the reader to the
+note and giving the marker a way back are the application's: so is the accessible
+name of the marker ("Footnote 1"), which the number alone does not give, and
+the `id` and `href` that join the two.
+
 ### The document surface
 
 `ekd-editor` goes on the editable root. Under it, the blocks and the marks are
@@ -2041,6 +2096,9 @@ package styles them.
 | `class="ekd-table-caption"` | A `figcaption` or `p` after the wrapper | The caption under a table |
 | `class="ekd-image"`, `data-state` | A `figure` | An image block, and the two states it has no picture in. Its names are tabled in "The image block" |
 | `class="ekd-image-resize"` | An element in the block's frame | The handle on the block's end edge, a slider that `attachImageResize` makes work |
+| `class="ekd-footnote-ref"` | An `a` in a `sup`, with the number as its text | A footnote marker. Its names are tabled in "Footnotes" |
+| `class="ekd-footnotes"`, `class="ekd-footnote"` | A `section` holding an `ol`, and each `li` of it | The notes at the end of the document, and one note |
+| `data-footnote-target` | A `li.ekd-footnote`, for a moment | The note the reader has jumped to |
 | `class="ekd-page-break"` | A block, with the label as its text | A page break |
 | `class="ekd-toc"` | A `nav`, named by its title | The table of contents |
 | `class="ekd-toc-title"` | A `p` or a heading in it | Its title |

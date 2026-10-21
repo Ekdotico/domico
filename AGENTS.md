@@ -61,6 +61,11 @@ transition: 140ms ease;          transition: var(--dur-fast) var(--ease-crisp);
 A `px` font size is a defect on its own terms: the scale is `rem` so that a
 reader who raised their browser font size scales the whole interface with it.
 
+Type that grows with the viewport takes a fluid token: `--fs-display` for a
+page's display heading (a marketing hero's title) and `--fs-lede` for the
+paragraph under it. Never write a `clamp()` for a font size in an application.
+A size the two do not cover is a new fluid token, proposed under rule 4.
+
 **3 — Never declare a token in an application.** A custom property defined in
 an app stylesheet shadows the package in one theme and not the others, so it
 resolves correctly in the palette you tested and silently wrongly in the other

@@ -712,7 +712,7 @@ export const scales = {
   "type": {
     "fs-3xs": "0.625rem",
     "fs-2xs": "0.6875rem",
-    "fs-xs": "0.75rem",
+    "fs-xs": "0.8125rem",
     "fs-sm": "0.8125rem",
     "fs-base": "0.9375rem",
     "fs-md": "1.0625rem",
@@ -723,6 +723,8 @@ export const scales = {
     "fs-4xl": "3rem",
     "fs-5xl": "3.75rem",
     "fs-6xl": "4.75rem",
+    "fs-display": "clamp(var(--fs-xl), 1.6vw + 0.9rem, var(--fs-4xl))",
+    "fs-lede": "clamp(var(--fs-md), 1vw + 0.75rem, var(--fs-lg))",
     "lh-tight": "1.12",
     "lh-snug": "1.28",
     "lh-normal": "1.5",

@@ -8,7 +8,7 @@
     "$type": "dimension"
   },
   "fs-xs": {
-    "$value": "0.75rem",
+    "$value": "0.8125rem",
     "$type": "dimension"
   },
   "fs-sm": {
@@ -49,6 +49,14 @@
   },
   "fs-6xl": {
     "$value": "4.75rem",
+    "$type": "dimension"
+  },
+  "fs-display": {
+    "$value": "clamp(var(--fs-xl), 1.6vw + 0.9rem, var(--fs-4xl))",
+    "$type": "dimension"
+  },
+  "fs-lede": {
+    "$value": "clamp(var(--fs-md), 1vw + 0.75rem, var(--fs-lg))",
     "$type": "dimension"
   },
   "lh-tight": {

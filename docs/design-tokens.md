@@ -619,7 +619,7 @@ Thirteen steps, in `rem`.
 | ------------ | ----------- | -------------- |
 | `--fs-3xs`   | `0.625rem`  | 10px           |
 | `--fs-2xs`   | `0.6875rem` | 11px           |
-| `--fs-xs`    | `0.75rem`   | 12px           |
+| `--fs-xs`    | `0.8125rem` | 13px           |
 | `--fs-sm`    | `0.8125rem` | 13px           |
 | `--fs-base`  | `0.9375rem` | 15px           |
 | `--fs-md`    | `1.0625rem` | 17px           |
@@ -640,9 +640,42 @@ The two micro steps exist so that badges, eyebrows, and keyboard chips stay on
 the scale instead of dropping to a literal below it. They are small enough that
 they are label sizes and not text sizes.
 
+`--fs-xs` is 13px, the same as `--fs-sm`. It was 12px until the owner raised
+it on 2026-10-21: at 12px a footer, an eyebrow or a form's fine print read as
+too small beside 17px body text. The two names are kept apart because they are
+used for different jobs, and either may move again on its own.
+
 **When not to.** Do not interpolate between steps, and do not scale a token with
 `calc()` to reach a size the scale does not offer. Do not use `--fs-3xs` or
 `--fs-2xs` for anything a reader has to read as a sentence.
+
+### Fluid sizes
+
+Two tokens grow with the viewport between two steps of the scale. They are the
+only sanctioned interpolation.
+
+| Token          | Value                                                | At 375px | At 1000px | At 1600px |
+| -------------- | ---------------------------------------------------- | -------- | --------- | --------- |
+| `--fs-display` | `clamp(var(--fs-xl), 1.6vw + 0.9rem, var(--fs-4xl))` | 24px     | 30px      | 40px      |
+| `--fs-lede`    | `clamp(var(--fs-md), 1vw + 0.75rem, var(--fs-lg))`   | 17px     | 17px      | 20px      |
+
+`--fs-display` is a page's one display heading, such as the title of a
+marketing hero, which has to hold a full sentence on a phone and on a wide
+screen without a breakpoint. `--fs-lede` is the paragraph directly under it.
+Pair `--fs-display` with `--lh-tight` and `--fs-lede` with `--lh-prose`.
+
+**How a fluid size is built, and how to add one.** Both ends of the `clamp()`
+are steps of the scale, written as `var()` references so they move with it.
+Only the slope in the middle (`vw` plus a `rem` offset) is a literal, and it is
+chosen so the size reaches its ceiling near 1600px, not before. The
+`rem` offset keeps the size responsive to a reader's own font setting, which a
+bare `vw` would ignore. A new fluid size is a token in `tokens/source/type.json`
+built the same way, proposed and approved before it is used, never a `clamp()`
+in an application's stylesheet.
+
+**When not to.** Do not use a fluid size for interface text, a section heading
+or anything inside the reading column. Those stay on fixed steps, so a page
+keeps one rhythm at every width.
 
 ## Line height
 

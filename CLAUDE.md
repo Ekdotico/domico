@@ -35,6 +35,22 @@ it matches the source. `.gitignore` ignores `/.claude/hooks/*`, so a second
 installed hook needs no new entry, and a hook genuinely local to a repository
 is exempted there by name.
 
+## Versioning: patch for small changes
+
+The changeset type is chosen by the size of the change, not by the habit of the
+last release. The owner set this on 2026-10-21, after 0.36.0 shipped a colour
+change as a minor release.
+
+- **`patch` (0.x.Y)** for a small change that adds nothing and removes nothing:
+  a colour, a spacing or size value, a fix, a comment, copy. The link arrow
+  turning `--accent` should have been 0.35.1, not 0.36.0.
+- **`minor` (0.X.0)** for a new export, class, token, prop or behaviour, and
+  for anything that renames or removes one. Before 1.0, a minor release is
+  where a breaking change goes, and its changeset says what breaks.
+
+When in doubt, ask whether a consumer could notice anything but the look. If
+not, it is a patch.
+
 ## Enforcement here
 
 - The installed **PostToolUse hook** fires on `Write | Edit | MultiEdit`, runs

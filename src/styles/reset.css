@@ -74,6 +74,44 @@ a {
 a:where(:not([class])) {
   text-decoration: underline;
   text-underline-offset: 0.15em;
+  text-decoration-thickness: from-font;
+  transition:
+    color var(--dur-fast) var(--ease-soft),
+    text-decoration-thickness var(--dur-fast) var(--ease-soft);
+}
+
+/* Hover and keyboard focus take the theme's primary colour and a heavier
+   underline. Colour alone would repeat the problem the underline solves, so
+   the weight changes too; the focus ring stays the document's. */
+a:where(:not([class])):hover,
+a:where(:not([class])):focus-visible {
+  color: var(--accent);
+  text-decoration-thickness: 0.12em;
+}
+
+/* A diagonal arrow at the link's top-right corner, so a link reads as one
+   before the pointer reaches it. It is Lucide's arrow-up-right, the same
+   geometry as ArrowUpRightIcon, drawn as a mask filled with currentColor so it
+   follows the link through hover and every theme. A pseudo-element with empty
+   content is not read aloud, and an inline-block is not underlined.
+
+   The stroke is heavier than the house 1.5: at a little over half an em the
+   house weight renders under a pixel and the arrow breaks up. In forced colours
+   a background is repainted to the canvas, so the arrow takes LinkText. */
+a:where(:not([class]))::after {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  margin-inline-start: 0.12em;
+  vertical-align: 0.3em;
+  background-color: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7h10v10'/%3E%3Cpath d='M7 17 17 7'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+@media (forced-colors: active) {
+  a:where(:not([class]))::after {
+    background-color: LinkText;
+  }
 }
 
 ::selection {

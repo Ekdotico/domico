@@ -89,25 +89,27 @@ a:where(:not([class])):focus-visible {
   text-decoration-thickness: 0.12em;
 }
 
-/* A diagonal arrow at the link's top-right corner, so a link reads as one
-   before the pointer reaches it. It is Lucide's arrow-up-right, the same
-   geometry as ArrowUpRightIcon, drawn as a mask filled with the theme's
-   primary colour at rest as well as on hover, so the arrow marks a link in
-   every theme while the text stays the paragraph's colour. A pseudo-element
-   with empty content is not read aloud, and an inline-block is not underlined.
+/* A diagonal arrow in a small box at the link's top-right corner, so a link
+   reads as one before the pointer reaches it. The arrow is Lucide's
+   arrow-up-right, the same geometry as ArrowUpRightIcon, drawn smaller inside
+   a rounded square. Box and arrow are one mask filled with currentColor, so
+   they take the link's colour: the paragraph's at rest, the accent on hover.
+   A pseudo-element with empty content is not read aloud, and an inline-block
+   is not underlined.
 
-   The stroke is heavier than the house 1.5: at a little over half an em the
-   house weight renders under a pixel and the arrow breaks up. In forced colours
-   a background is repainted to the canvas, so the arrow takes LinkText. */
+   One stroke weight serves both. At two units of the 24-unit box it renders
+   at about a pixel at body size; the house 1.5 would fall under one and break
+   up. In forced colours a background is repainted to the canvas, so the box
+   takes LinkText. */
 a:where(:not([class]))::after {
   content: "";
   display: inline-block;
-  width: 0.55em;
-  height: 0.55em;
-  margin-inline-start: 0.12em;
-  vertical-align: 0.3em;
-  background-color: var(--accent);
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7h10v10'/%3E%3Cpath d='M7 17 17 7'/%3E%3C/svg%3E") center / contain no-repeat;
+  width: 0.7em;
+  height: 0.7em;
+  margin-inline-start: 0.15em;
+  vertical-align: 0.2em;
+  background-color: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='2' width='20' height='20' rx='5'/%3E%3Cpath d='M9 8h7v7'/%3E%3Cpath d='M8 16 16 8'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 @media (forced-colors: active) {
   a:where(:not([class]))::after {

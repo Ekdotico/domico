@@ -1093,6 +1093,7 @@
   --fs-6xl: 4.75rem;
   --fs-display: clamp(var(--fs-xl), 1.6vw + 0.9rem, var(--fs-4xl));
   --fs-lede: clamp(var(--fs-md), 1vw + 0.75rem, var(--fs-lg));
+  --fs-title: clamp(var(--fs-4xl), 7vw + 0.375rem, var(--fs-6xl));
   --lh-tight: 1.12;
   --lh-snug: 1.28;
   --lh-normal: 1.5;

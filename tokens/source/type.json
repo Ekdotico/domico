@@ -59,6 +59,10 @@
     "$value": "clamp(var(--fs-md), 1vw + 0.75rem, var(--fs-lg))",
     "$type": "dimension"
   },
+  "fs-title": {
+    "$value": "clamp(var(--fs-4xl), 7vw + 0.375rem, var(--fs-6xl))",
+    "$type": "dimension"
+  },
   "lh-tight": {
     "$value": "1.12",
     "$type": "dimension"

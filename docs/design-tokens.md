@@ -651,18 +651,25 @@ used for different jobs, and either may move again on its own.
 
 ### Fluid sizes
 
-Two tokens grow with the viewport between two steps of the scale. They are the
-only sanctioned interpolation.
+Three tokens grow with the viewport between two steps of the scale. They are
+the only sanctioned interpolation.
 
-| Token          | Value                                                | At 375px | At 1000px | At 1600px |
-| -------------- | ---------------------------------------------------- | -------- | --------- | --------- |
-| `--fs-display` | `clamp(var(--fs-xl), 1.6vw + 0.9rem, var(--fs-4xl))` | 24px     | 30px      | 40px      |
-| `--fs-lede`    | `clamp(var(--fs-md), 1vw + 0.75rem, var(--fs-lg))`   | 17px     | 20px      | 20px      |
+| Token          | Value                                                  | At 375px | At 1000px | At 1600px |
+| -------------- | ------------------------------------------------------ | -------- | --------- | --------- |
+| `--fs-display` | `clamp(var(--fs-xl), 1.6vw + 0.9rem, var(--fs-4xl))`   | 24px     | 30px      | 40px      |
+| `--fs-lede`    | `clamp(var(--fs-md), 1vw + 0.75rem, var(--fs-lg))`     | 17px     | 20px      | 20px      |
+| `--fs-title`   | `clamp(var(--fs-4xl), 7vw + 0.375rem, var(--fs-6xl))`  | 48px     | 76px      | 76px      |
 
 `--fs-display` is a page's one display heading, such as the title of a
 marketing hero, which has to hold a full sentence on a phone and on a wide
 screen without a breakpoint. `--fs-lede` is the paragraph directly under it.
 Pair `--fs-display` with `--lh-tight` and `--fs-lede` with `--lh-prose`.
+
+`--fs-title` is a site's name set at title-page scale: one word or a short
+name, such as "Ekdotico" on the docs home. It leaves its floor at 600px and
+reaches its ceiling at 1000px, so a tablet sees it grow and a laptop sets it in
+full. It is not for a sentence, which belongs in `--fs-display`. Pair it with
+`--lh-tight`.
 
 **How a fluid size is built, and how to add one.** Both ends of the `clamp()`
 are steps of the scale, written as `var()` references so they move with it.

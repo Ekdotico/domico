@@ -63,8 +63,9 @@ reader who raised their browser font size scales the whole interface with it.
 
 Type that grows with the viewport takes a fluid token: `--fs-display` for a
 page's display heading (a marketing hero's title) and `--fs-lede` for the
-paragraph under it. Never write a `clamp()` for a font size in an application.
-A size the two do not cover is a new fluid token, proposed under rule 4.
+paragraph under it, and `--fs-title` for a site's name on its title page.
+Never write a `clamp()` for a font size in an application. A size the three do
+not cover is a new fluid token, proposed under rule 4.
 
 **3 — Never declare a token in an application.** A custom property defined in
 an app stylesheet shadows the package in one theme and not the others, so it

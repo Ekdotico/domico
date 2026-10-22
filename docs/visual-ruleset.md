@@ -327,6 +327,16 @@ motion but a hover colour, which reduced motion removes. The width has a way
 to be set without a drag (WCAG 2.5.7) in the application's own controls, not
 in the package: the README says what is owed.
 
+Footnotes are in `editor.css` too, and are styles only: `ekd-footnote-ref` on a
+link in a `sup`, `ekd-footnotes` on the section at the end, `ekd-footnote` on
+each entry, and `data-footnote-target` on the entry a reader has just jumped to.
+The marker's target is 24px square (`--sp-6`, WCAG 2.5.8), an out-of-flow
+`::after` centred on the number, so the line height does not move. Its focus
+ring is the accent, 2px, offset 2px. The list is set off by `--rule-strong` and
+is numbered by the `ol`, so the numbers cannot disagree with the markers. The
+target is a wash in `--accent-soft` that fades over `--dur-slow`, with no fade
+under reduced motion, and an outline in forced colours.
+
 The chrome is shared for the same reason the components are. The passcode page,
 the navigation drawer, the on-this-page rail, and the opening sequence were each
 two or three copies that had drifted: a gate that described its error and not

@@ -4182,6 +4182,128 @@ await it('The image block is styled by the documented names, in tokens, and hold
   }
 });
 
+await it('Footnotes are styled by the documented names, in tokens, and hold the 24px target, the focus ring, the numbering, the highlight and the media queries', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+  const strip = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = strip(read('../dist/styles/editor.css'));
+  const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const block = (selector, source = css) => new RegExp(`(?:^|[{}])\\s*${escape(selector)}\\s*\\{([^}]*)\\}`).exec(source)?.[1];
+  const must = (selector, source) => {
+    const body = block(selector, source);
+    assert.ok(body !== undefined, `editor.css has no rule for ${selector}`);
+    return body;
+  };
+  /** The body of each `@media (query) { … }`, braces counted. */
+  const media = (query) => {
+    const bodies = [];
+    for (let at = css.indexOf(`@media ${query} {`); at >= 0; at = css.indexOf(`@media ${query} {`, at + 1)) {
+      let depth = 0;
+      const open = css.indexOf('{', at);
+      for (let i = open; i < css.length; i++) {
+        if (css[i] === '{') depth++;
+        if (css[i] === '}' && --depth === 0) { bodies.push(css.slice(open + 1, i)); break; }
+      }
+    }
+    return bodies.join('\n');
+  };
+
+  // The section the checks about all of it read: the marker to the end of the
+  // stylesheet, which is the editor's last rules (the code block is code.css).
+  const start = css.indexOf('.ekd-footnote-ref {');
+  assert.ok(start > 0, 'the footnotes are not in the editor stylesheet');
+  const section = css.slice(start);
+
+  // The marker reads as a link, and is not given a height in the line.
+  const ref = must('.ekd-footnote-ref');
+  assert.match(ref, /position:\s*relative;/, 'the target has nothing to be placed on');
+  assert.match(ref, /color:\s*var\(--accent\);/, 'the marker is not the colour of a link');
+  assert.match(ref, /text-decoration:\s*underline;/, 'the marker differs from the text by a hue alone');
+  assert.match(ref, /font-weight:\s*var\(--fw-medium\);/);
+  assert.ok(!/(?:^|[;\s])(?:display|line-height|height|block-size|padding[\w-]*|margin[\w-]*)\s*:/.test(ref), 'the marker is given a box that can open the line');
+  assert.match(must('.ekd-footnote-ref:hover'), /text-decoration-thickness:\s*0\.12em;/);
+  assert.match(css, /mark \.ekd-footnote-ref\s*\{\s*color:\s*inherit;/, 'a marker in a highlight takes the accent, which does not hold there');
+
+  // The target: a 24px square, centred, out of flow, whatever the writing mode.
+  const target = must('.ekd-footnote-ref::after');
+  assert.match(target, /position:\s*absolute;/, 'the target takes room in the line');
+  assert.match(target, /inset:\s*calc\(\(var\(--sp-6\) - 100%\) \/ -2\);/, 'the target is not the 24px square centred on the marker');
+  assert.match(target, /content:\s*"";/);
+  const tokens = read('../tokens/generated/tokens.css');
+  const px = (name) => Number(new RegExp(`${escape(name)}:\\s*(\\d+(?:\\.\\d+)?)px`).exec(tokens)?.[1]);
+  assert.ok(px('--sp-6') >= 24, 'the target is smaller than the 24px of WCAG 2.5.8');
+
+  // The focus ring is the system's, written out, and nothing removes it.
+  const focus = must('.ekd-footnote-ref:focus-visible');
+  assert.match(focus, /outline:\s*2px solid var\(--accent\);/, 'the marker has no focus ring');
+  assert.match(focus, /outline-offset:\s*2px;/);
+  assert.match(focus, /border-radius:\s*var\(--radius-xs\);/);
+  assert.ok(!/:focus\s*\{|outline:\s*none|outline:\s*0/.test(section), 'a rule removes the focus ring');
+
+  // The list: set apart by the section rule, numbered by the list.
+  const list = must('.ekd-footnotes');
+  assert.match(list, /border-block-start:\s*1px solid var\(--rule-strong\);/, 'the notes are not set apart by a rule');
+  assert.match(list, /margin-block-start:\s*var\(--sp-7\);/);
+  assert.match(list, /padding-block-start:\s*var\(--sp-4\);/);
+  assert.match(list, /font-size:\s*var\(--fs-base\);/);
+  const ol = must('.ekd-footnotes > ol');
+  assert.match(ol, /list-style:\s*decimal;/, 'the numbers are not the list\'s own, and can disagree with the markers');
+  assert.match(ol, /padding-inline-start:\s*var\(--sp-7\);/, 'the numbers have no room');
+  assert.ok(!/counter-(?:reset|increment)/.test(section), 'the notes are numbered by a counter, which can disagree with the markers');
+  assert.match(must('.ekd-footnotes > ol > li::marker'), /color:\s*var\(--fg-2\);/);
+
+  // One note: editable text with its line breaks.
+  const note = must('.ekd-footnote');
+  assert.match(note, /white-space:\s*pre-wrap;/, 'a line break in a note is lost');
+  assert.match(note, /overflow-wrap:\s*anywhere;/, 'an address in a note widens the page');
+  assert.match(note, /transition:\s*background-color var\(--dur-slow\) var\(--ease-soft\);/);
+  assert.match(must('.ekd-footnote + .ekd-footnote'), /margin-block-start:\s*var\(--sp-2\);/);
+
+  // The highlight, and the media queries.
+  assert.match(must('.ekd-footnote[data-footnote-target]'), /background-color:\s*var\(--accent-soft\);/, 'the jump is not shown');
+  assert.match(media('(prefers-reduced-motion: reduce)'), /\.ekd-footnote\s*\{\s*transition:\s*none;\s*\}/, 'the note fades for a reader who asked for no motion');
+  assert.match(media('(forced-colors: active)'), /\.ekd-footnote\[data-footnote-target\]\s*\{[^}]*outline:\s*2px solid Highlight;/, 'the jump is not shown in forced colours, where a wash is not drawn');
+  assert.ok(!/@keyframes|animation\s*:/.test(section), 'the highlight moves by a means the reduced-motion rule does not reach');
+
+  // Tokens only: no colour literal, no length but the hairline and the 2px ring,
+  // no fallback in a var(), no case change, no physical side.
+  assert.ok(!/#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch)\(/.test(section), 'the footnotes write a colour');
+  for (const [length] of section.matchAll(/(?<![\w-])\d+(?:\.\d+)?px/g)) {
+    assert.ok(['1px', '2px'].includes(length), `the footnotes write the length ${length}`);
+  }
+  assert.ok(!/text-transform|font-size:\s*\d|transition:[^;]*\d+m?s\b|cubic-bezier|var\(--[\w-]+\s*,/.test(section), 'the footnotes write a literal, or a fallback');
+  assert.ok(!/(?:^|[;\s{])(?:left|right|margin-left|margin-right|padding-left|padding-right)\s*:/.test(section), 'the footnotes use a physical side, and are wrong in a right to left document');
+
+  // Every pair of inks that the footnotes draw is one `check:contrast` measures.
+  const pairs = JSON.parse(spawnSync(process.execPath, ['scripts/check-contrast.mjs', '--pairs'], { cwd: root, encoding: 'utf8' }).stdout);
+  const threshold = (fg, bg) => pairs.find(([a, b]) => a === fg && b === bg)?.[2];
+  for (const [fg, bg, what] of [
+    ['accent', 'bg-canvas', 'the marker and its focus ring'],
+    ['fg-2', 'bg-canvas', 'the numbers of the notes'],
+    ['fg-1', 'accent-soft', 'a note that has been jumped to'],
+  ]) {
+    assert.ok(threshold(fg, bg) >= 4.5, `check:contrast does not hold ${what}: --${fg} on --${bg} at 4.5:1`);
+  }
+
+  // The same rules are in every entry that carries the editor.
+  for (const entry of ['base.css', 'components.css']) {
+    const shipped = strip(read(`../dist/styles/${entry}`));
+    for (const selector of ['.ekd-footnote-ref', '.ekd-footnote-ref::after', '.ekd-footnotes', '.ekd-footnote']) {
+      assert.equal(block(selector, shipped), block(selector), `styles/${entry} does not carry ${selector} as editor.css has it`);
+    }
+  }
+
+  // The README says every name, and the ruleset says the footnotes.
+  const readme = read('../README.md');
+  for (const name of ['ekd-footnote-ref', 'ekd-footnotes', 'ekd-footnote', 'data-footnote-target', 'WCAG 2.5.8']) {
+    assert.ok(readme.includes(name), `the README does not say ${name}`);
+  }
+  assert.ok(read('../docs/visual-ruleset.md').includes('data-footnote-target'), 'the visual ruleset does not say the footnotes');
+});
+
 // --- The QR code --------------------------------------------------------------
 // The fixture is another encoder's output, and three of them agreed on it. A
 // matrix this package wrote for itself would hold nothing.

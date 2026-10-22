@@ -2863,12 +2863,100 @@ button.ekd-sync-control:hover {
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
+
+/* Footnotes: a marker in the running text and the list the markers point to,
+   at the end of the document. The application writes `sup > a.ekd-footnote-ref`
+   with the number as its text, and `section.ekd-footnotes > ol > li.ekd-footnote`.
+   The names are the contract; the README tables them.
+
+   The marker is a link and reads as one: the accent, underlined, a step heavier
+   (the same three as a link in the document, restated because the class is
+   not under `.ekd-editor` where that rule is), and a heavier underline under
+   the pointer. It is the superscript's own size and leading. The `sup` rule
+   above gives it no height in the line, and the target is not made of
+   height: it is a 24px square (--sp-6, WCAG 2.5.8) drawn by a `::after` that is
+   out of flow, centred on the marker, so the line is the line it was and the
+   whole square takes the press. The inset is half of what the marker lacks of
+   24px, in each direction, so the square is centred whatever the writing mode
+   and the size of the text. Two markers side by side share their squares; the
+   reader's separator between them is the application's.
+
+   The focus ring is the system's, written out here so that it does not depend
+   on the reset being loaded: --accent, 2px, offset 2px, --radius-xs. Inside a
+   highlight the link takes the ink of the text, as every link does (--accent
+   does not hold on --hl-mark in the dark palettes).
+
+   The list is set apart from the body by --rule-strong, the document's
+   section boundary, and by space above it; it is a size down from the text
+   and keeps its face. Its numbers are the list's own, decimal, so the Nth
+   entry carries the number the Nth marker says, with no counter to disagree.
+   An entry is editable text: its line breaks are kept as written
+   (`white-space: pre-wrap`), and an address wraps and does not widen the page.
+
+   `data-footnote-target` is set on the entry a reader has just jumped to, and
+   removed by the application a moment later. The wash is --accent-soft, held
+   at 4.5:1 under --fg-1 in the eight palettes, and it fades in and out over
+   --dur-slow. Reduced motion: no fade, the wash stays until it is removed. In
+   forced colours a wash is not drawn, so it is an outline. */
+.ekd-footnote-ref {
+  position: relative;
+  color: var(--accent);
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.ekd-footnote-ref::after {
+  content: "";
+  position: absolute;
+  inset: calc((var(--sp-6) - 100%) / -2);
+}
+.ekd-footnote-ref:hover { text-decoration-thickness: 0.12em; }
+.ekd-footnote-ref:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+mark .ekd-footnote-ref { color: inherit; }
+.ekd-footnotes {
+  margin-block-start: var(--sp-7);
+  padding-block-start: var(--sp-4);
+  border-block-start: 1px solid var(--rule-strong);
+  max-inline-size: var(--measure);
+  font-size: var(--fs-base);
+}
+.ekd-footnotes > ol {
+  margin: 0;
+  padding-inline-start: var(--sp-7);
+  list-style: decimal;
+}
+.ekd-footnotes > ol > li::marker {
+  color: var(--fg-2);
+  font-variant-numeric: tabular-nums;
+}
+.ekd-footnote {
+  border-radius: var(--radius-xs);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  transition: background-color var(--dur-slow) var(--ease-soft);
+}
+.ekd-footnote + .ekd-footnote { margin-block-start: var(--sp-2); }
+.ekd-footnote[data-footnote-target] {
+  background-color: var(--accent-soft);
+  box-shadow: 0 0 0 var(--sp-1) var(--accent-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ekd-footnote { transition: none; }
+}
 @media (forced-colors: active) {
   /* The wash and the inset edge are both removed, so the selection is drawn as
      an outline in the system's selection colour. */
   .ekd-editor :is(th, td):is([data-cell-selected], .selectedCell) {
     outline: 2px solid Highlight;
     outline-offset: -2px;
+  }
+  .ekd-footnote[data-footnote-target] {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
   }
   .ekd-editor :where(mark) {
     background: Mark;

@@ -2206,6 +2206,30 @@ the visible label and the name of the `<nav>`. A child of a heading matching
 rail sits in a layout, and the width below which it is hidden, are the
 application's.
 
+### The arrow on a link
+
+The reset puts an arrow in a small box after every link in running text, and
+the arrow says where the link goes:
+
+| `href` | Arrow |
+|---|---|
+| Another site: `https://…`, `//…`, `mailto:`, `tel:` | Diagonal, up and right |
+| A page on this site: `/guide`, `./next`, `notes` | Right |
+| A place on this page: `#terms` | Down, or up when the target is above the link |
+
+CSS cannot tell whether a target is above or below its link, so a fragment link
+points down until `InPageLinkDirection` has read the page. Render it once in
+the layout, keyed on the route:
+
+```tsx
+import { InPageLinkDirection } from '@ekdotico/domico/components';
+
+<InPageLinkDirection rescanKey={pathname} />
+```
+
+An absolute address on the site's own origin keeps the diagonal: write a link
+to the site rooted, as `/guide`. A link with a class carries no arrow.
+
 ### The opening sequence
 
 `OpeningSequence` draws the mark, fades in the wordmark, and lifts, once per

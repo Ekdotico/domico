@@ -61,7 +61,7 @@ const h = React.createElement;
 const { inertOutside, useModalSurface, isShortcut, shortcutLabel } = await import('../dist/src/a11y/index.js');
 const {
   Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
-  AccessGate, GateSubmitButton, NavDrawer, OnThisPage, OpeningSequence, DocMeta,
+  AccessGate, GateSubmitButton, NavDrawer, OnThisPage, InPageLinkDirection, OpeningSequence, DocMeta,
   Button, TextField, OneTimeCodeField, PasswordField, TextArea, RadioGroup, Checkbox, FormFault, Dialog, Tooltip,
   PageHeading, Select, Toolbar, ToolbarSeparator, ToggleButton, MenuButton, SyncStatus, QrCode,
   Avatar, AvatarStack, avatarInitials,
@@ -660,6 +660,42 @@ await it('OnThisPage', async () => {
   await view.unmount();
   article.remove();
   delete globalThis.IntersectionObserver;
+});
+
+// --- InPageLinkDirection ----------------------------------------------------------
+await it('InPageLinkDirection', async () => {
+  const wait = () => act(async () => new Promise((resolve) => setTimeout(resolve, 60)));
+  const article = document.createElement('article');
+  article.innerHTML = `
+    <h2 id="before">Before</h2>
+    <section id="here">
+      <p><a id="l-up" href="#before">a</a> <a id="l-self" href="#here">b</a>
+         <a id="l-down" href="#after">c</a> <a id="l-top" href="#">d</a>
+         <a id="l-missing" href="#nowhere" data-link-direction="up">e</a>
+         <a id="l-encoded" href="#%C3%A9t%C3%A9">f</a></p>
+    </section>
+    <h2 id="after">After</h2>
+    <h2 id="été">Été</h2>`;
+  document.body.appendChild(article);
+
+  const view = await mount(h(InPageLinkDirection, { rescanKey: 1 }));
+  await wait();
+  const dir = (id) => document.getElementById(id).getAttribute('data-link-direction');
+  assert.equal(dir('l-up'), 'up', 'a target above the link is not up');
+  assert.equal(dir('l-self'), 'up', 'a section linking to its own top is not up');
+  assert.equal(dir('l-down'), 'down', 'a target below the link is not down');
+  assert.equal(dir('l-top'), 'up', 'an empty fragment is not the top of the page');
+  assert.equal(dir('l-missing'), null, 'a missing target kept a stale direction');
+  assert.equal(dir('l-encoded'), 'down', 'a percent-encoded fragment was not decoded');
+
+  // A new route: the links are read again.
+  article.innerHTML = '<h2 id="x">X</h2><p><a id="l-again" href="#x">x</a></p>';
+  await view.rerender(h(InPageLinkDirection, { rescanKey: 2 }));
+  await wait();
+  assert.equal(dir('l-again'), 'up');
+  assert.equal(view.container.childNodes.length, 0, 'it rendered something');
+  await view.unmount();
+  article.remove();
 });
 
 // --- OpeningSequence ------------------------------------------------------------

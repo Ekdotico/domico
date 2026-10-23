@@ -111,6 +111,30 @@ a:where(:not([class]))::after {
   background-color: currentColor;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='2' width='20' height='20' rx='5'/%3E%3Cpath d='M9 8h7v7'/%3E%3Cpath d='M8 16 16 8'/%3E%3C/svg%3E") center / contain no-repeat;
 }
+/* The arrow says where the link goes. The diagonal above is the default and
+   stays on everything that leaves the site: a full address, a mailto, a tel.
+
+   A path on the site, rooted or relative, turns the arrow right, to the next
+   page. A path is an href with no scheme, which is to say no colon, or one
+   that begins with a single slash (a query may hold a colon). A protocol-
+   relative `//host` is another site. An absolute address on the site's own
+   origin cannot be told apart in CSS and keeps the diagonal; write it rooted.
+
+   A fragment is a place on this page, so the arrow points down to it, or up
+   when `InPageLinkDirection` has found the target above the link and set
+   `data-link-direction="up"`. Down is the default because a fragment link in
+   prose usually points ahead, and it is what a page without the component, or
+   before it runs, shows. The rules keep the base rule's specificity, so source
+   order alone decides between them, and only the image is replaced. */
+a:where(:not([class]):not([href^="//"]):is([href^="/"], :not([href*=":"])))::after {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='2' width='20' height='20' rx='5'/%3E%3Cpath d='M7 12h10'/%3E%3Cpath d='m12 7 5 5-5 5'/%3E%3C/svg%3E");
+}
+a:where(:not([class])[href^="#"])::after {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='2' width='20' height='20' rx='5'/%3E%3Cpath d='M12 7v10'/%3E%3Cpath d='m7 12 5 5 5-5'/%3E%3C/svg%3E");
+}
+a:where(:not([class])[href^="#"][data-link-direction="up"])::after {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='2' width='20' height='20' rx='5'/%3E%3Cpath d='M12 17V7'/%3E%3Cpath d='m7 12 5-5 5 5'/%3E%3C/svg%3E");
+}
 @media (forced-colors: active) {
   a:where(:not([class]))::after {
     background-color: LinkText;

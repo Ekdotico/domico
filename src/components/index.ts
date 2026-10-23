@@ -117,5 +117,6 @@ export { GateSubmitButton } from './GateSubmitButton.js';
 /** @supersedes MobileNav, ResearchMobileNav */
 export { NavDrawer } from './NavDrawer.js';
 export { OnThisPage } from './OnThisPage.js';
+export { InPageLinkDirection, type InPageLinkDirectionProps } from './InPageLinkDirection.js';
 /** @supersedes PageLoader */
 export { OpeningSequence } from './OpeningSequence.js';

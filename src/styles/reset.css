@@ -90,26 +90,54 @@ a:where(:not([class])):focus-visible {
 }
 
 /* A diagonal arrow in a small box at the link's top-right corner, so a link
-   reads as one before the pointer reaches it. The arrow is Lucide's
-   arrow-up-right, the same geometry as ArrowUpRightIcon, drawn smaller inside
-   a rounded square. Box and arrow are one mask filled with currentColor, so
-   they take the link's colour: the paragraph's at rest, the accent on hover.
-   A pseudo-element with empty content is not read aloud, and an inline-block
-   is not underlined.
+   reads as one before the pointer reaches it. It is Lucide's arrow-up-right,
+   the same geometry as ArrowUpRightIcon, drawn smaller inside a rounded
+   square, and it is drawn by CSS alone: the box is the pseudo-element's own
+   border, and each stroke of the arrow is a background layer. All of them are
+   `currentColor`, so they take the link's colour: the paragraph's at rest, the
+   accent on hover.
 
-   One stroke weight serves both. At two units of the 24-unit box it renders
-   at about a pixel at body size; the house 1.5 would fall under one and break
-   up. In forced colours a background is repainted to the canvas, so the box
-   takes LinkText. */
+   There is no image of any kind here, no file and no `data:` address. An
+   application whose Content Security Policy leaves `data:` out of `img-src`
+   blocks one: the arrow does not draw and every page with such a link reports
+   a violation. `check:styles` fails on any `url` function in a stylesheet the
+   package ships. A pseudo-element with empty content is not read aloud, and an
+   inline-block is not underlined.
+
+   The numbers are the 24-unit grid of the icon at 0.7em, so one unit is
+   0.0292em. The box is the icon's 20-unit square with its 2-unit stroke, 22
+   units across (0.6417em) with a corner of 6 units (0.175em); the margins
+   either side add up to the 0.15em and 0.7em it has always taken in the line.
+   One stroke weight serves the box and the arrow: 2 units, about a pixel at
+   body size, where the house 1.5 would fall under one and break up. The
+   border is rounded to a whole pixel, so it lands on the device's pixels
+   instead of fading, and is never thinner than one. Each diagonal is a
+   gradient across a square tile whose corners it joins, with a quarter pixel
+   of soft edge to smooth it; the straight strokes are plain fills. Layers sit
+   against the border box, so the positions are the icon's own.
+
+   In forced colours a background image is dropped and the colours are
+   repainted, so the arrow takes LinkText and opts out of the adjustment, drawing
+   the same layers in the system colour. */
 a:where(:not([class]))::after {
   content: "";
   display: inline-block;
-  width: 0.7em;
-  height: 0.7em;
-  margin-inline-start: 0.15em;
-  vertical-align: 0.2em;
-  background-color: currentColor;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='2' width='20' height='20' rx='5'/%3E%3Cpath d='M9 8h7v7'/%3E%3Cpath d='M8 16 16 8'/%3E%3C/svg%3E") center / contain no-repeat;
+  inline-size: 0.6417em;
+  block-size: 0.6417em;
+  margin-inline: 0.1792em 0.0292em;
+  vertical-align: 0.2292em;
+  border-radius: 0.175em;
+  border: 1px solid;
+  border-width: round(0.0583em, 1px);
+  background-origin: border-box;
+  background-repeat: no-repeat;
+  /* The arrow up and to the right: the top bar, the right bar, the diagonal. */
+  background-image:
+    linear-gradient(currentColor, currentColor),
+    linear-gradient(currentColor, currentColor),
+    linear-gradient(135deg, transparent calc(50% - 0.0292em - 0.25px), currentColor calc(50% - 0.0292em + 0.25px) calc(50% + 0.0292em - 0.25px), transparent calc(50% + 0.0292em + 0.25px));
+  background-size: 0.2333em 0.0583em, 0.0583em 0.2333em, 0.2625em 0.2625em;
+  background-position: 0.2333em 0.175em, 0.4083em 0.175em, 0.1896em 0.1896em;
 }
 /* The arrow says where the link goes. The diagonal above is the default and
    stays on everything that leaves the site: a full address, a mailto, a tel.
@@ -125,19 +153,36 @@ a:where(:not([class]))::after {
    `data-link-direction="up"`. Down is the default because a fragment link in
    prose usually points ahead, and it is what a page without the component, or
    before it runs, shows. The rules keep the base rule's specificity, so source
-   order alone decides between them, and only the image is replaced. */
+   order alone decides between them, and only the strokes are replaced. In each:
+   the shaft, then the two sides of the head. */
 a:where(:not([class]):not([href^="//"]):is([href^="/"], :not([href*=":"])))::after {
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='2' width='20' height='20' rx='5'/%3E%3Cpath d='M7 12h10'/%3E%3Cpath d='m12 7 5 5-5 5'/%3E%3C/svg%3E");
+  background-image:
+    linear-gradient(currentColor, currentColor),
+    linear-gradient(45deg, transparent calc(50% - 0.0292em - 0.25px), currentColor calc(50% - 0.0292em + 0.25px) calc(50% + 0.0292em - 0.25px), transparent calc(50% + 0.0292em + 0.25px)),
+    linear-gradient(135deg, transparent calc(50% - 0.0292em - 0.25px), currentColor calc(50% - 0.0292em + 0.25px) calc(50% + 0.0292em - 0.25px), transparent calc(50% + 0.0292em + 0.25px));
+  background-size: 0.2917em 0.0583em, 0.175em 0.175em, 0.175em 0.175em;
+  background-position: 0.175em 0.2917em, 0.3062em 0.1604em, 0.3062em 0.3062em;
 }
 a:where(:not([class])[href^="#"])::after {
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='2' width='20' height='20' rx='5'/%3E%3Cpath d='M12 7v10'/%3E%3Cpath d='m7 12 5 5 5-5'/%3E%3C/svg%3E");
+  background-image:
+    linear-gradient(currentColor, currentColor),
+    linear-gradient(45deg, transparent calc(50% - 0.0292em - 0.25px), currentColor calc(50% - 0.0292em + 0.25px) calc(50% + 0.0292em - 0.25px), transparent calc(50% + 0.0292em + 0.25px)),
+    linear-gradient(135deg, transparent calc(50% - 0.0292em - 0.25px), currentColor calc(50% - 0.0292em + 0.25px) calc(50% + 0.0292em - 0.25px), transparent calc(50% + 0.0292em + 0.25px));
+  background-size: 0.0583em 0.2917em, 0.175em 0.175em, 0.175em 0.175em;
+  background-position: 0.2917em 0.175em, 0.1604em 0.3062em, 0.3062em 0.3062em;
 }
 a:where(:not([class])[href^="#"][data-link-direction="up"])::after {
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='2' width='20' height='20' rx='5'/%3E%3Cpath d='M12 17V7'/%3E%3Cpath d='m7 12 5-5 5 5'/%3E%3C/svg%3E");
+  background-image:
+    linear-gradient(currentColor, currentColor),
+    linear-gradient(135deg, transparent calc(50% - 0.0292em - 0.25px), currentColor calc(50% - 0.0292em + 0.25px) calc(50% + 0.0292em - 0.25px), transparent calc(50% + 0.0292em + 0.25px)),
+    linear-gradient(45deg, transparent calc(50% - 0.0292em - 0.25px), currentColor calc(50% - 0.0292em + 0.25px) calc(50% + 0.0292em - 0.25px), transparent calc(50% + 0.0292em + 0.25px));
+  background-size: 0.0583em 0.2917em, 0.175em 0.175em, 0.175em 0.175em;
+  background-position: 0.2917em 0.175em, 0.1604em 0.1604em, 0.3062em 0.1604em;
 }
 @media (forced-colors: active) {
   a:where(:not([class]))::after {
-    background-color: LinkText;
+    forced-color-adjust: none;
+    color: LinkText;
   }
 }
 

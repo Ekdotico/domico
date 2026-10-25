@@ -2230,6 +2230,12 @@ import { InPageLinkDirection } from '@ekdotico/domico/components';
 An absolute address on the site's own origin keeps the diagonal: write a link
 to the site rooted, as `/guide`. A link with a class carries no arrow.
 
+The box and the arrow are drawn with CSS alone, in the link's colour: a border
+and gradients, with no image, no file and no `data:` address. A Content Security
+Policy whose `img-src` leaves out `data:` therefore blocks nothing here, and no
+stylesheet the package ships loads an image (`check:styles` fails on one). In
+forced colours the arrow takes `LinkText`.
+
 ### The opening sequence
 
 `OpeningSequence` draws the mark, fades in the wordmark, and lifts, once per

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Do the shipped stylesheets parse, and do they keep two house rules?
+ * Do the shipped stylesheets parse, and do they keep the house rules?
  *
  * The second half was added because `docs/visual-ruleset.md` named this script as
  * the guard for rules 11 and 13 while it checked neither — a rule citing a guard
@@ -260,6 +260,33 @@ const SHEETS = CONSUMER
       );
     }
 
+    // No stylesheet the package ships loads an image, a file or a data address.
+    //
+    // A `url()` in a default stylesheet is a request an application's Content
+    // Security Policy gets a say in, and the Ekdotico application's `img-src`
+    // allows only itself and its image store, as its specification requires.
+    // From 0.35.0 the arrow on a link in running text was a `mask` over an
+    // inline `data:` SVG: the policy blocked it, the arrow did not draw, and every
+    // page with such a link reported a violation. Nothing here read for it, because
+    // the stylesheet is valid and the arrow looks right wherever `data:` is allowed.
+    //
+    // Package only. An application's own stylesheets are its business, and a
+    // consumer's `url()` is no finding. `image-set()` and `@import` are the same
+    // request by another name, so they are refused with it. Comments are stripped
+    // first so that a comment may say why.
+    if (parse) {
+      for (const m of decl.matchAll(/\burl\s*\(|\bimage-set\s*\(|@import\b/gi)) {
+        const line = decl.slice(0, m.index).split('\n').length;
+        failures.push(
+          `${name}: \`${m[0].trim()}\` at line ${line}. A shipped stylesheet may not load an ` +
+            'image, a file or a `data:` address: an application whose Content Security ' +
+            'Policy leaves `data:` out of `img-src` blocks it, and a path would not ' +
+            'resolve from a package. Draw it with borders, gradients and `currentColor`; ' +
+            'the arrow on a link in running text (reset.css) is the worked example.',
+        );
+      }
+    }
+
     // The rule is "no COLOURED edge stripe", and the adjective is the test.
     //
     // One-sidedness was the first attempt and it was the wrong shape: the table
@@ -322,5 +349,5 @@ console.log(
     ? `check:styles — ${checked} stylesheets in ${WHOSE} carry no 0.01ms motion ceiling, ` +
         'draw no coloured edge stripe, and apply no case transform'
     : `check:styles — ${checked} shipped stylesheets parse, carry no 0.01ms motion ceiling, ` +
-        'draw no coloured edge stripe, and apply no case transform',
+        'draw no coloured edge stripe, apply no case transform, and load no image through `url()`',
 );

@@ -330,9 +330,10 @@ in the package: the README says what is owed.
 Footnotes are in `editor.css` too, and are styles only: `ekd-footnote-ref` on a
 link in a `sup`, `ekd-footnotes` on the section at the end, `ekd-footnote` on
 each entry, and `data-footnote-target` on the entry a reader has just jumped to.
-The marker's target is 24px square (`--sp-6`, WCAG 2.5.8), an out-of-flow
-`::after` centred on the number, so the line height does not move. Its focus
-ring is the accent, 2px, offset 2px. The list is set off by `--rule-strong` and
+The marker has no target beyond the number: it sits inside a sentence, which
+WCAG 2.2 SC 2.5.8 exempts (the Inline exception), and an enlarged invisible
+target caught clicks meant for the text beside it. Its focus ring is the
+accent, 2px, offset 2px. The list is set off by `--rule-strong` and
 is numbered by the `ol`, so the numbers cannot disagree with the markers. The
 target is a wash in `--accent-soft` that fades over `--dur-slow`, with no fade
 under reduced motion, and an outline in forced colours.

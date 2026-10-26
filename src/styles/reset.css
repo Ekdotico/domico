@@ -90,7 +90,21 @@ a:where(:not([class])):focus-visible {
 }
 
 /* A diagonal arrow in a small box at the link's top-right corner, so a link
-   reads as one before the pointer reaches it. It is Lucide's arrow-up-right,
+   reads as one before the pointer reaches it.
+
+   Only a link in reading text has one: a link inside a paragraph or a
+   quotation. The bare `a` of a navigation bar, a list of titles, a table of
+   contents or a table cell has no paragraph around it, so it has no arrow, and
+   a link in a `nav`, in `.ekd-toc` or in an editable surface
+   (`contenteditable="true"` and everything inside it) is left out even where a
+   paragraph surrounds it: in an editor the box beside a word is where the
+   writer's pointer lands. The exclusions are written out because a list of
+   titles and a list of sentences cannot be told apart by CSS. Only this rule
+   is narrowed. The three after it choose which strokes are drawn and draw
+   nothing where there is no box. `:where()` keeps the specificity of the bare
+   `a` and its pseudo-element, so source order still decides between them.
+
+   It is Lucide's arrow-up-right,
    the same geometry as ArrowUpRightIcon, drawn smaller inside a rounded
    square, and it is drawn by CSS alone: the box is the pseudo-element's own
    border, and each stroke of the arrow is a background layer. All of them are
@@ -119,7 +133,7 @@ a:where(:not([class])):focus-visible {
    In forced colours a background image is dropped and the colours are
    repainted, so the arrow takes LinkText and opts out of the adjustment, drawing
    the same layers in the system colour. */
-a:where(:not([class]))::after {
+:where(p, blockquote) a:where(:not([class], nav *, .ekd-toc *, [contenteditable="true"] *))::after {
   content: "";
   display: inline-block;
   inline-size: 0.6417em;

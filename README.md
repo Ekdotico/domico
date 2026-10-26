@@ -1978,11 +1978,12 @@ Second line of the note.</li>
 link in the document is, and a heavier underline under the pointer. Inside a
 highlight it takes the ink of the text, as every link does. It is the
 superscript's own size and adds nothing to the line: the `sup` rule gives it no
-height. **Its target is 24 by 24 CSS pixels** (`--sp-6`, WCAG 2.5.8), drawn as an
-out-of-flow `::after` centred on the number, so it takes no room and the whole
-square takes the press, in a left to right or a right to left line and at any
-text size. Two markers side by side share their squares, and a separator between
-them (a comma, a space) is the writer's. The focus ring is the system's: the
+height. **It has no target beyond the number.** A marker sits inside a sentence,
+and WCAG 2.2 SC 2.5.8 exempts a target in running text from the 24px minimum
+(the Inline exception). Until 0.41.0 it drew an invisible 24 by 24 square around
+the number, which in an editor caught a click 4 to 8px beside the number that
+was meant for the text. A separator between two markers (a comma, a space) is
+the writer's. The focus ring is the system's: the
 accent, 2px, offset 2px, `--radius-xs`, written on the marker so that it does not
 depend on the reset being loaded.
 
@@ -2208,8 +2209,13 @@ application's.
 
 ### The arrow on a link
 
-The reset puts an arrow in a small box after every link in running text, and
-the arrow says where the link goes:
+The reset puts an arrow in a small box after a link in reading text, which is a
+link inside a `p` or a `blockquote`, and the arrow says where the link goes. A
+link that is not in reading text has none: a navigation link, an entry in a list
+of titles, a table of contents entry (`.ekd-toc`), a link in a table cell or a
+heading, anything inside a `nav`, and anything inside an editable surface
+(`contenteditable="true"` and its descendants). Until 0.41.0 every link without
+a class had one.
 
 | `href` | Arrow |
 |---|---|

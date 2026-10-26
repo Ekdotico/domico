@@ -2873,13 +2873,13 @@ button.ekd-sync-control:hover {
    (the same three as a link in the document, restated because the class is
    not under `.ekd-editor` where that rule is), and a heavier underline under
    the pointer. It is the superscript's own size and leading. The `sup` rule
-   above gives it no height in the line, and the target is not made of
-   height: it is a 24px square (--sp-6, WCAG 2.5.8) drawn by a `::after` that is
-   out of flow, centred on the marker, so the line is the line it was and the
-   whole square takes the press. The inset is half of what the marker lacks of
-   24px, in each direction, so the square is centred whatever the writing mode
-   and the size of the text. Two markers side by side share their squares; the
-   reader's separator between them is the application's.
+   above gives it no height in the line, and it is given no target beyond the
+   number: a marker sits inside a sentence, which WCAG 2.2 SC 2.5.8 exempts
+   from the 24px minimum (the Inline exception). A 24px target was drawn here
+   once, an out-of-flow `::after` centred on the marker; in an editor it
+   caught the click 4 to 8px beside the number, which was meant for the text.
+   The press is the number's own box. The reader's separator between two
+   markers is the application's.
 
    The focus ring is the system's, written out here so that it does not depend
    on the reset being loaded: --accent, 2px, offset 2px, --radius-xs. Inside a
@@ -2899,16 +2899,10 @@ button.ekd-sync-control:hover {
    --dur-slow. Reduced motion: no fade, the wash stays until it is removed. In
    forced colours a wash is not drawn, so it is an outline. */
 .ekd-footnote-ref {
-  position: relative;
   color: var(--accent);
   font-weight: var(--fw-medium);
   text-decoration: underline;
   text-underline-offset: 0.15em;
-}
-.ekd-footnote-ref::after {
-  content: "";
-  position: absolute;
-  inset: calc((var(--sp-6) - 100%) / -2);
 }
 .ekd-footnote-ref:hover { text-decoration-thickness: 0.12em; }
 .ekd-footnote-ref:focus-visible {

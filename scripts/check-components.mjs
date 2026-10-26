@@ -662,6 +662,43 @@ await it('OnThisPage', async () => {
   delete globalThis.IntersectionObserver;
 });
 
+// --- The arrow on a link ----------------------------------------------------------
+await it('The arrow is drawn on a link in reading text, and on no navigation link, listed title, contents entry or link in an editable surface', async () => {
+  const { readFileSync } = await import('node:fs');
+  const css = readFileSync(new URL('../dist/styles/reset-only.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  // The rule that makes the box: the one with `content: ""`, whichever selector it has.
+  const rule = [...css.matchAll(/([^{}]+)::after\s*\{([^}]*)\}/g)].find((m) => /content:\s*"";/.test(m[2]));
+  assert.ok(rule, 'reset.css has no rule that draws the arrow');
+  const selector = rule[1].trim();
+  assert.ok(!/^a:where\(:not\(\[class\]\)\)$/.test(selector), 'the arrow is back on every unclassed link');
+
+  const host = document.createElement('div');
+  host.innerHTML = [
+    '<header><nav><a id="nav" href="/guide">Guide</a></nav></header>',
+    '<a id="bare-nav" href="/guide">Guide</a>',
+    '<ul><li><a id="list" href="/doc/1">A document title</a></li></ul>',
+    '<div class="ekd-toc"><ol><li><a id="toc" href="#one">One</a></li></ol></div>',
+    '<div class="ekd-toc"><p><a id="toc-p" href="#one">One</a></p></div>',
+    '<div contenteditable="true"><p><a id="editable" href="https://example.com">text</a></p><p contenteditable="false"><a id="island" href="/x">x</a></p></div>',
+    '<p contenteditable="true"><a id="editable-p" href="/x">x</a></p>',
+    '<table><tbody><tr><td><a id="cell" href="/x">x</a></td></tr></tbody></table>',
+    '<h2><a id="heading" href="/x">x</a></h2>',
+    '<p>Some copy with <a id="copy" href="/x">a link</a>, <a id="copy-out" href="https://example.com">another</a> and <a id="classed" class="x" href="/x">a classed one</a>.</p>',
+    '<blockquote><p><a id="quote" href="/x">q</a></p></blockquote>',
+    '<div><p>Ordinary copy <a id="page-copy" href="#top">here</a>.</p></div>',
+  ].join('');
+  document.body.append(host);
+  const arrow = (id) => host.querySelector(`#${id}`).matches(selector);
+  try {
+    for (const id of ['copy', 'copy-out', 'quote', 'page-copy']) assert.ok(arrow(id), `the link ${id} in reading text has no arrow`);
+    for (const id of ['nav', 'bare-nav', 'list', 'toc', 'toc-p', 'editable', 'island', 'editable-p', 'cell', 'heading', 'classed']) {
+      assert.ok(!arrow(id), `the link ${id} outside reading text has an arrow`);
+    }
+  } finally {
+    host.remove();
+  }
+});
+
 // --- InPageLinkDirection ----------------------------------------------------------
 await it('InPageLinkDirection', async () => {
   const wait = () => act(async () => new Promise((resolve) => setTimeout(resolve, 60)));
@@ -4218,7 +4255,7 @@ await it('The image block is styled by the documented names, in tokens, and hold
   }
 });
 
-await it('Footnotes are styled by the documented names, in tokens, and hold the 24px target, the focus ring, the numbering, the highlight and the media queries', async () => {
+await it('Footnotes are styled by the documented names, in tokens, and hold the focus ring, no enlarged target, the numbering, the highlight and the media queries', async () => {
   const { readFileSync } = await import('node:fs');
   const { spawnSync } = await import('node:child_process');
   const { fileURLToPath } = await import('node:url');
@@ -4255,7 +4292,7 @@ await it('Footnotes are styled by the documented names, in tokens, and hold the 
 
   // The marker reads as a link, and is not given a height in the line.
   const ref = must('.ekd-footnote-ref');
-  assert.match(ref, /position:\s*relative;/, 'the target has nothing to be placed on');
+  assert.ok(!/position\s*:/.test(ref), 'the marker is positioned, which only an enlarged target needs');
   assert.match(ref, /color:\s*var\(--accent\);/, 'the marker is not the colour of a link');
   assert.match(ref, /text-decoration:\s*underline;/, 'the marker differs from the text by a hue alone');
   assert.match(ref, /font-weight:\s*var\(--fw-medium\);/);
@@ -4263,14 +4300,11 @@ await it('Footnotes are styled by the documented names, in tokens, and hold the 
   assert.match(must('.ekd-footnote-ref:hover'), /text-decoration-thickness:\s*0\.12em;/);
   assert.match(css, /mark \.ekd-footnote-ref\s*\{\s*color:\s*inherit;/, 'a marker in a highlight takes the accent, which does not hold there');
 
-  // The target: a 24px square, centred, out of flow, whatever the writing mode.
-  const target = must('.ekd-footnote-ref::after');
-  assert.match(target, /position:\s*absolute;/, 'the target takes room in the line');
-  assert.match(target, /inset:\s*calc\(\(var\(--sp-6\) - 100%\) \/ -2\);/, 'the target is not the 24px square centred on the marker');
-  assert.match(target, /content:\s*"";/);
-  const tokens = read('../tokens/generated/tokens.css');
-  const px = (name) => Number(new RegExp(`${escape(name)}:\\s*(\\d+(?:\\.\\d+)?)px`).exec(tokens)?.[1]);
-  assert.ok(px('--sp-6') >= 24, 'the target is smaller than the 24px of WCAG 2.5.8');
+  // No enlarged target: a marker in a sentence is exempt from 24px (WCAG 2.5.8,
+  // Inline), and an invisible square beside the number caught clicks meant for
+  // the text. Nothing draws a pseudo-element on the marker, or positions it.
+  assert.equal(block('.ekd-footnote-ref::after'), undefined, 'the marker draws an enlarged target again');
+  assert.ok(!/\.ekd-footnote-ref[^{}]*::(?:after|before)/.test(section), 'a rule draws a pseudo-element on the marker');
 
   // The focus ring is the system's, written out, and nothing removes it.
   const focus = must('.ekd-footnote-ref:focus-visible');
@@ -4327,7 +4361,7 @@ await it('Footnotes are styled by the documented names, in tokens, and hold the 
   // The same rules are in every entry that carries the editor.
   for (const entry of ['base.css', 'components.css']) {
     const shipped = strip(read(`../dist/styles/${entry}`));
-    for (const selector of ['.ekd-footnote-ref', '.ekd-footnote-ref::after', '.ekd-footnotes', '.ekd-footnote']) {
+    for (const selector of ['.ekd-footnote-ref', '.ekd-footnotes', '.ekd-footnote']) {
       assert.equal(block(selector, shipped), block(selector), `styles/${entry} does not carry ${selector} as editor.css has it`);
     }
   }

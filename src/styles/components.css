@@ -1704,6 +1704,7 @@ textarea.ekd-field-input {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 0.15em;
+  text-decoration-skip-ink: none;
 }
 
 /* --- Dialog -------------------------------------------------------------- */
@@ -2523,6 +2524,7 @@ button.ekd-sync-control:hover {
   font-weight: var(--fw-medium);
   text-decoration: underline;
   text-underline-offset: 0.15em;
+  text-decoration-skip-ink: none;
 }
 /* Inline code: the mono, brought to the height of the serif beside it, on the
    surface the catalogue names for it. */
@@ -2862,6 +2864,7 @@ button.ekd-sync-control:hover {
   color: var(--fg-1);
   text-decoration: underline;
   text-underline-offset: 0.15em;
+  text-decoration-skip-ink: none;
 }
 
 /* Footnotes: a marker in the running text and the list the markers point to,
@@ -2903,6 +2906,7 @@ button.ekd-sync-control:hover {
   font-weight: var(--fw-medium);
   text-decoration: underline;
   text-underline-offset: 0.15em;
+  text-decoration-skip-ink: none;
 }
 .ekd-footnote-ref:hover { text-decoration-thickness: 0.12em; }
 .ekd-footnote-ref:focus-visible {

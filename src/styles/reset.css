@@ -70,11 +70,17 @@ a {
 
    `:where()` keeps this at the specificity of the bare `a` above, so any class
    an application gives its own links still wins without a fight. The offset
-   is in `em` so it scales with the text the link sits in. */
+   is in `em` so it scales with the text the link sits in.
+
+   The underline runs through descenders rather than breaking around them.
+   The browser's default skips the ink, which at 0.15em cuts the line under
+   every g, j, p, q and y, so "How your address is kept" read as three
+   underlines. A link is one line from its first letter to its last. */
 a:where(:not([class])) {
   text-decoration: underline;
   text-underline-offset: 0.15em;
   text-decoration-thickness: from-font;
+  text-decoration-skip-ink: none;
   transition:
     color var(--dur-fast) var(--ease-soft),
     text-decoration-thickness var(--dur-fast) var(--ease-soft);

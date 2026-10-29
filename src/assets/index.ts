@@ -78,7 +78,7 @@ export const brandAssets = {
  * as a mark rather than as decoration.
  */
 export const logoRules = [
-  'The mark is the only custom SVG icon in the system. Every other icon is Lucide at 1.5px stroke, 16px default.',
+  'The mark is the only icon outside domico’s icon set. Every other icon is domico’s own set: Tabler outline icons used as drawn, and icons redrawn to Tabler’s construction (24-unit grid, 1.5 stroke, round caps and joins), at a 16px default. Each icon’s source is recorded beside it.',
   'Do not recolour the mark outside the three variants. The tile colours are brand-fixed tokens and do not follow the theme.',
   'Do not stretch, rotate, outline, or add effects. No shadow, no glow, no gradient.',
   'Keep clear space around the mark of at least a quarter of its width.',

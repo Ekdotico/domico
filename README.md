@@ -86,7 +86,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
 | `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `option-list.css`, `sync-status.css`, `avatar.css`, `editor.css`, and `code.css` |
 | `@ekdotico/domico/components` | The shared React components |
-| `@ekdotico/domico/icons` | The icon set: Lucide, vendored, at the house stroke weight |
+| `@ekdotico/domico/icons` | The icon set: domico's own, built on Tabler, vendored, at the house stroke weight |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord, and `attachImageResize` for the handle on an image block |
 | `@ekdotico/domico/fonts` | Font loading configuration for the three locked families |
@@ -2566,7 +2566,7 @@ Six guards run only here, and say so rather than failing on a missing import:
 `generated` rebuilds the tokens, `expression` validates the authoring schemas,
 `exports` packs this package, `svg` builds a DOM with jsdom, `components`
 renders the shared components and the accessibility helpers into jsdom, and
-`icons` compares against `lucide-static`. Each needs a development dependency that is
+`icons` compares against `@tabler/icons`. Each needs a development dependency that is
 never published. `icons` was the odd one out until the default set stopped being
 a hand-written list — it noted the dependency in its description and nowhere
 else, which was survivable while nothing picked it up automatically and would
@@ -2615,6 +2615,7 @@ files under `assets/logo`.
 
 Third-party material keeps its own licence. The three typefaces are each
 licensed under the SIL Open Font License 1.1, and the package ships loading
-configuration, not font files. The icons are Lucide, vendored, under the ISC
-licence. [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) carries the
-notices.
+configuration, not font files. The icons are domico's own set, vendored: Tabler
+and Phosphor icons under the MIT License, and one adapted from MingCute under
+the Apache License 2.0. [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md)
+carries the notices.

@@ -1,7 +1,7 @@
 lockfileVersion: '9.0'
 
 settings:
-  autoInstallPeers: true
+  autoInstallPeers: false
   excludeLinksFromLockfile: false
 
 overrides:
@@ -17,6 +17,9 @@ importers:
       '@changesets/cli':
         specifier: ^2.29.8
         version: 2.31.1(@types/node@22.20.1)
+      '@tabler/icons':
+        specifier: ^3.50.0
+        version: 3.50.0
       '@types/node':
         specifier: ^22
         version: 22.20.1
@@ -32,9 +35,6 @@ importers:
       jsdom:
         specifier: ^30.0.1
         version: 30.0.1
-      lucide-static:
-        specifier: ^1.31.0
-        version: 1.31.0
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -321,6 +321,9 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@tabler/icons@3.50.0':
+    resolution: {integrity: sha512-HflLxyrH1cqC7s7jzQGSjpsTAVIoaf7+/yHjbdM59rJQBMjliibp+LYhDPFxOMcwa1M8DNpOk6ENzQiWn9a1Dg==}
 
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
@@ -719,9 +722,6 @@ packages:
   lru-cache@11.5.2:
     resolution: {integrity: sha512-4pfM1Ff0x50o0tQwb5ucw/RzNyD0/YJME6IVcStalZuMWxdt3sR3huStTtxz4PUmvZfRguvDejasvQ2kifR11g==}
     engines: {node: 20 || >=22}
-
-  lucide-static@1.31.0:
-    resolution: {integrity: sha512-XFX9NO+gcLsOkXISmeQZYGJa2siGWZc/lgT/BK1b83h9RdOiz3cj1eQP5nWhELiB1KhW5ryk0nmMopOgm/CuSA==}
 
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
@@ -1466,6 +1466,8 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
 
+  '@tabler/icons@3.50.0': {}
+
   '@types/node@12.20.55': {}
 
   '@types/node@22.20.1':
@@ -1872,8 +1874,6 @@ snapshots:
       js-tokens: 4.0.0
 
   lru-cache@11.5.2: {}
-
-  lucide-static@1.31.0: {}
 
   math-intrinsics@1.1.0: {}
 

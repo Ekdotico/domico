@@ -3,11 +3,19 @@ import type { SVGProps } from 'react';
 /**
  * The Ekdotico icon set.
  *
- * Every icon is Lucide, vendored: the path data is copied verbatim from
- * `lucide-static` rather than the package being installed. An icon set ships
- * two thousand glyphs to serve a dozen, and vendoring avoids that weight, an
- * extra supply-chain surface, and a version to track — for a set that changes
+ * domico's own set, built on Tabler and vendored: the path data lives here
+ * rather than a package being installed. An icon set ships thousands of glyphs
+ * to serve a few dozen, and vendoring avoids that weight, an extra
+ * supply-chain surface, and a version to track — for a set that changes
  * perhaps twice a year.
+ *
+ * Most icons are Tabler outline icons, copied verbatim from `@tabler/icons`.
+ * The rest are drawn to Tabler's construction — the 24-unit grid, the 1.5
+ * stroke, round caps and joins — so the set reads as one: seven are Phosphor
+ * regular icons redrawn as strokes with Phosphor's design kept, and the quote
+ * is drawn after MingCute's with its heads filled. `scripts/icon-sources.json`
+ * records where every icon comes from, and `check:icons` holds each Tabler one
+ * to its original.
  *
  * The cost of vendoring is that conformance is a convention rather than
  * something the package manager enforces. This module is how that cost is
@@ -15,14 +23,15 @@ import type { SVGProps } from 'react';
  * viewBox, so an icon cannot drift in a single consumer without the drift
  * being visible here.
  *
- * **Adding an icon:** copy the inner markup from
- * `node_modules/lucide-static/icons/<name>.svg` unchanged, convert the
- * hyphenated attributes to JSX casing, and add a component below. Do not
- * redraw by eye and do not adjust coordinates to taste — a set that has been
- * individually tuned stops reading as a set, which is the entire reason to use
- * one.
+ * **Adding an icon:** take a Tabler outline icon when one fits. Copy the inner
+ * markup from `node_modules/@tabler/icons/icons/outline/<name>.svg` unchanged,
+ * less the invisible bounding path, and add a component below and its line in
+ * `icon-sources.json`. Do not adjust coordinates to taste — a set that has
+ * been individually tuned stops reading as a set. An icon drawn here instead
+ * is the exception, keeps to the construction above, and names what it was
+ * drawn from.
  *
- * The Ekdotico logo mark is the only icon in the system that is not Lucide.
+ * The Ekdotico logo mark is the only icon in the system outside this set.
  */
 
 export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
@@ -39,9 +48,10 @@ export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
 /**
  * Shared chrome for every icon.
  *
- * Stroke is 1.5 rather than Lucide's own 2: the house style is hairlines, and
- * a 2px stroke reads heavy against the type. It is set here rather than
- * per-icon so it cannot vary between them.
+ * Stroke is 1.5 rather than Tabler's own 2: the house style is hairlines, and
+ * a 2px stroke reads heavy against the type. At the 16px default it draws at
+ * one pixel. It is set here rather than per-icon so it cannot vary between
+ * them.
  */
 function Icon({ size = 16, title, children, ...rest }: IconProps & { children: React.ReactNode }) {
   return (
@@ -68,15 +78,8 @@ function Icon({ size = 16, title, children, ...rest }: IconProps & { children: R
 export function SunIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2" />
-      <path d="M12 20v2" />
-      <path d="m4.93 4.93 1.41 1.41" />
-      <path d="m17.66 17.66 1.41 1.41" />
-      <path d="M2 12h2" />
-      <path d="M20 12h2" />
-      <path d="m6.34 17.66-1.41 1.41" />
-      <path d="m19.07 4.93-1.41 1.41" />
+      <path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+      <path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" />
     </Icon>
   );
 }
@@ -84,9 +87,8 @@ export function SunIcon(props: IconProps) {
 export function MonitorIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <rect width="20" height="14" x="2" y="3" rx="2" />
-      <line x1="8" x2="16" y1="21" y2="21" />
-      <line x1="12" x2="12" y1="17" y2="21" />
+      <rect x="3" y="4.5" width="18" height="13.5" rx="1.5" />
+      <path d="M9 21h6" />
     </Icon>
   );
 }
@@ -94,24 +96,24 @@ export function MonitorIcon(props: IconProps) {
 export function MoonIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
+      <path d="M10.135 2.635A9.008 9.008 0 0 0 21.365 13.865A9 9 0 1 1 10.135 2.635Z" />
     </Icon>
   );
 }
 
 /**
- * The appearance menu's trigger. The four dots carry `fill="currentColor"`
- * against the wrapper's `fill="none"`, which is how Lucide draws them — a
- * half-unit circle would otherwise render as a stroked ring rather than a dot.
+ * The appearance menu's trigger. Each of the four dots is a circle of 0.375
+ * units drawn by the stroke alone: at 1.5 the stroke closes it into a solid
+ * dot of 1.125, so the dots keep the set's weight rather than carrying a fill.
  */
 export function PaletteIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" />
-      <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-      <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-      <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-      <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+      <path d="M21 12A8.825 8.825 0 0 1 20.782 13.957A2.25 2.25 0 0 1 18.582 15.75L14.25 15.75A2.25 2.25 0 0 0 12 18A2.25 2.25 0 0 1 8.981 20.119C5.443 18.866 3 15.87 3 12A9 9 0 0 1 11.906 3C16.892 2.95 21 6.961 21 12Z" />
+      <circle cx="12" cy="7.125" r=".375" />
+      <circle cx="7.875" cy="9.375" r=".375" />
+      <circle cx="7.875" cy="14.625" r=".375" />
+      <circle cx="16.125" cy="9.375" r=".375" />
     </Icon>
   );
 }
@@ -119,8 +121,8 @@ export function PaletteIcon(props: IconProps) {
 export function SearchIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m21 21-4.34-4.34" />
-      <circle cx="11" cy="11" r="8" />
+      <circle cx="10.5" cy="10.5" r="7.5" />
+      <path d="M15.803 15.803L21 21" />
     </Icon>
   );
 }
@@ -128,7 +130,9 @@ export function SearchIcon(props: IconProps) {
 export function MessageSquareIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" />
+      <path d="M8 9h8" />
+      <path d="M8 13h6" />
+      <path d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12" />
     </Icon>
   );
 }
@@ -136,9 +140,9 @@ export function MessageSquareIcon(props: IconProps) {
 export function MenuIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M4 5h16" />
-      <path d="M4 12h16" />
-      <path d="M4 19h16" />
+      <path d="M4 6l16 0" />
+      <path d="M4 12l16 0" />
+      <path d="M4 18l16 0" />
     </Icon>
   );
 }
@@ -146,8 +150,8 @@ export function MenuIcon(props: IconProps) {
 export function XIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
+      <path d="M18 6l-12 12" />
+      <path d="M6 6l12 12" />
     </Icon>
   );
 }
@@ -155,7 +159,7 @@ export function XIcon(props: IconProps) {
 export function ChevronLeftIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m15 18-6-6 6-6" />
+      <path d="M15 6l-6 6l6 6" />
     </Icon>
   );
 }
@@ -163,7 +167,7 @@ export function ChevronLeftIcon(props: IconProps) {
 export function ChevronDownIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m6 9 6 6 6-6" />
+      <path d="M6 9l6 6l6 -6" />
     </Icon>
   );
 }
@@ -171,9 +175,9 @@ export function ChevronDownIcon(props: IconProps) {
 export function DownloadIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M12 15V3" />
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <path d="m7 10 5 5 5-5" />
+      <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+      <path d="M7 11l5 5l5 -5" />
+      <path d="M12 4l0 12" />
     </Icon>
   );
 }
@@ -181,10 +185,9 @@ export function DownloadIcon(props: IconProps) {
 export function TableIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M12 3v18" />
-      <rect width="18" height="18" x="3" y="3" rx="2" />
-      <path d="M3 9h18" />
-      <path d="M3 15h18" />
+      <path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14" />
+      <path d="M3 10h18" />
+      <path d="M10 3v18" />
     </Icon>
   );
 }
@@ -192,10 +195,10 @@ export function TableIcon(props: IconProps) {
 export function MaximizeIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
-      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
-      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
-      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+      <path d="M4 8v-2a2 2 0 0 1 2 -2h2" />
+      <path d="M4 16v2a2 2 0 0 0 2 2h2" />
+      <path d="M16 4h2a2 2 0 0 1 2 2v2" />
+      <path d="M16 20h2a2 2 0 0 0 2 -2v-2" />
     </Icon>
   );
 }
@@ -203,8 +206,8 @@ export function MaximizeIcon(props: IconProps) {
 export function PlusIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M5 12h14" />
-      <path d="M12 5v14" />
+      <path d="M12 5l0 14" />
+      <path d="M5 12l14 0" />
     </Icon>
   );
 }
@@ -212,7 +215,7 @@ export function PlusIcon(props: IconProps) {
 export function MinusIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M5 12h14" />
+      <path d="M5 12l14 0" />
     </Icon>
   );
 }
@@ -220,8 +223,8 @@ export function MinusIcon(props: IconProps) {
 export function PencilIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
-      <path d="m15 5 4 4" />
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
     </Icon>
   );
 }
@@ -229,30 +232,18 @@ export function PencilIcon(props: IconProps) {
 export function ArrowUpRightIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M7 7h10v10" />
-      <path d="M7 17 17 7" />
+      <path d="M17 7l-10 10" />
+      <path d="M8 7l9 0l0 9" />
     </Icon>
   );
 }
 
-/**
- * Named for `circle-question-mark`, not the shorter `help-circle`.
- *
- * Lucide ships all three of `help-circle`, `circle-help` and
- * `circle-question-mark` with identical geometry, but only the last is in
- * `tags.json` — the other two are back-compatibility aliases kept from earlier
- * renames. Every other icon in this set is named for a current Lucide name, so
- * `HelpCircleIcon` would be the first to rest on an alias, and `check:icons`
- * resolves the file from the component name: the day lucide-static drops the
- * alias, the guard fails on an icon nobody touched. The longer name is the one
- * that keeps working.
- */
 export function CircleQuestionMarkIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-      <path d="M12 17h.01" />
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 13.5v-.75c1.657 0 3-1.176 3-2.625s-1.343-2.625-3-2.625S9 8.676 9 10.125v.375" />
+      <circle cx="12" cy="16.875" r=".375" />
     </Icon>
   );
 }
@@ -265,7 +256,8 @@ export function CircleQuestionMarkIcon(props: IconProps) {
 export function BoldIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8" />
+      <path d="M7 5h6a3.5 3.5 0 0 1 0 7h-6l0 -7" />
+      <path d="M13 12h1a3.5 3.5 0 0 1 0 7h-7v-7" />
     </Icon>
   );
 }
@@ -273,9 +265,9 @@ export function BoldIcon(props: IconProps) {
 export function ItalicIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <line x1="19" x2="10" y1="4" y2="4" />
-      <line x1="14" x2="5" y1="20" y2="20" />
-      <line x1="15" x2="9" y1="4" y2="20" />
+      <path d="M11 5l6 0" />
+      <path d="M7 19l6 0" />
+      <path d="M14 5l-4 14" />
     </Icon>
   );
 }
@@ -283,8 +275,8 @@ export function ItalicIcon(props: IconProps) {
 export function UnderlineIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M6 4v6a6 6 0 0 0 12 0V4" />
-      <line x1="4" x2="20" y1="20" y2="20" />
+      <path d="M7 5v5a5 5 0 0 0 10 0v-5" />
+      <path d="M5 19h14" />
     </Icon>
   );
 }
@@ -292,9 +284,8 @@ export function UnderlineIcon(props: IconProps) {
 export function StrikethroughIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M16 4H9a3 3 0 0 0-2.83 4" />
-      <path d="M14 12a4 4 0 0 1 0 8H6" />
-      <line x1="4" x2="20" y1="12" y2="12" />
+      <path d="M5 12l14 0" />
+      <path d="M16 6.5a4 2 0 0 0 -4 -1.5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1.5a4 2 0 0 1 -4 -1.5" />
     </Icon>
   );
 }
@@ -302,8 +293,9 @@ export function StrikethroughIcon(props: IconProps) {
 export function CodeIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m16 18 6-6-6-6" />
-      <path d="m8 6-6 6 6 6" />
+      <path d="M7 8l-4 4l4 4" />
+      <path d="M17 8l4 4l-4 4" />
+      <path d="M14 4l-4 16" />
     </Icon>
   );
 }
@@ -311,9 +303,8 @@ export function CodeIcon(props: IconProps) {
 export function SuperscriptIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m4 19 8-8" />
-      <path d="m12 19-8-8" />
-      <path d="M20 12h-4c0-1.5.442-2 1.5-2.5S20 8.334 20 7.002c0-.472-.17-.93-.484-1.29a2.105 2.105 0 0 0-2.617-.436c-.42.239-.738.614-.899 1.06" />
+      <path d="M5 7l8 10m-8 0l8 -10" />
+      <path d="M21 11h-4l3.5 -4a1.73 1.73 0 0 0 -3.5 -2" />
     </Icon>
   );
 }
@@ -321,9 +312,8 @@ export function SuperscriptIcon(props: IconProps) {
 export function SubscriptIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m4 5 8 8" />
-      <path d="m12 5-8 8" />
-      <path d="M20 19h-4c0-1.5.44-2 1.5-2.5S20 15.33 20 14c0-.47-.17-.93-.48-1.29a2.11 2.11 0 0 0-2.62-.44c-.42.24-.74.62-.9 1.07" />
+      <path d="M5 7l8 10m-8 0l8 -10" />
+      <path d="M21 20h-4l3.5 -4a1.73 1.73 0 0 0 -3.5 -2" />
     </Icon>
   );
 }
@@ -331,8 +321,9 @@ export function SubscriptIcon(props: IconProps) {
 export function LinkIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+      <path d="M9 15l6 -6" />
+      <path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" />
+      <path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" />
     </Icon>
   );
 }
@@ -340,8 +331,9 @@ export function LinkIcon(props: IconProps) {
 export function HighlighterIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m9 11-6 6v3h9l3-3" />
-      <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4" />
+      <path d="M13.286 3.96L8.786 8.46L16.5 16.174L21 11.674" />
+      <path d="M9.429 9.103L6.857 11.674L13.286 18.103L15.857 15.531" />
+      <path d="M8.143 12.96L3 18.103L8.786 20.031L12 16.817" />
     </Icon>
   );
 }
@@ -354,8 +346,8 @@ export function HighlighterIcon(props: IconProps) {
 export function StickyNoteIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M21 9a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z" />
-      <path d="M15 3v5a1 1 0 0 0 1 1h5" />
+      <path d="M13 20l7 -7" />
+      <path d="M13 20v-6a1 1 0 0 1 1 -1h6v-7a2 2 0 0 0 -2 -2h-12a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7" />
     </Icon>
   );
 }
@@ -363,9 +355,9 @@ export function StickyNoteIcon(props: IconProps) {
 export function LightbulbIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
-      <path d="M9 18h6" />
-      <path d="M10 22h4" />
+      <path d="M8.538 17.019A2.077 2.077 0 0 0 7.734 15.375A6.923 6.923 0 1 1 16.266 15.375A2.077 2.077 0 0 0 15.462 17.019L15.462 17.538A0.692 0.692 0 0 1 14.769 18.231L9.231 18.231A0.692 0.692 0 0 1 8.538 17.538Z" />
+      <path d="M8.538 21L15.462 21" />
+      <path d="M12.692 5.769C14.431 6.063 15.86 7.495 16.154 9.231" />
     </Icon>
   );
 }
@@ -373,9 +365,9 @@ export function LightbulbIcon(props: IconProps) {
 export function TriangleAlertIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
       <path d="M12 9v4" />
-      <path d="M12 17h.01" />
+      <path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" />
+      <path d="M12 16h.01" />
     </Icon>
   );
 }
@@ -383,9 +375,9 @@ export function TriangleAlertIcon(props: IconProps) {
 export function InfoIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 16v-4" />
-      <path d="M12 8h.01" />
+      <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+      <path d="M12 9h.01" />
+      <path d="M11 12h1v4h1" />
     </Icon>
   );
 }
@@ -393,18 +385,26 @@ export function InfoIcon(props: IconProps) {
 export function OctagonAlertIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M12 16h.01" />
+      <path d="M3 9.101v5.798c0 .53 .211 1.039 .586 1.415l4.1 4.1c.375 .375 .884 .586 1.415 .586h5.799c.53 0 1.039 -.211 1.414 -.586l4.1 -4.1c.375 -.375 .586 -.884 .586 -1.415v-5.798c0 -.53 -.211 -1.039 -.586 -1.415l-4.1 -4.1c-.375 -.375 -.884 -.586 -1.414 -.586l-5.799 0c-.53 0 -1.039 .211 -1.415 .586l-4.1 4.1c-.375 .375 -.586 .884 -.586 1.415" />
       <path d="M12 8v4" />
-      <path d="M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z" />
+      <path d="M12 16h.01" />
     </Icon>
   );
 }
 
+/**
+ * Drawn after MingCute's `quote-left-line` with the heads filled. The two
+ * circles carry `fill="currentColor"` against the wrapper's `fill="none"`; the
+ * stroke still runs round them, so the heads grow with the weight like the rest
+ * of the set.
+ */
 export function QuoteIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z" />
-      <path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z" />
+      <circle cx="7.5" cy="14.5" r="2.5" fill="currentColor" />
+      <path d="M5 14.5C4.833 13 5 10 9 7" />
+      <circle cx="16.5" cy="14.5" r="2.5" fill="currentColor" />
+      <path d="M14 14.5C13.833 13 14 10 18 7" />
     </Icon>
   );
 }
@@ -414,8 +414,8 @@ export function QuoteIcon(props: IconProps) {
 export function CircleCheckIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="m9 12 2 2 4-4" />
+      <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+      <path d="M9 12l2 2l4 -4" />
     </Icon>
   );
 }
@@ -423,10 +423,8 @@ export function CircleCheckIcon(props: IconProps) {
 export function RefreshCwIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-      <path d="M21 3v5h-5" />
-      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-      <path d="M8 16H3v5" />
+      <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+      <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
     </Icon>
   );
 }
@@ -434,9 +432,9 @@ export function RefreshCwIcon(props: IconProps) {
 export function CircleAlertIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" x2="12" y1="8" y2="12" />
-      <line x1="12" x2="12.01" y1="16" y2="16" />
+      <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+      <path d="M12 8v4" />
+      <path d="M12 16h.01" />
     </Icon>
   );
 }

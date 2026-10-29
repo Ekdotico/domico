@@ -1,19 +1,24 @@
 #!/usr/bin/env node
 /**
- * Assert every vendored icon still matches its Lucide original.
+ * Assert every vendored icon still matches its source.
  *
  * Vendoring buys a small bundle and one fewer dependency, and the price is
  * that conformance becomes a convention rather than something the package
- * manager enforces. `icons.tsx` states the rule — "Do not redraw by eye and do
- * not adjust coordinates to taste" — but a comment cannot fail a build.
+ * manager enforces. `icons.tsx` states the rule — "Do not adjust coordinates
+ * to taste" — but a comment cannot fail a build.
  *
  * This is what makes the rule enforceable. It found the case it was written
  * for on its first run: `ModeSwitcher` carried its own hand-drawn sun, monitor
- * and moon, at different radii and rectangles from the Lucide ones sitting in
+ * and moon, at different radii and rectangles from the ones sitting in
  * `icons.tsx`, so the same three concepts shipped as two different sets.
  *
+ * `scripts/icon-sources.json` names each icon's source. A Tabler icon is
+ * compared with `@tabler/icons`; an icon drawn for this set has no upstream to
+ * compare with, so it must name what it was drawn from, and the list and the
+ * module must agree, so no icon is added without its source.
+ *
  * Comparison is on geometry only. Stroke, size and viewBox live on the shared
- * `Icon` wrapper by design — the house weight is 1.5 against Lucide's 2 — so
+ * `Icon` wrapper by design — the house weight is 1.5 against Tabler's 2 — so
  * presentation attributes are deliberately not compared.
  */
 
@@ -23,22 +28,16 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const ICONS = join(ROOT, 'src/components/icons.tsx');
-const LUCIDE = join(ROOT, 'node_modules/lucide-static/icons');
+const TABLER = join(ROOT, 'node_modules/@tabler/icons/icons/outline');
+const SOURCES = JSON.parse(readFileSync(join(ROOT, 'scripts/icon-sources.json'), 'utf8'));
 
-if (!existsSync(LUCIDE)) {
+if (!existsSync(TABLER)) {
   console.error(
-    'lucide-static is not installed, so vendored icons cannot be verified.\n' +
+    '@tabler/icons is not installed, so vendored icons cannot be verified.\n' +
       'Run `pnpm install`. It is a devDependency and is never published.',
   );
   process.exit(2);
 }
-
-/** SunIcon -> sun, ChevronLeftIcon -> chevron-left. */
-const lucideNameFor = (component) =>
-  component
-    .replace(/Icon$/, '')
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .toLowerCase();
 
 /**
  * Reduce markup to a comparable shape: an ordered list of shapes, each with
@@ -50,6 +49,9 @@ const PRESENTATION = new Set([
   'stroke-linejoin', 'strokelinejoin', 'class', 'classname', 'xmlns', 'width',
   'height', 'viewbox', 'aria-hidden', 'role',
 ]);
+
+/** Tabler opens every file with an invisible path that spans the grid. */
+const BOUNDS = 'path(d=M0 0h24v24H0z)';
 
 function shapes(markup) {
   const out = [];
@@ -69,39 +71,56 @@ function shapes(markup) {
       `${m[1]}(${Object.keys(attrs).sort().map((k) => `${k}=${attrs[k]}`).join(',')})`,
     );
   }
-  return out;
+  return out.filter((s) => s !== BOUNDS);
 }
 
 const source = readFileSync(ICONS, 'utf8');
 const failures = [];
-let checked = 0;
+const seen = new Set();
+let compared = 0;
+let drawn = 0;
 
 // Each `export function NameIcon(...) { ... }` up to the next export.
 const component = /export function (\w+Icon)\s*\([\s\S]*?\n}/g;
 let match;
 while ((match = component.exec(source)) !== null) {
   const name = match[1];
-  const lucide = lucideNameFor(name);
-  const file = join(LUCIDE, `${lucide}.svg`);
+  const entry = SOURCES[name];
+  seen.add(name);
+  const ours = shapes(match[0]);
 
-  if (!existsSync(file)) {
-    failures.push(`${name}: no Lucide icon named "${lucide}". Rename the component or vendor the right glyph.`);
+  if (!entry) {
+    failures.push(`${name}: no entry in scripts/icon-sources.json. Name its Tabler icon, or what it was drawn from.`);
+    continue;
+  }
+  if (ours.length === 0) {
+    failures.push(`${name}: no geometry found. The parser expected circle/path/rect/line/polyline/polygon/ellipse.`);
+    continue;
+  }
+  if (entry.drawn) {
+    drawn++;
     continue;
   }
 
-  const ours = shapes(match[0]);
+  const file = join(TABLER, `${entry.tabler}.svg`);
+  if (!existsSync(file)) {
+    failures.push(`${name}: no Tabler outline icon named "${entry.tabler}". Correct icon-sources.json or vendor the right glyph.`);
+    continue;
+  }
   const theirs = shapes(readFileSync(file, 'utf8'));
-  checked++;
-
-  if (ours.length === 0) {
-    failures.push(`${name}: no geometry found. The parser expected circle/path/rect/line/polyline/polygon/ellipse.`);
-  } else if (JSON.stringify(ours) !== JSON.stringify(theirs)) {
+  compared++;
+  if (JSON.stringify(ours) !== JSON.stringify(theirs)) {
     failures.push(
-      `${name} has drifted from lucide-static/icons/${lucide}.svg\n` +
+      `${name} has drifted from @tabler/icons/icons/outline/${entry.tabler}.svg\n` +
         `      vendored: ${ours.join(' ')}\n` +
         `      upstream: ${theirs.join(' ')}`,
     );
   }
+}
+
+const orphans = Object.keys(SOURCES).filter((n) => !seen.has(n));
+if (orphans.length > 0) {
+  failures.push(`icon-sources.json names icons that icons.tsx does not export: ${orphans.join(', ')}.`);
 }
 
 // A stray inline SVG outside icons.tsx is how the drift got in last time: the
@@ -159,12 +178,13 @@ if (!epsilon) {
 }
 
 if (failures.length > 0) {
-  console.error('check:icons — vendored icons do not match their Lucide originals:\n');
+  console.error('check:icons — vendored icons do not match their sources:\n');
   for (const f of failures) console.error(`  - ${f}`);
   process.exit(1);
 }
 
 console.log(
-  `check:icons — ${checked} vendored icons match lucide-static verbatim, ` +
+  `check:icons — ${compared} vendored icons match @tabler/icons verbatim, ` +
+    `${drawn} drawn for the set name their source, ` +
     'and every file of the logo mark carries the same epsilon',
 );

@@ -110,9 +110,8 @@ a:where(:not([class])):focus-visible {
    nothing where there is no box. `:where()` keeps the specificity of the bare
    `a` and its pseudo-element, so source order still decides between them.
 
-   It is Lucide's arrow-up-right,
-   the same geometry as ArrowUpRightIcon, drawn smaller inside a rounded
-   square, and it is drawn by CSS alone: the box is the pseudo-element's own
+   It is an arrow up and to the right, the arrow of ArrowUpRightIcon, drawn
+   smaller inside a rounded square, and it is drawn by CSS alone: the box is the pseudo-element's own
    border, and each stroke of the arrow is a background layer. All of them are
    `currentColor`, so they take the link's colour: the paragraph's at rest, the
    accent on hover.

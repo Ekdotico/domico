@@ -1,0 +1,110 @@
+{
+  "SunIcon": {
+    "tabler": "sun"
+  },
+  "MonitorIcon": {
+    "drawn": "redrawn from phosphor monitor"
+  },
+  "MoonIcon": {
+    "drawn": "redrawn from phosphor moon"
+  },
+  "PaletteIcon": {
+    "drawn": "redrawn from phosphor palette"
+  },
+  "SearchIcon": {
+    "drawn": "redrawn from phosphor magnifying-glass"
+  },
+  "MessageSquareIcon": {
+    "tabler": "message"
+  },
+  "MenuIcon": {
+    "tabler": "menu-2"
+  },
+  "XIcon": {
+    "tabler": "x"
+  },
+  "ChevronLeftIcon": {
+    "tabler": "chevron-left"
+  },
+  "ChevronDownIcon": {
+    "tabler": "chevron-down"
+  },
+  "DownloadIcon": {
+    "tabler": "download"
+  },
+  "TableIcon": {
+    "tabler": "table"
+  },
+  "MaximizeIcon": {
+    "tabler": "maximize"
+  },
+  "PlusIcon": {
+    "tabler": "plus"
+  },
+  "MinusIcon": {
+    "tabler": "minus"
+  },
+  "PencilIcon": {
+    "tabler": "pencil"
+  },
+  "ArrowUpRightIcon": {
+    "tabler": "arrow-up-right"
+  },
+  "CircleQuestionMarkIcon": {
+    "drawn": "redrawn from phosphor question"
+  },
+  "BoldIcon": {
+    "tabler": "bold"
+  },
+  "ItalicIcon": {
+    "tabler": "italic"
+  },
+  "UnderlineIcon": {
+    "tabler": "underline"
+  },
+  "StrikethroughIcon": {
+    "tabler": "strikethrough"
+  },
+  "CodeIcon": {
+    "tabler": "code"
+  },
+  "SuperscriptIcon": {
+    "tabler": "superscript"
+  },
+  "SubscriptIcon": {
+    "tabler": "subscript"
+  },
+  "LinkIcon": {
+    "tabler": "link"
+  },
+  "HighlighterIcon": {
+    "drawn": "redrawn from phosphor highlighter"
+  },
+  "StickyNoteIcon": {
+    "tabler": "note"
+  },
+  "LightbulbIcon": {
+    "drawn": "redrawn from phosphor lightbulb"
+  },
+  "TriangleAlertIcon": {
+    "tabler": "alert-triangle"
+  },
+  "InfoIcon": {
+    "tabler": "info-circle"
+  },
+  "OctagonAlertIcon": {
+    "tabler": "alert-octagon"
+  },
+  "QuoteIcon": {
+    "drawn": "after mingcute quote-left-line, filled heads"
+  },
+  "CircleCheckIcon": {
+    "tabler": "circle-check"
+  },
+  "RefreshCwIcon": {
+    "tabler": "refresh"
+  },
+  "CircleAlertIcon": {
+    "tabler": "alert-circle"
+  }
+}

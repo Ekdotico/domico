@@ -3,8 +3,9 @@
  * path data is the "Glyph · epsilon" layer of the Logo & Iconography Figma file
  * (node 91:22), byte-identical to the source SVGs under assets/logo/SVG/.
  *
- * This is the only custom SVG icon in the system. Every other icon comes from
- * Lucide at 1.5px stroke, 16px default.
+ * This is the only icon outside domico's icon set. Every other icon is in
+ * icons.tsx: Tabler outline icons and icons redrawn to Tabler's construction,
+ * at 1.5px stroke, 16px default.
  *
  * Four render modes:
  *   "ink" (default) — the glyph fills with currentColor and there is no tile,

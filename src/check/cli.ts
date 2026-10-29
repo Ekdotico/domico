@@ -114,19 +114,19 @@ const GUARDS: Record<string, Guard> = {
   },
   icons: {
     script: 'check-icons',
-    what: 'every vendored icon matches its Lucide original',
+    what: 'every vendored icon matches its Tabler original or names what it was drawn from',
     /**
      * Declared rather than merely documented in `what`. The guard reads
-     * node_modules/lucide-static/icons inside THIS package, and exits 2 when it
-     * is absent — which it is in every consumer, because lucide-static is a
-     * devDependency here and consumers are told not to install Lucide at all.
+     * node_modules/@tabler/icons inside THIS package, and exits 2 when it is
+     * absent — which it is in every consumer, because @tabler/icons is a
+     * devDependency here and consumers are told not to install an icon set.
      *
      * It mattered once the default guard set stopped being a hand-written list:
      * a guard that cannot run outside this repository, and does not say so, is
      * a red pipeline in three applications the moment it is picked up
      * automatically.
      */
-    developmentOnly: 'it compares against lucide-static, which only this repository installs',
+    developmentOnly: 'it compares against @tabler/icons, which only this repository installs',
   },
   svg: {
     script: 'check-svg',

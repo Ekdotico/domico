@@ -18,8 +18,8 @@ modified version of this package, and not in a way that suggests Ekdotico made
 or endorses something it did not. That use needs written permission from
 Ekdotico.
 
-Crimson Pro, Commissioner, Fira Code, and Lucide are the names of other
-people's work. Their licences are in
+Crimson Pro, Commissioner, Fira Code, Tabler, Phosphor, and MingCute are the
+names of other people's work. Their licences are in
 [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md).
 
 Enquiries: legal@ekdoti.co

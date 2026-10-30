@@ -74,8 +74,8 @@ jobs:
       # Icons are vendored, so conformance is a convention rather than
       # something the package manager enforces. This is what makes the
       # convention enforceable — it caught ModeSwitcher shipping its own
-      # hand-drawn sun, monitor and moon alongside the Lucide ones.
-      - name: Vendored icons match their Lucide originals
+      # hand-drawn sun, monitor and moon alongside the vendored ones.
+      - name: Vendored icons match their Tabler originals or name their source
         run: pnpm check:icons
 
       # The bootstrap runs before React and before any stylesheet, so a defect

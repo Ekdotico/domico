@@ -1392,12 +1392,17 @@
   line-height: var(--lh-normal);
   color: var(--fg-1);
 }
+/* Greedy wrapping, not the reset's pretty. A hint sits under a control that
+   spans its column, and WebKit's pretty evens the rag over the whole paragraph:
+   on an iPhone every line of a hint ended well short of the field above it, and
+   the hint read as narrower than its own control. Filled lines meet its edge. */
 .ekd-field-hint {
   margin: 0;
   font-family: var(--font-sans);
   font-size: var(--fs-sm);
   line-height: var(--lh-normal);
   color: var(--fg-2);
+  text-wrap: wrap;
 }
 .ekd-field-input {
   width: 100%;

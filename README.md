@@ -90,6 +90,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
 | `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord, and `attachImageResize` for the handle on an image block |
 | `@ekdotico/domico/fonts` | Font loading configuration for the three locked families |
+| `@ekdotico/domico/color` | `oklchToHex` and the rest of the package's OKLCH and sRGB maths, for a surface that cannot paint `oklch()`, such as an Open Graph image |
 | `@ekdotico/domico/mermaid` | Mermaid `themeVariables` for all eight palettes |
 | `@ekdotico/domico/mermaid/accessibility` | Reads `accTitle` and `accDescr` out of a diagram source, and blanks the directive lines in place |
 | `@ekdotico/domico/svg` | `annotateSvg` — writes `<title>` and `<desc>` into a detached SVG so a downloaded file names itself |

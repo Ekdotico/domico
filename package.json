@@ -43,6 +43,10 @@
       "default": "./dist/tokens/generated/tokens.js"
     },
     "./tokens.css": "./tokens/generated/tokens.css",
+    "./color": {
+      "types": "./tokens/lib/color.d.mts",
+      "default": "./tokens/lib/color.mjs"
+    },
     "./mermaid": {
       "types": "./dist/tokens/generated/mermaid.d.ts",
       "default": "./dist/tokens/generated/mermaid.js"

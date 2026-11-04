@@ -16,6 +16,10 @@
       "variants": [
         "doc"
       ],
+      "notDetectable": [
+        "docs"
+      ],
+      "notDetectableReason": "The linter matches a variant's plural, and \"docs\" is the plural of \"doc\" only on paper. In practice it means documentation: the docs site is a repository of that name, and docs/ is a path in every repository in the estate. Blocking it would report the name of a repository as a breach. Reviewers catch documents called docs; the linter does not try.",
       "rationale": "Format-agnostic; applies equally to thesis, journal article, research paper, and conference paper. \"Paper\" implies a specific physical format. \"Manuscript\" implies an unpublished state. \"Work\" is too general for functional contexts. \"Manuscript\" is also standard academic usage for a paper under submission, so it is confirmable rather than blocking. \"Project\" names the same thing from the other side: FR-AU used it for the unit an institution gains read access to — a document together with its source library, planning canvas, research journal, and task list — while every other module called that unit the document, and the data model has no Project entity. FR-AU was amended in September 2026 to say document, so no requirement now uses the term. Document is canonical for the concept, and \"project\" stays confirmable rather than blocking because it is also an ordinary English word.",
       "since": "0.2",
       "ambiguousVariants": [
@@ -351,7 +355,11 @@
       "since": "0.2",
       "ambiguousVariants": [
         "cite"
-      ]
+      ],
+      "notDetectable": [
+        "cites"
+      ],
+      "notDetectableReason": "The linter matches a variant's plural, but \"cites\" is the verb (\"the rationale cites the requirement\") in effectively every use: the noun plural is slang. \"Cite\" stays confirmable; matching its plural would ask a reviewer to confirm a verb every time."
     },
     {
       "id": "bibliography",

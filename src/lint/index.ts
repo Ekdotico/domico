@@ -68,16 +68,29 @@ export interface LintResult {
   skippedRegisterRules: string[];
 }
 
+const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * A plain term as a regular expression that also matches its regular English
+ * plural: "writing record" matches "writing records", "polish" "polishes",
+ * "faculty" "faculties". A term was once matched only as written, so pluralising
+ * a blocked variant was enough to slip it past the linter. Irregular plurals
+ * are not attempted; list them as variants in their own right.
+ */
+function withPlural(term: string): string {
+  if (/[^aeiou]y$/i.test(term)) return `${escape(term.slice(0, -1))}(?:y|ies)`;
+  return `${escape(term)}(?:e?s)?`;
+}
+
 /** Compile one rule's patterns into a single regular expression. */
 function compile(match: { kind: string; patterns: string[]; caseSensitive?: boolean }): RegExp {
   const flags = match.caseSensitive === true ? 'g' : 'gi';
-  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   switch (match.kind) {
     case 'word':
-      return new RegExp(`\\b(?:${match.patterns.map(escape).join('|')})\\b`, flags);
+      return new RegExp(`\\b(?:${match.patterns.map(withPlural).join('|')})\\b`, flags);
     case 'phrase':
-      return new RegExp(match.patterns.map(escape).join('|'), flags);
+      return new RegExp(match.patterns.map(withPlural).join('|'), flags);
     case 'regex':
       return new RegExp(match.patterns.join('|'), flags);
     case 'unicode-range': {
@@ -126,10 +139,16 @@ function vocabularyFindings(source: string, file: string, spans: Span[]): Findin
       // A variant that is a substring of a permitted longer form is not a
       // violation: "PDF reader and annotator" is an approved module title even
       // though "PDF annotator" is not a permitted surface name.
-      const re = new RegExp(`\\b${variant.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+      const re = new RegExp(`\\b${withPlural(variant)}\\b`, 'gi');
+
+      // The plural is generated, so a plural that is ordinarily another word
+      // ("docs" is documentation, "cites" a verb) is listed under the term's
+      // notDetectable and skipped here, as any undetectable form is.
+      const undetectable = (term.notDetectable ?? []).map((s) => s.toLowerCase());
 
       for (const m of source.matchAll(re)) {
         if (isExempt(m.index, spans)) continue;
+        if (undetectable.includes(m[0].toLowerCase())) continue;
 
         // A variant that is a substring of a longer correct phrase is not a
         // violation. "canvas" is the non-canonical form on its own, but it also

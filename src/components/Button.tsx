@@ -1,7 +1,7 @@
 'use client';
 
 import * as ReactDOM from 'react-dom';
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
 
 /**
  * A button, in four variants, which can report an operation in flight.
@@ -43,6 +43,8 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
  *
  * `disabled` still passes through, for an action that is unavailable rather
  * than in flight. Prefer saying why beside the button to disabling it.
+ *
+ * Navigation is `ButtonLink`, below; an action is `Button`.
  *
  * Styles ship in `@ekdotico/domico/styles/button.css`.
  */
@@ -110,6 +112,49 @@ export function Button({
   return (
     <PendingButton
       {...button}
+      className={['ekd-button', className].filter(Boolean).join(' ')}
+      data-variant={variant}
+    />
+  );
+}
+
+/**
+ * A link that looks like a button: for navigation, not for an action.
+ *
+ *   <ButtonLink variant="primary" href="/apply">Apply</ButtonLink>
+ *   <ButtonLink href="https://example.org/form" target="_blank" rel="noreferrer">Open the form</ButtonLink>
+ *
+ * A native `<a>`; its attributes pass through, and `href` is required. It takes
+ * the same four variants and the same `.ekd-button` skin as `Button`, so the
+ * two sit side by side at one height. If the control changes state on the page
+ * (saves, deletes, opens a dialog), use `Button`: a link that does that is
+ * announced as a link and does not respond to Space.
+ *
+ * There is no pending or disabled state: a link that is not available is not
+ * rendered, or is text with the reason beside it.
+ *
+ * The stylesheet keeps the colour, background, border and no-underline of the
+ * skin in every state (`:link`, `:visited`, `:hover`, `:active`,
+ * `:focus-visible`) against an application's own link rules, up to a
+ * specificity of (0,2,1) and without `!important`. Do not put `.ekd-button` on
+ * an `<a>` yourself; use this.
+ *
+ * Height is the same as `Button`'s, about 40px. WCAG 2.5.8 asks for 24px; an
+ * application that wants 44px adds `padding-block` to its own class.
+ *
+ * Styles ship in `@ekdotico/domico/styles/button.css`.
+ */
+export function ButtonLink({
+  variant = 'secondary',
+  className,
+  ...link
+}: AnchorHTMLAttributes<HTMLAnchorElement> & {
+  href: string;
+  variant?: ButtonVariant;
+}) {
+  return (
+    <a
+      {...link}
       className={['ekd-button', className].filter(Boolean).join(' ')}
       data-variant={variant}
     />

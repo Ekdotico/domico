@@ -62,7 +62,7 @@ const { inertOutside, useModalSurface, isShortcut, shortcutLabel } = await impor
 const {
   Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
   AccessGate, GateSubmitButton, NavDrawer, OnThisPage, InPageLinkDirection, OpeningSequence, DocMeta,
-  Button, TextField, OneTimeCodeField, PasswordField, TextArea, RadioGroup, Checkbox, FormFault, Dialog, Tooltip,
+  Button, ButtonLink, TextField, OneTimeCodeField, PasswordField, TextArea, RadioGroup, Checkbox, FormFault, Dialog, Tooltip,
   PageHeading, Select, Toolbar, ToolbarSeparator, ToggleButton, MenuButton, SyncStatus, QrCode,
   Avatar, AvatarStack, avatarInitials,
   OptionList, optionListAttributes, optionListKey, optionListNavigating, optionListOptionId, placeOptionList,
@@ -824,6 +824,20 @@ await it('Button', async () => {
   // In flight with no label of its own: the label stays.
   await view.rerender(h(Button, { pending: true }, 'Save'));
   assert.equal(button.textContent, 'Save');
+  await view.unmount();
+});
+
+await it('ButtonLink', async () => {
+  const view = await mount(h(ButtonLink, { href: '/apply', target: '_blank', rel: 'noreferrer', className: 'x' }, 'Apply'));
+  const a = view.container.querySelector('a');
+  assert.equal(a.getAttribute('href'), '/apply');
+  assert.equal(a.getAttribute('target'), '_blank');
+  assert.equal(a.getAttribute('rel'), 'noreferrer');
+  assert.equal(a.className, 'ekd-button x');
+  assert.equal(a.getAttribute('data-variant'), 'secondary');
+  await view.rerender(h(ButtonLink, { href: '/a', variant: 'primary' }, 'Apply'));
+  assert.equal(a.getAttribute('data-variant'), 'primary');
+  assert.ok(!a.hasAttribute('aria-busy') && !a.hasAttribute('aria-disabled'));
   await view.unmount();
 });
 

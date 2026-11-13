@@ -396,3 +396,11 @@ html {
   background-clip: padding-box;
 }
 
+
+/* Inline code, kbd and samp: the mono, brought to the height of the text it
+   sits in. Fira Code is taller than Crimson Pro, so at the same size it reads
+   large beside serif; --serif-fit is the size that matches. A block (pre > code)
+   keeps the block's own size. */
+:not(pre) > :is(code, kbd, samp) {
+  font-size: var(--serif-fit);
+}

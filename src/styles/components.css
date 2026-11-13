@@ -1337,6 +1337,7 @@
 }
 .ekd-button[data-variant="primary"]:hover {
   background: var(--accent-hover);
+  color: var(--accent-ink);
   border-color: var(--accent-hover);
 }
 /* No boundary at rest. The transparent border keeps it the height of its
@@ -1358,6 +1359,47 @@
 }
 .ekd-button[data-variant][aria-busy="true"] { cursor: progress; }
 .ekd-button[data-variant]:disabled { cursor: not-allowed; }
+/* ButtonLink: the same skin on an `<a>`, which a consumer's prose-link rules
+   also reach. Typical ones are `.content-inner a` (0,1,1) and
+   `.content-inner a:hover` (0,2,1), which set colour, a bottom border and an
+   underline. The anchor rules below are (0,3,1): `a` + `.ekd-button` +
+   `[data-variant]` + one state pseudo-class (`:is()` takes the weight of its
+   most specific argument, a pseudo-class, so each group counts once). That
+   outranks both without `!important`, in every state, :visited included, and
+   each state states colour, background, border (all four sides) and
+   decoration, so none is left to inherit from the link. A consumer rule more
+   specific than (0,3,1) still wins; the fix then is in that rule. Rest states
+   come first, then hover and active, so hover wins where both match. */
+a.ekd-button[data-variant]:is(:any-link, :focus-visible),
+a.ekd-button[data-variant]:is(:hover, :active) {
+  text-decoration: none;
+  border-style: solid;
+  border-width: 1px;
+}
+a.ekd-button[data-variant="secondary"]:is(:any-link, :focus-visible) {
+  background: transparent; color: var(--fg-1); border-color: var(--rule-control);
+}
+a.ekd-button[data-variant="secondary"]:is(:hover, :active) {
+  background: var(--bg-surface-2); color: var(--fg-1); border-color: var(--rule-control);
+}
+a.ekd-button[data-variant="primary"]:is(:any-link, :focus-visible) {
+  background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
+}
+a.ekd-button[data-variant="primary"]:is(:hover, :active) {
+  background: var(--accent-hover); color: var(--accent-ink); border-color: var(--accent-hover);
+}
+a.ekd-button[data-variant="quiet"]:is(:any-link, :focus-visible) {
+  background: transparent; color: var(--fg-1); border-color: transparent;
+}
+a.ekd-button[data-variant="quiet"]:is(:hover, :active) {
+  background: var(--bg-surface-2); color: var(--fg-1); border-color: transparent;
+}
+a.ekd-button[data-variant="destructive"]:is(:any-link, :focus-visible) {
+  background: transparent; color: var(--fg-1); border-color: var(--danger);
+}
+a.ekd-button[data-variant="destructive"]:is(:hover, :active) {
+  background: var(--danger-soft); color: var(--fg-1); border-color: var(--danger);
+}
 @media (forced-colors: active) {
   .ekd-button[data-variant][aria-disabled="true"],
   .ekd-button[data-variant]:disabled {

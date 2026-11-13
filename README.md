@@ -329,6 +329,7 @@ the platform's, and every attribute the native element takes passes through.
 | Component | What it is | Stylesheet |
 |---|---|---|
 | `Button` | Four variants, `primary`, `secondary`, `quiet`, and `destructive`, and a pending state | `styles/button.css` |
+| `ButtonLink` | The button's skin on an `<a>`, for navigation; the same four variants, no pending state | `styles/button.css` |
 | `TextField` | A single-line field with a label, a hint, and a message | `styles/form.css` |
 | `PasswordField` | A password field with a button that shows what is typed | `styles/form.css` |
 | `OneTimeCodeField` | One field for a numeric code, six digits unless told otherwise | `styles/form.css` |

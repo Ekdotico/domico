@@ -69,7 +69,7 @@
   color: var(--fg-3);
   font-family: var(--font-sans);
   font-weight: var(--fw-semi);
-  font-size: var(--fs-3xs);
+  font-size: var(--fs-2xs);
   letter-spacing: var(--tr-label);
   padding: 10px 14px;
   text-align: left;
@@ -105,7 +105,7 @@
   font-family: var(--font-sans);
   font-size: var(--fs-xs);
   color: var(--fg-2);
-  line-height: 1.45;
+  line-height: var(--lh-normal);
   /* `anywhere`, not `normal`, and the distinction is load-bearing rather than
      cosmetic. A cell holding a long unbreakable token — a regex, a route path,
      a DOI — contributes that token's full width to the column's min-content
@@ -231,7 +231,7 @@
   background: var(--bg-surface-2);
   font-family: var(--font-sans);
   font-weight: var(--fw-semi);
-  font-size: var(--fs-3xs);
+  font-size: var(--fs-2xs);
   color: var(--fg-3);
   letter-spacing: var(--tr-label);
   border-top: 2px solid var(--rule);
@@ -260,12 +260,12 @@
   align-items: center;
   font-family: var(--font-sans);
   font-size: var(--fs-2xs);
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semi);
   padding: 3px 9px;
   border-radius: var(--radius-pill);
-  letter-spacing: var(--tr-wide);
+  letter-spacing: var(--tr-label);
   white-space: nowrap;
-  line-height: 1.4;
+  line-height: var(--lh-normal);
   vertical-align: middle;
 }
 
@@ -310,11 +310,11 @@
 .kv-list {
   display: flex;
   flex-direction: column;
-  margin: 14px 0 24px;
+  margin: 14px 0 var(--sp-6);
   padding: 0;
 }
 .kv-list-card {
-  padding: 20px 24px;
+  padding: var(--sp-5) var(--sp-6);
   background: var(--bg-surface);
   border: 1px solid var(--rule-soft);
   border-radius: var(--radius-lg);
@@ -326,7 +326,7 @@
 .kv-row {
   display: grid;
   grid-template-columns: 180px 1fr;
-  gap: 4px 28px;
+  gap: var(--sp-1) 28px;
   padding: 14px 0;
   border-bottom: 1px solid var(--rule-soft);
 }
@@ -343,7 +343,7 @@
 }
 .kv-val {
   font-family: var(--font-serif);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   line-height: var(--lh-prose);
   color: var(--fg-1);
   margin: 0;
@@ -453,13 +453,13 @@
   font-family: var(--font-sans);
   font-size: var(--fs-2xs);
   font-weight: var(--fw-semi);
-  letter-spacing: var(--tr-wider);
+  letter-spacing: var(--tr-label);
   color: var(--fg-3);
   margin: 0 0 6px;
 }
 .callout-body {
   font-family: var(--font-serif);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   line-height: var(--lh-prose);
   color: var(--fg-1);
 }
@@ -468,7 +468,7 @@
    callout use the editorial serif rather than the default UI sans. */
 .content-inner .callout-body p {
   font-family: var(--font-serif);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   line-height: var(--lh-prose);
   color: var(--fg-1);
   margin: 0 0 8px;
@@ -678,9 +678,9 @@
 }
 .stat-label {
   font-family: var(--font-sans);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
-  letter-spacing: var(--tr-wider);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--tr-label);
   color: var(--fg-3);
 }
 .stat-sub {
@@ -1106,7 +1106,7 @@
   margin: 0 0 var(--sp-3);
   font-family: var(--font-sans);
   font-weight: var(--fw-medium);
-  font-size: var(--fs-3xs);
+  font-size: var(--fs-xs);
   letter-spacing: var(--tr-widest);
   color: var(--fg-4);
 }

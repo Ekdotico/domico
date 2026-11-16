@@ -9,7 +9,8 @@ their regular English plural as well as the form written in the data: "writing
 records" is blocking like "writing record", "polishes" like "polish", and
 "faculties" is confirmable like "faculty". Before this, three uses of "writing
 records" passed the linter in a single proposal. `regex` and `unicode-range`
-rules are unchanged.
+rules are unchanged. Irregular plurals (analysis, analyses) are not matched;
+list them as variants in their own right.
 
 Two generated plurals that ordinarily mean something else are listed under
 their term's `notDetectable`, which the linter now honours: "docs"

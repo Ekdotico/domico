@@ -151,6 +151,23 @@ assert(has('something-went-wrong'), 'missed a register-scoped System Feedback ru
     ids('Provenance records are kept for every session.').length === 0,
     'reported the canonical plural "Provenance records" as a breach',
   );
+  // A vowel before the y keeps the y: "session key" gives "session keys", not
+  // "session keies". Matching is case-insensitive.
+  for (const text of ['Both session keys are signed.', 'SESSION KEYS are signed.']) {
+    assert(
+      ids(text).some((id) => id.startsWith('vocabulary/') && id.toLowerCase().endsWith(':session keys')),
+      `missed the vowel+y plural in "${text}": got [${ids(text).join(', ')}]`,
+    );
+  }
+  // The plural suffix must not open a match inside a longer word.
+  assert(
+    ids('A session keyboard and a session keyed entry.').length === 0,
+    'matched "session key" inside a longer word',
+  );
+  // Irregular plurals are NOT matched (analysis/analyses, -ves): list them as
+  // variants in their own right. Documented in the changeset and withPlural.
+  // No vocabulary term is irregular or ends in x or ch today, and withPlural is
+  // not exported, so those suffixes are unreachable from lintText.
   // A generated plural that is ordinarily another word is listed under the
   // term's notDetectable, and must stay unreported.
   assert(

@@ -117,6 +117,65 @@ assert(has('something-went-wrong'), 'missed a register-scoped System Feedback ru
   );
 }
 
+// --- Plurals -------------------------------------------------------------
+// A variant was matched as written and nowhere else, so "writing record" was
+// blocking and "writing records" passed: three uses of the plural went through
+// the assessor-study proposal unflagged. A plural is the same non-canonical
+// term, so it carries the same grade, blocking or ambiguous.
+{
+  const ids = (text) =>
+    lintText(text, 'plural.md', { register: 'functional' })
+      .findings.filter((f) => !f.overriddenBy)
+      .map((f) => `${f.ruleId}:${f.severity}:${f.found}`);
+
+  const plurals = [
+    ['The reports are rendered from writing records.', 'vocabulary/provenance-record:blocking:writing records'],
+    ['Each draft polishes the argument.', 'vocabulary/prose-refine:blocking:polishes'],
+    ['Two faculties signed off.', 'vocabulary/supervisor:substantive:faculties'],
+    ['The tool humanizes nothing.', 'humanize:blocking:humanizes'],
+    ['No writing fluencies are scored.', 'inferred-quality-metric:blocking:writing fluencies'],
+  ];
+  for (const [text, expected] of plurals) {
+    const found = ids(text);
+    assert(found.includes(expected), `missed the plural in "${text}": got [${found.join(', ')}]`);
+  }
+
+  // The singular must still be caught, and the canonical plural must not be.
+  assert(
+    ids('The report is rendered from a writing record.').includes(
+      'vocabulary/provenance-record:blocking:writing record',
+    ),
+    'stopped catching the singular "writing record"',
+  );
+  assert(
+    ids('Provenance records are kept for every session.').length === 0,
+    'reported the canonical plural "Provenance records" as a breach',
+  );
+  // A vowel before the y keeps the y: "session key" gives "session keys", not
+  // "session keies". Matching is case-insensitive.
+  for (const text of ['Both session keys are signed.', 'SESSION KEYS are signed.']) {
+    assert(
+      ids(text).some((id) => id.startsWith('vocabulary/') && id.toLowerCase().endsWith(':session keys')),
+      `missed the vowel+y plural in "${text}": got [${ids(text).join(', ')}]`,
+    );
+  }
+  // The plural suffix must not open a match inside a longer word.
+  assert(
+    ids('A session keyboard and a session keyed entry.').length === 0,
+    'matched "session key" inside a longer word',
+  );
+  // Irregular plurals are NOT matched (analysis/analyses, -ves): list them as
+  // variants in their own right. Documented in the changeset and withPlural.
+  // No vocabulary term is irregular or ends in x or ch today, and withPlural is
+  // not exported, so those suffixes are unreachable from lintText.
+  // A generated plural that is ordinarily another word is listed under the
+  // term's notDetectable, and must stay unreported.
+  assert(
+    ids('The docs repository cites it.').length === 0,
+    'reported a plural listed under notDetectable ("docs", "cites")',
+  );
+}
+
 // --- Must NOT be caught --------------------------------------------------
 const exemptLines = active.filter((f) => f.line >= 30 && f.line <= 50);
 assert(

@@ -19,6 +19,6 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["src/**/*", "tokens/generated/**/*.ts"],
+  "include": ["src/**/*", "tests/**/*.ts", "tokens/generated/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

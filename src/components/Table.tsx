@@ -146,10 +146,18 @@ export interface TableCellProps extends TdHTMLAttributes<HTMLTableCellElement> {
  * stylesheet measures from the end edge of the table, which only the last cell
  * touches. In any other cell they stay under the content at every width.
  *
- * Without `note` the cell renders what it always rendered.
+ * Without `note` the cell renders what it always rendered. So does a `note`
+ * that holds nothing: `null`, a boolean, an empty string, an empty array or
+ * one of empty values, and `0`, which is what `count && <MarginNote />` leaves
+ * behind when there are none.
  */
+function holdsNothing(note: ReactNode): boolean {
+  if (note == null || typeof note === 'boolean' || note === '' || note === 0) return true;
+  return Array.isArray(note) && note.every(holdsNothing);
+}
+
 export function TableCell({ note, children, ...rest }: TableCellProps) {
-  if (note == null || note === false) return <td {...rest}>{children}</td>;
+  if (holdsNothing(note)) return <td {...rest}>{children}</td>;
   return (
     <td {...rest}>
       <div className="tbl-noted">

@@ -4642,6 +4642,13 @@ await it('MarginNote is a note named by its label, and a row carries it in its l
     /@media not print\s*\{\s*@media \(min-width: 921px\)\s*\{\s*@container style\(--ekd-margin-gutter:\s*on\)\s*\{\s*\.tbl-wrap:has\(\.tbl-notes\)/,
     'a row note is moved out of a wrapper that clips it',
   );
+  // Below the breakpoint a declared gutter leaves the note in the form with no
+  // gutter, in every cell.
+  assert.match(
+    table,
+    /@media not print\s*\{\s*@media \(max-width: 920px\)\s*\{\s*@container style\(--ekd-margin-gutter:\s*on\)\s*\{\s*\.tbl-wrap \.tbl-notes > \.ekd-margin-note\s*\{[^}]*float:\s*none[^}]*border-inline-start:\s*1px solid var\(--rule\)/,
+    'under the content at a narrow width, a note keeps the form of the gutter',
+  );
   // As one query the `not` negates the width too, and it holds at any width.
   assert.ok(!/@media not print and/.test(table + note), 'a query negates more than the medium');
   assert.ok(!/box-shadow|text-transform|url\(/.test(note), 'margin-note.css has a shadow, a case transform or a url');
@@ -4651,6 +4658,10 @@ await it('MarginNote is a note named by its label, and a row carries it in its l
   assert.match(table, /\.tbl-wrap :is\(td, th\):is\(:last-child, \.req-text\) > \.tbl-noted\s*\{\s*display:\s*grid/);
   assert.match(table, /inset-inline-end:\s*100cqi/);
   assert.match(table, /\.tbl-wrap:has\(\.tbl-notes\)\s*\{\s*container-type:\s*inline-size/);
+  // A size container is 0 wide in a parent that fits its content. It is told
+  // the least width of a table, and the two numbers are one.
+  assert.match(table, /\.tbl-wrap table\s*\{[^}]*min-width:\s*480px/);
+  assert.match(table, /\.tbl-wrap:has\(\.tbl-notes\)\s*\{[^}]*contain-intrinsic-inline-size:\s*480px/);
 
   for (const entry of ['base.css', 'components.css']) {
     const shipped = strip(readFileSync(new URL(`../dist/styles/${entry}`, import.meta.url), 'utf8'));
@@ -4691,17 +4702,32 @@ await it('RequirementTable is the table, renders every string through renderText
 
   // Three columns where a row has a priority, two where none has.
   const heads = [...first.querySelectorAll(':scope > table > thead th')];
-  assert.deepEqual(heads.map((th) => th.textContent), ['ID', 'Requirement', 'P']);
+  // What is drawn, and what a screen reader is given: the drawn letter is
+  // hidden from it and the word is hidden from the page.
+  const drawn = (el) => el.querySelector('[aria-hidden="true"]')?.textContent ?? el.textContent;
+  const heard = (el) => {
+    const copy = el.cloneNode(true);
+    copy.querySelectorAll('[aria-hidden="true"]').forEach((hidden) => hidden.remove());
+    return copy.textContent;
+  };
+  assert.deepEqual(heads.map(drawn), ['ID', 'Requirement', 'P']);
+  assert.deepEqual(heads.map(heard), ['ID', 'Requirement', 'Priority']);
   assert.ok(heads.every((th) => th.getAttribute('scope') === 'col'));
-  assert.equal(heads[2].getAttribute('abbr'), 'Priority');
+  assert.ok(!heads[2].hasAttribute('abbr'), '`abbr` is for the short form of a long header, and this is the reverse');
+  assert.ok(heads[2].querySelector('.req-drawn > .req-spoken'));
   assert.equal(second.querySelectorAll(':scope > table > thead th').length, 2);
 
   const [noted, plain] = first.querySelectorAll(':scope > table > tbody > tr');
   assert.equal(noted.id, 'fr-aa-01', 'the row is not the target of a link to its requirement');
   assert.equal(noted.children.length, 3, 'a note added a cell to its row');
   assert.equal(noted.children[0].className, 'td-id');
-  assert.equal(noted.children[2].querySelector('.badge.badge-M')?.textContent, 'M');
-  assert.equal(plain.children[2].querySelector('.req-none')?.textContent, '—');
+  const badge = noted.children[2].querySelector('.badge.badge-M');
+  assert.equal(drawn(badge), 'M');
+  assert.equal(heard(badge), 'Must have');
+  // The dash has no word until the application gives it one.
+  const none = plain.children[2].querySelector('.req-none');
+  assert.equal(none.textContent, '—');
+  assert.equal(none.querySelector('.req-spoken'), null, 'the package gave the dash a word of its own');
 
   // The notes are in the cell that holds the requirement, after its text and
   // its blocks, and each is a note.
@@ -4728,6 +4754,39 @@ await it('RequirementTable is the table, renders every string through renderText
   // Without one, a string is shown as it is.
   assert.equal(second.querySelector('.tbl-noted-text')?.textContent, 'A **shall**');
   await view.unmount();
+
+  // Every word the table writes is the application's to replace, and an empty
+  // list of notes is no notes.
+  const worded = await mount(h(RequirementTable, {
+    requirements: [
+      { id: 'X-1', text: 'One', priority: 'S', notes: [] },
+      { id: 'X-2', text: 'Two' },
+    ],
+    labels: {
+      id: 'Κωδικός', requirement: 'Απαίτηση', priority: 'Προτεραιότητα', priorityShort: 'Π', name: 'Απαιτήσεις',
+      priorities: { S: 'Θα έπρεπε' }, noPriority: 'Καμία',
+    },
+  }));
+  const wordedWrap = worded.container.querySelector('.tbl-wrap');
+  assert.equal(wordedWrap.getAttribute('aria-label'), 'Απαιτήσεις');
+  const wordedHeads = [...wordedWrap.querySelectorAll('thead th')];
+  assert.deepEqual(wordedHeads.map(drawn), ['Κωδικός', 'Απαίτηση', 'Π']);
+  assert.equal(heard(wordedHeads[2]), 'Προτεραιότητα');
+  const [wordedFirst, wordedSecond] = wordedWrap.querySelectorAll('tbody tr');
+  assert.equal(wordedFirst.querySelector('.tbl-noted'), null, 'an empty list of notes drew the box of one');
+  assert.equal(heard(wordedFirst.querySelector('.badge')), 'Θα έπρεπε');
+  assert.equal(drawn(wordedSecond.querySelector('.req-none')), '—');
+  assert.equal(heard(wordedSecond.querySelector('.req-none')), 'Καμία');
+  await worded.unmount();
+
+  // A note that holds nothing is no note, in each form it can take.
+  for (const [name, empty] of [['null', null], ['false', false], ['true', true], ['an empty string', ''], ['0', 0], ['an empty array', []], ['an array of empty values', [null, false, '']]]) {
+    const bare = await mount(h(Table, { label: 'T' }, h(TableBody, null, h(TableRow, null, h(TableCell, { note: empty }, 'Text')))));
+    const td = bare.container.querySelector('td');
+    assert.equal(td.querySelector('.tbl-noted, .tbl-notes'), null, `${name} drew the box of a note`);
+    assert.equal(td.textContent, 'Text', `${name} was written into the cell`);
+    await bare.unmount();
+  }
 
   // No hook and no client boundary of its own, so a server component can pass
   // it a function.

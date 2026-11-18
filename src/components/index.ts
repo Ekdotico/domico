@@ -66,6 +66,7 @@ export {
   type Requirement,
   type RequirementBlock,
   type RequirementNote,
+  type RequirementTableLabels,
   type RequirementTableProps,
 } from './RequirementTable.js';
 export { StickyTableHead } from './StickyTableHead.js';

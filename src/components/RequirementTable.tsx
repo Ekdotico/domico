@@ -50,12 +50,58 @@ export interface Requirement {
   notes?: RequirementNote[];
 }
 
+/**
+ * The words the table writes itself. Each default is a word the documentation
+ * site showed when the table was its own; an application with other words, or
+ * another language, passes its own.
+ *
+ * `noPriority` has no default, because no application has yet given the dash a
+ * word. Until one is passed, the dash is all a row without a priority shows.
+ */
+export interface RequirementTableLabels {
+  /** The header of the identifier column. Default "ID". */
+  id?: string;
+  /** The header of the requirement column. Default "Requirement". */
+  requirement?: string;
+  /** The header of the priority column, as it is read aloud. Default "Priority". */
+  priority?: string;
+  /** The same header as it is drawn, in a column 60px wide. Default "P". */
+  priorityShort?: string;
+  /** The name of the scroll area where there is no caption. Default "Requirements". */
+  name?: string;
+  /** What each letter stands for. Defaults "Must have", "Should have", "Could have". */
+  priorities?: Partial<Record<'M' | 'S' | 'C', string>>;
+  /** What the dash stands for, in a row with no priority. No default. */
+  noPriority?: string;
+}
+
 export interface RequirementTableProps {
   requirements: Requirement[];
   /** A caption row above the table, and the name of its scroll area. */
   caption?: string;
   /** What a string of the data becomes. The default shows it as it is. */
   renderText?: (text: string) => ReactNode;
+  /** The words the table writes itself. */
+  labels?: RequirementTableLabels;
+}
+
+// The legend of the documentation site's requirement pages, word for word.
+const PRIORITY_WORDS = { M: 'Must have', S: 'Should have', C: 'Could have' } as const;
+
+// A letter or a dash for the eye and a word for a screen reader. The drawn
+// form is hidden from the reader so that it hears "Must have" and not
+// "M, Must have". A visually hidden word and not `<abbr title>`: a title is
+// read by some screen readers, in some settings, and by none on a touch
+// screen, and a header cell's `abbr` attribute is for the short form of a long
+// header, which is the reverse of this.
+function spoken(drawn: string, word: string | undefined) {
+  if (!word || word === drawn) return drawn;
+  return (
+    <span className="req-drawn">
+      <span aria-hidden="true">{drawn}</span>
+      <span className="req-spoken">{word}</span>
+    </span>
+  );
 }
 
 type Render = (text: string) => ReactNode;
@@ -110,20 +156,23 @@ function renderBlock(b: RequirementBlock, i: number, render: Render) {
   }
 }
 
-export function RequirementTable({ requirements, caption, renderText }: RequirementTableProps) {
+export function RequirementTable({ requirements, caption, renderText, labels = {} }: RequirementTableProps) {
   const render: Render = renderText ?? ((text) => text);
+  const priorityWords = { ...PRIORITY_WORDS, ...labels.priorities };
   // The column is drawn only where a row has a priority. A specification
   // written to "shall" has none, and an empty column would say it had.
   const showPriority = requirements.some((r) => r.priority !== undefined);
 
   return (
-    <Table caption={caption || undefined} label={caption ? undefined : 'Requirements'}>
+    <Table caption={caption || undefined} label={caption ? undefined : (labels.name ?? 'Requirements')}>
       <TableHead>
         <TableRow>
-          <TableHeaderCell scope="col" className="col-id">ID</TableHeaderCell>
-          <TableHeaderCell scope="col">Requirement</TableHeaderCell>
+          <TableHeaderCell scope="col" className="col-id">{labels.id ?? 'ID'}</TableHeaderCell>
+          <TableHeaderCell scope="col">{labels.requirement ?? 'Requirement'}</TableHeaderCell>
           {showPriority && (
-            <TableHeaderCell scope="col" className="col-priority" abbr="Priority">P</TableHeaderCell>
+            <TableHeaderCell scope="col" className="col-priority">
+              {spoken(labels.priorityShort ?? 'P', labels.priority ?? 'Priority')}
+            </TableHeaderCell>
           )}
         </TableRow>
       </TableHead>
@@ -148,7 +197,11 @@ export function RequirementTable({ requirements, caption, renderText }: Requirem
             </TableCell>
             {showPriority && (
               <TableCell>
-                {r.priority ? <Badge variant={r.priority}>{r.priority}</Badge> : <span className="req-none">—</span>}
+                {r.priority ? (
+                  <Badge variant={r.priority}>{spoken(r.priority, priorityWords[r.priority])}</Badge>
+                ) : (
+                  <span className="req-none">{spoken('—', labels.noPriority)}</span>
+                )}
               </TableCell>
             )}
           </TableRow>

@@ -822,6 +822,20 @@ table scrolls inside its card, and a card that scrolls would clip a note moved
 out of it, so there the notes stay under the content whatever the application
 says of the gutter.
 
+A declared gutter must be there. The notes are 200px wide and stand 16px from
+the table, so the table needs 216px of free space at its start. The package
+cannot see whether the space exists: an application that says there is a
+gutter where there is none has its notes drawn over whatever is beside the
+table, or off the page.
+
+The table also needs a width from its parent. While there is a gutter the
+wrapper of a table with notes is a size container, which takes no width from
+its content. In a block parent, or as a flex or grid item that is stretched,
+it is as wide as it was. In a parent that fits its content, such as a flex
+item in a row, an inline-block, a float or a `max-content` grid track, it
+falls to 480px, the least width of a table, and the notes are placed against
+that. Give such a table a width, or a parent that has one.
+
 Only the last cell can reach the gutter, because the stylesheet measures
 across the table from its end edge. Notes given to any other cell stay under
 its content at every width. The requirement table is the one exception, since
@@ -849,6 +863,25 @@ requirement, and a MoSCoW priority where any row has one. Its styles are in
 | `requirements` | `Requirement[]` | `id`, `text`, and optionally `blocks`, `priority` (`'M'`, `'S'` or `'C'`) and `notes` |
 | `caption` | `string` | A caption row, and the name of the scroll area. Without one the area is named "Requirements" |
 | `renderText` | `(text: string) => ReactNode` | What a string of the data becomes. Without one it is shown as it is |
+| `labels` | `RequirementTableLabels` | The words the table writes itself. Each is optional |
+
+| `labels` | Default | |
+| --- | --- | --- |
+| `id` | "ID" | Header of the identifier column |
+| `requirement` | "Requirement" | Header of the requirement column |
+| `priority` | "Priority" | Header of the priority column, as a screen reader reads it |
+| `priorityShort` | "P" | The same header as it is drawn, in a column 60px wide |
+| `name` | "Requirements" | Name of the scroll area where there is no `caption` |
+| `priorities` | `{ M: 'Must have', S: 'Should have', C: 'Could have' }` | What each letter stands for, read in place of the letter |
+| `noPriority` | none | What the dash stands for. Until it is passed, the dash is all there is |
+
+A letter and a dash are drawn, and a screen reader is given the word instead:
+the drawn form is `aria-hidden` and the word is beside it, hidden from the
+page (`.req-drawn > .req-spoken`). The header cell has no `abbr` attribute,
+which is for the short form of a long header, and no `<abbr title>`, which a
+screen reader may not read and a touch screen cannot show. The defaults are
+the words the documentation site shows. `noPriority` has none because no
+application has given the dash a word, and the package does not choose one.
 
 The words of a requirement are strings, because a page of them is generated
 from a specification. The application says once what a string becomes:

@@ -84,7 +84,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `option-list.css`, `sync-status.css`, `avatar.css`, `editor.css`, and `code.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `margin-note.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `option-list.css`, `sync-status.css`, `avatar.css`, `editor.css`, and `code.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/icons` | The icon set: domico's own, built on Tabler, vendored, at the house stroke weight |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
@@ -730,6 +730,9 @@ off there is not a fault; a table with both, or with a row header past the
 first column, needs it (WCAG 1.3.1, technique H63). Use `colgroup` or
 `rowgroup` where one header covers several.
 
+`TableCell` also takes `note`, for the margin notes of its row. The margin
+note's section says where they are drawn.
+
 `Checkbox` takes `labelHidden` for a box whose row header already says what it
 is about. The label is kept for a screen reader and is not drawn, as `Select`
 keeps its own, and it stays required: it is the box's name. The hidden words
@@ -741,6 +744,82 @@ the box, so the empty line beside it does not toggle it, and keeps a 24px
 target (WCAG 2.5.8).
 
 ---
+
+## The margin note
+
+`MarginNote` is marginalia: a small italic aside with a hairline rule and an
+optional label above it, with the styles in `styles/margin-note.css`. It is
+for what belongs beside the text and not in it, such as an amendment.
+
+```tsx
+<MarginNote label={label}>{text}</MarginNote>
+<p>The passage the note is about.</p>
+```
+
+It takes `label` and `children`, and writes no word of its own. It is an
+`<aside role="note">` named by its label through `aria-labelledby`, as a
+`Callout` is, so a page of notes adds nothing to the landmark list. The label
+is a `<p class="ekd-margin-note-label">`, and the text is in a
+`<div class="ekd-margin-note-body">`. It is text, so it is not a tab stop, and
+it has no shadow.
+
+The note has two forms. With no gutter it is a block in the text column, with
+the rule on its start edge. Where there is a gutter it floats into the gutter
+at the start of the text column, 200px wide, and the rule moves to the edge
+that faces the text. Put it directly before the passage it is about.
+
+The package cannot know whether a page has a gutter, so the application says
+so. Set `--ekd-margin-gutter: on` on an ancestor of the text column, at the
+widths where the gutter at the start of the column is at least 216px wide, and
+set it to `off` wherever the gutter closes:
+
+```css
+@media (min-width: 1480px) {
+  .content { --ekd-margin-gutter: on; }
+  html[data-chat-open] .content { --ekd-margin-gutter: off; }
+}
+```
+
+It is an optional property that the package reads and no palette defines, like
+`--ekd-editor-placeholder-offset`: it is not a token, and unset there is no
+gutter. The package reads it with a container style query. A browser without
+style queries keeps the form with no gutter, and so does print.
+
+### A note on a table row
+
+Give the notes of a row to the **last cell** of the row, through `note`:
+
+```tsx
+<TableRow>
+  <TableCell>{id}</TableCell>
+  <TableCell note={<MarginNote label={label}>{amendment}</MarginNote>}>
+    {requirement}
+  </TableCell>
+</TableRow>
+```
+
+`note` takes one `MarginNote` or several. They are rendered inside the cell,
+after its content, so the table keeps its columns and its rows, and a screen
+reader reads the note at the end of the row it belongs to:
+
+```html
+<td>
+  <div class="tbl-noted">
+    <div class="tbl-noted-text">…</div>
+    <div class="tbl-notes"><aside class="ekd-margin-note" role="note">…</aside></div>
+  </div>
+</td>
+```
+
+With no gutter the notes are under the content of the cell. With a gutter they
+stand in the same gutter as a note on a paragraph, at the start of the table
+and level with the top of their row. The row is as tall as its notes, so the
+notes of two rows never meet and none moves away from its row, however many a
+table has.
+
+Only the last cell can reach the gutter, because the stylesheet measures
+across the table from its end edge. Notes given to any other cell stay under
+its content at every width.
 
 ## The avatar and the avatar stack
 

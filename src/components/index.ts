@@ -52,7 +52,10 @@ export {
   TableHead,
   TableHeaderCell,
   TableRow,
+  type TableCellProps,
 } from './Table.js';
+/** @supersedes Margin */
+export { MarginNote, type MarginNoteProps } from './MarginNote.js';
 export { StickyTableHead } from './StickyTableHead.js';
 export { Tab, Tabs } from './Tabs.js';
 

@@ -251,6 +251,180 @@
   border-top-right-radius: 0;
 }
 
+/* --- Margin note --------------------------------------------------------- */
+/* MarginNote: marginalia. A small italic aside behind a hairline, with an
+   optional gilt label, which is what --gilt is for. No surface, no radius and
+   no shadow: a note is type and one rule, on whatever it sits on.
+
+   Two forms. This one, the default, is a block in the text column with the
+   rule on its start edge. The second, below, stands in a gutter.
+
+   The inks are --fg-3 and --gilt. Both are measured on the canvas, on the
+   card and on the sunken step in all eight palettes (check:contrast), because
+   a note in a table cell is on the canvas at rest and on a wash of the sunken
+   step while its row is hovered. */
+.ekd-margin-note {
+  display: block;
+  margin-block: var(--sp-4);
+  margin-inline: 0;
+  padding-block: var(--sp-3);
+  padding-inline: var(--sp-3) 0;
+  border-inline-start: 1px solid var(--rule);
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-normal);
+  color: var(--fg-3);
+  text-align: start;
+  break-inside: avoid;
+}
+.ekd-margin-note-label {
+  margin: 0 0 var(--sp-1);
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-3xs);
+  letter-spacing: var(--tr-widest);
+  color: var(--gilt);
+}
+.ekd-margin-note-body { font-style: italic; }
+.ekd-margin-note-body :where(p) { margin: 0 0 var(--sp-2); }
+.ekd-margin-note-body :where(p:last-child) { margin-bottom: 0; }
+
+/* The gutter form.
+
+   Whether a page has a gutter is a fact about the application's layout, and
+   the width at which it opens is another, so neither is written here. The
+   application says so, on an ancestor of its text column, in its own
+   stylesheet and inside whatever media query its layout needs:
+
+     @media (min-width: 1480px) {
+       .content-inner { --ekd-margin-gutter: on; }
+     }
+
+   The property is a hook and not a token: no palette defines it, and unset
+   means no gutter. It promises 216px of empty space before the start edge of
+   the text column, which is the note's 200px and the --sp-4 between the note
+   and the text. Any other value, `off` for one, takes the promise back, which
+   is how an application closes the gutter again while a panel is open.
+
+   A container style query reads it, and every element is a style container,
+   so the application declares nothing else. A browser without style queries
+   (Firefox before 151) keeps the form above, which is complete on its own.
+
+   The note is pulled fully clear of the text and not wrapped by it: the
+   negative margin is its whole width and the gap, so the float has no width
+   left in the column and no line is shortened. The rule changes sides,
+   because it belongs between the note and the text. `clear` stacks two notes
+   that are close together down the gutter; a heading does not clear a note,
+   so the text never waits for one.
+
+   Print has no gutter, whatever the application said on screen. */
+@media not print {
+  @container style(--ekd-margin-gutter: on) {
+    .ekd-margin-note {
+      float: inline-start;
+      clear: inline-start;
+      width: 200px;
+      margin-block: var(--sp-1) var(--sp-4);
+      margin-inline: calc(-200px - var(--sp-4)) 0;
+      padding-inline: 0 var(--sp-3);
+      border-inline-start: 0;
+      border-inline-end: 1px solid var(--rule);
+    }
+  }
+}
+
+/* --- Table row note ------------------------------------------------------ */
+/* The margin notes of a table row: `<TableCell note={…}>`, which renders
+
+     td > .tbl-noted > .tbl-noted-text + .tbl-notes > .ekd-margin-note
+
+   The notes are inside a cell of their row. That is what ties a note to its
+   row for a screen reader, with no id to reference, and it leaves the table
+   the columns it had.
+
+   With no gutter the notes are under the cell's content, in the cell's own
+   width: the place the paragraph note has at the same widths, set off by the
+   same rule. This is the form at phone width too, where the table scrolls
+   inside its card and the notes scroll with their rows. */
+.tbl-notes { margin-top: var(--sp-3); }
+.tbl-notes > .ekd-margin-note { margin: 0; }
+.tbl-notes > .ekd-margin-note + .ekd-margin-note { margin-top: var(--sp-3); }
+
+/* In the gutter, beside the row.
+
+   The notes stay in the flow of the row. The cell's two children share one
+   grid cell, so the row is as tall as the taller of the two, and a row's
+   notes can neither reach the next row's nor move away from their own. A
+   table of eighteen notes is eighteen rows, each beside its note. A note out
+   of the flow (`position: absolute`) would be placed as well and would overlap
+   the next one whenever it was longer than its row, which an amendment
+   usually is.
+
+   Only across is the note moved, and by a distance the stylesheet can know.
+   The cell is the last of its row, so the end edge of its content is the end
+   edge of the table less the cell's own border and padding (2px and 14px,
+   above). The wrapper is made a size container, and 100cqi is then the width
+   of the table. The notes are aligned to the end of the cell and shifted one
+   table's width towards the start, which puts their far edge 16px before the
+   table begins: the same --sp-4 the paragraph note keeps from the text. The
+   2px and 14px are 16px, so they appear in no sum here; change the cell's
+   padding and this rule changes with it.
+
+   The shift is `position: relative`, which moves the box after layout and
+   takes nothing out of the flow. The negative margin cancels the notes' width
+   so that they ask nothing of the column they are written in.
+
+   A cell that is not the last of its row keeps its notes under its content:
+   nothing here can know how far it is from either edge of the table.
+
+   The wrapper is a container only where it holds notes and only while there
+   is a gutter, because containment makes it the containing block of anything
+   fixed inside it. */
+@media not print {
+  @container style(--ekd-margin-gutter: on) {
+    .tbl-wrap:has(.tbl-notes) { container-type: inline-size; }
+    .tbl-wrap :is(td, th):last-child > .tbl-noted { display: grid; }
+    .tbl-wrap :is(td, th):last-child > .tbl-noted > * { grid-area: 1 / 1; min-width: 0; }
+    .tbl-wrap :is(td, th):last-child > .tbl-noted > .tbl-notes {
+      justify-self: end;
+      align-self: start;
+      width: 200px;
+      margin: 0;
+      margin-inline-start: -200px;
+      position: relative;
+      inset-inline-end: 100cqi;
+    }
+    /* The gutter form of the note, without the float: the row places it. */
+    .tbl-wrap :is(td, th):last-child > .tbl-noted > .tbl-notes > .ekd-margin-note {
+      float: none;
+      clear: none;
+      width: auto;
+      margin: 0;
+      /* No padding above or below: the note starts on the first line of its
+         row, and the rule is as tall as the words. */
+      padding-block: 0;
+    }
+    .tbl-wrap :is(td, th):last-child > .tbl-noted > .tbl-notes > .ekd-margin-note + .ekd-margin-note {
+      margin-top: var(--sp-3);
+    }
+    /* In a cell that is not the last, the note keeps the form with no gutter. */
+    .tbl-wrap :is(td, th):not(:last-child) > .tbl-noted > .tbl-notes > .ekd-margin-note {
+      float: none;
+      clear: none;
+      width: auto;
+      margin: 0;
+      padding-inline: var(--sp-3) 0;
+      border-inline-start: 1px solid var(--rule);
+      border-inline-end: 0;
+    }
+    .tbl-wrap :is(td, th):not(:last-child) > .tbl-noted > .tbl-notes > .ekd-margin-note + .ekd-margin-note {
+      margin-top: var(--sp-3);
+    }
+  }
+}
+
 /* --- Badges -------------------------------------------------------------- */
 
 /* BADGES

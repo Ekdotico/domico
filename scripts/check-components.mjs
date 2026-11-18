@@ -64,7 +64,7 @@ const {
   AccessGate, GateSubmitButton, NavDrawer, OnThisPage, InPageLinkDirection, OpeningSequence, DocMeta,
   Button, ButtonLink, TextField, OneTimeCodeField, PasswordField, TextArea, RadioGroup, Checkbox, FormFault, Dialog, Tooltip,
   PageHeading, Select, Toolbar, ToolbarSeparator, ToggleButton, MenuButton, SyncStatus, QrCode,
-  Avatar, AvatarStack, avatarInitials,
+  Avatar, AvatarStack, avatarInitials, MarginNote,
   OptionList, optionListAttributes, optionListKey, optionListNavigating, optionListOptionId, placeOptionList,
 } = await import('../dist/src/components/index.js');
 const icons = await import('../dist/src/components/icons.js');
@@ -4576,6 +4576,79 @@ await it('QrCode is an image named by its label, dark on light, with a quiet zon
   const tokens = read('../tokens/generated/tokens.css');
   assert.equal(tokens.match(/--scan-plate:/g).length, 1);
   assert.equal(tokens.match(/--scan-ink:/g).length, 1);
+});
+
+// --- The margin note --------------------------------------------------------
+// A note, named by its label, and not a landmark. In a table it is inside the
+// last cell of its row, so the table keeps its columns and the note is read
+// with the row.
+await it('MarginNote is a note named by its label, and a row carries it in its last cell', async () => {
+  const view = await mount(
+    h('div', null,
+      h(MarginNote, { label: 'Amendment' }, h('p', null, 'The limit was raised.')),
+      h(MarginNote, null, 'No label'),
+      h(Table, { caption: 'Requirements' },
+        h(TableHead, null, h(TableRow, null,
+          h(TableHeaderCell, { scope: 'col' }, 'ID'),
+          h(TableHeaderCell, { scope: 'col' }, 'Requirement'))),
+        h(TableBody, null,
+          h(TableRow, null,
+            h(TableCell, null, 'R-01'),
+            h(TableCell, { note: [h(MarginNote, { key: 1, label: 'First' }, 'One'), h(MarginNote, { key: 2, label: 'Second' }, 'Two')] }, 'The text')),
+          h(TableRow, null, h(TableCell, { colSpan: 2, note: null }, 'Plain'))))),
+  );
+  const [named, bare] = view.container.querySelectorAll(':scope > div > .ekd-margin-note');
+  assert.equal(named.tagName, 'ASIDE');
+  assert.equal(named.getAttribute('role'), 'note', 'a bare aside is a landmark; forty notes are forty landmarks');
+  const label = view.container.ownerDocument.getElementById(named.getAttribute('aria-labelledby'));
+  assert.equal(label?.textContent, 'Amendment');
+  assert.equal(label.tagName, 'P', 'the label of a note is not a heading');
+  assert.equal(named.querySelector('.ekd-margin-note-body')?.textContent, 'The limit was raised.');
+  assert.ok(!bare.hasAttribute('aria-labelledby'), 'a note with no label points at a label that is not there');
+  assert.equal(bare.querySelector('.ekd-margin-note-label'), null);
+  assert.equal(view.container.querySelector('[tabindex]:not(.tbl-wrap)'), null, 'a note is text, not a tab stop');
+
+  // The table is the table it was: two columns, two rows, no cell added.
+  const rows = view.container.querySelectorAll('tbody tr');
+  assert.equal(rows.length, 2, 'the note added a row');
+  assert.equal(rows[0].children.length, 2, 'the note added a cell to its row');
+  const noted = rows[0].lastElementChild;
+  assert.equal(noted.querySelector(':scope > .tbl-noted > .tbl-noted-text')?.textContent, 'The text');
+  const notes = noted.querySelectorAll(':scope > .tbl-noted > .tbl-notes > .ekd-margin-note');
+  assert.equal(notes.length, 2, 'the notes of the row are not both in its cell');
+  // Without a note, the cell is the bare cell it always was.
+  assert.equal(rows[1].firstElementChild.innerHTML, 'Plain');
+  assert.equal(rows[1].firstElementChild.getAttribute('colspan'), '2');
+  await view.unmount();
+
+  // jsdom applies no stylesheet, so the rules are read.
+  const { readFileSync } = await import('node:fs');
+  const strip = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const note = strip(readFileSync(new URL('../dist/styles/margin-note.css', import.meta.url), 'utf8'));
+  const table = strip(readFileSync(new URL('../dist/styles/table.css', import.meta.url), 'utf8'));
+  // The gutter is the application's to declare, and paper has none.
+  for (const [name, css] of [['margin-note.css', note], ['table.css', table]]) {
+    assert.match(
+      css,
+      /@media not print\s*\{\s*@container style\(--ekd-margin-gutter:\s*on\)/,
+      `${name} takes the gutter without being told there is one, or takes it in print`,
+    );
+  }
+  assert.ok(!/box-shadow|text-transform|url\(/.test(note), 'margin-note.css has a shadow, a case transform or a url');
+  assert.match(note, /\.ekd-margin-note\s*\{[^}]*border-inline-start:\s*1px solid var\(--rule\)/, 'the rule of the note is not a hairline');
+  assert.match(note, /\.ekd-margin-note\s*\{[^}]*break-inside:\s*avoid/);
+  // Only the last cell touches the end edge the gutter is measured from.
+  assert.match(table, /\.tbl-wrap :is\(td, th\):last-child > \.tbl-noted\s*\{\s*display:\s*grid/);
+  assert.match(table, /inset-inline-end:\s*100cqi/);
+  assert.match(table, /\.tbl-wrap:has\(\.tbl-notes\)\s*\{\s*container-type:\s*inline-size/);
+
+  for (const entry of ['base.css', 'components.css']) {
+    const shipped = strip(readFileSync(new URL(`../dist/styles/${entry}`, import.meta.url), 'utf8'));
+    assert.ok(shipped.includes('.ekd-margin-note-label'), `styles/${entry} does not carry the margin note`);
+    assert.ok(shipped.includes('.tbl-notes'), `styles/${entry} does not carry the notes of a row`);
+  }
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(manifest.exports['./styles/margin-note.css'], './dist/styles/margin-note.css');
 });
 
 console.log(`check:components — ${cases} cases: the a11y helpers, and the components' names, roles and focus, against jsdom`);

@@ -215,7 +215,7 @@ colour is never the sole carrier of the choice.
 
 Each component with styles of its own ships a stylesheet **export entry** —
 `styles/badge.css`, `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`,
-`primitives.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, and
+`primitives.css`, `section-rule.css`, `stat.css`, `table.css`, `margin-note.css`, `tabs.css`, and
 for the application chrome `access-gate.css`, `nav-drawer.css`,
 `on-this-page.css`, `doc-meta.css`, and `opening-sequence.css`, and for the
 controls `button.css`, `dialog.css`, `tooltip.css`, and `form.css`, which is one

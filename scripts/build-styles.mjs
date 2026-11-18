@@ -2,7 +2,7 @@
 /**
  * Assemble the shipped stylesheets.
  *
- * Thirty-three entries, so a consumer can take as much or as little as it needs.
+ * Thirty-four entries, so a consumer can take as much or as little as it needs.
  * Tokens are separate again, so the values can be had without any of the
  * opinions.
  *
@@ -20,7 +20,8 @@
  *   styles/logo.css
  *   styles/section-rule.css
  *   styles/stat.css
- *   styles/table.css
+ *   styles/table.css          the table, its caption and the notes of a row
+ *   styles/margin-note.css
  *   styles/tabs.css
  *   styles/access-gate.css
  *   styles/nav-drawer.css
@@ -200,7 +201,8 @@ const COMPONENTS = [
   ['logo', ['LOGO LOCKUP'], 'the logo lockup'],
   ['section-rule', ['Section rule'], 'the section rule'],
   ['stat', ['Stat and stat grid'], 'the stat and the stat grid'],
-  ['table', ['Tables', 'Table caption'], 'the table and its caption'],
+  ['table', ['Tables', 'Table caption', 'Table row note'], 'the table, its caption and the notes of a row'],
+  ['margin-note', ['Margin note'], 'the margin note'],
   ['tabs', ['Tabs'], 'the tab panel'],
   ['access-gate', ['Access gate'], 'the access gate'],
   ['nav-drawer', ['Navigation drawer'], 'the navigation drawer'],

@@ -817,6 +817,11 @@ and level with the top of their row. The row is as tall as its notes, so the
 notes of two rows never meet and none moves away from its row, however many a
 table has.
 
+The notes of a row take the gutter only above 920px. At 920px and below the
+table scrolls inside its card, and a card that scrolls would clip a note moved
+out of it, so there the notes stay under the content whatever the application
+says of the gutter.
+
 Only the last cell can reach the gutter, because the stylesheet measures
 across the table from its end edge. Notes given to any other cell stay under
 its content at every width. The requirement table is the one exception, since

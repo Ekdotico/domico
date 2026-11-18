@@ -4630,10 +4630,20 @@ await it('MarginNote is a note named by its label, and a row carries it in its l
   for (const [name, css] of [['margin-note.css', note], ['table.css', table]]) {
     assert.match(
       css,
-      /@media not print\s*\{\s*@container style\(--ekd-margin-gutter:\s*on\)/,
+      /@media not print\s*\{\s*(?:@media \(min-width: 921px\)\s*\{\s*)?@container style\(--ekd-margin-gutter:\s*on\)/,
       `${name} takes the gutter without being told there is one, or takes it in print`,
     );
   }
+  // At 920px and below the wrapper scrolls across, and a box that scrolls
+  // clips a note moved out of it. The two numbers are one breakpoint.
+  assert.match(table, /@media \(max-width: 920px\)\s*\{\s*\.tbl-wrap\s*\{\s*overflow-x:\s*auto/);
+  assert.match(
+    table,
+    /@media not print\s*\{\s*@media \(min-width: 921px\)\s*\{\s*@container style\(--ekd-margin-gutter:\s*on\)\s*\{\s*\.tbl-wrap:has\(\.tbl-notes\)/,
+    'a row note is moved out of a wrapper that clips it',
+  );
+  // As one query the `not` negates the width too, and it holds at any width.
+  assert.ok(!/@media not print and/.test(table + note), 'a query negates more than the medium');
   assert.ok(!/box-shadow|text-transform|url\(/.test(note), 'margin-note.css has a shadow, a case transform or a url');
   assert.match(note, /\.ekd-margin-note\s*\{[^}]*border-inline-start:\s*1px solid var\(--rule\)/, 'the rule of the note is not a hairline');
   assert.match(note, /\.ekd-margin-note\s*\{[^}]*break-inside:\s*avoid/);

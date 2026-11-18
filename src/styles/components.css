@@ -384,8 +384,20 @@
 
    The wrapper is a container only where it holds notes and only while there
    is a gutter, because containment makes it the containing block of anything
-   fixed inside it. */
+   fixed inside it.
+
+   The notes leave the wrapper because, above 920px, the wrapper clips
+   nothing: it has no overflow there (see `.tbl-wrap`, above). At 920px and
+   below it scrolls across, and a box that scrolls clips what is moved out of
+   it, on the start side with nothing to scroll to. So these rules hold only
+   above 920px. An application that says there is a gutter at a narrower
+   width gets the notes under the content, where they can be read.
+
+   The width is a query of its own, inside the first. Written as one,
+   `not print and (min-width: 921px)`, the `not` would negate the whole of it,
+   and the query would hold on a screen of any width. */
 @media not print {
+@media (min-width: 921px) {
   @container style(--ekd-margin-gutter: on) {
     .tbl-wrap:has(.tbl-notes) { container-type: inline-size; }
     .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted { display: grid; }
@@ -433,6 +445,7 @@
       margin-top: var(--sp-3);
     }
   }
+}
 }
 
 /* --- Requirement table --------------------------------------------------- */

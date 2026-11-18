@@ -4,7 +4,7 @@
   "private": false,
   "description": "Domico — the Ekdotico house style: design tokens, base styles, shared components, and the Expression Guidelines with their machine-readable vocabulary and prohibited terms.",
   "license": "AGPL-3.0-only",
-  "author": "Ekdotico",
+  "author": "Stavros Apostolou",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Ekdotico/domico.git"
@@ -33,6 +33,7 @@
     "docs/*.md",
     "AGENTS.md",
     "LICENSE",
+    "NOTICE",
     "TRADEMARKS.md",
     "THIRD-PARTY-NOTICES.md",
     "README.md"

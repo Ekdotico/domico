@@ -2601,19 +2601,17 @@ claiming the same version number while saying different things.
 
 ---
 
+## Contributing
+
+Until the beta, Ekdotico is built by a small founding team, and we are not accepting pull requests from outside the team. Issues are very welcome: if you find a bug or have an idea, please open one. We will say here when that changes.
+
+---
+
 ## Licence
 
-Copyright © 2026 Ekdotico.
+The code is licensed under the GNU Affero General Public License, version 3 only (`AGPL-3.0-only`); see [LICENSE](LICENSE). [NOTICE](NOTICE) names the copyright holder and the logo files that are not under the AGPL. The Ekdotico name and marks are not licensed; see [TRADEMARKS.md](TRADEMARKS.md).
 
-GNU Affero General Public License, version 3 only (`AGPL-3.0-only`). The full
-text is in [LICENSE](./LICENSE), which ships in the tarball. Versions up to and
-including 0.23.1 were published under the proprietary licence they carry, and
-stay under those terms.
-
-The licence covers copyright and grants no rights in trade marks. The Ekdotico
-name, the Ekdotico logo mark, and the Ekdotico wordmarks are trade marks of
-Ekdotico, and [TRADEMARKS.md](./TRADEMARKS.md) says what that means for the
-files under `assets/logo`.
+Versions up to and including 0.23.1 were published under the proprietary licence they carry, and stay under those terms.
 
 Third-party material keeps its own licence. The three typefaces are each
 licensed under the SIL Open Font License 1.1, and the package ships loading

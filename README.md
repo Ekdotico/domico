@@ -2048,6 +2048,22 @@ them.
   the application says what the prompt says in a place a screen reader is
   told it: the description of the text region, or `aria-placeholder` on it.
   In forced colours the prompt is `GrayText`.
+- The prompt can start after a control the application draws at the start of
+  the line, such as an Insert button at the cursor. Set
+  `--ekd-editor-placeholder-offset` on the editor, or any ancestor of it, to
+  the control's width and its gap, from tokens, and the prompt is indented by
+  that much from the start of the line (the right, in a right-to-left
+  document):
+
+  ```css
+  .document-editor {
+    --ekd-editor-placeholder-offset: calc(var(--sp-7) + var(--sp-2));
+  }
+  ```
+
+  It is an optional property that the package reads and no palette defines,
+  like `--theme-count`: it is not a token, and unset it is `0`, so nothing
+  moves. The caret stays at the start of the line.
 - The prompt is `--fg-3`, and that ink does not hold as text on every ground
   a block under the root can have. In the eight palettes it is 5.03:1 at its
   least on `--bg-canvas`, 5.12:1 on `--bg-surface` and 4.60:1 on

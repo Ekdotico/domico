@@ -2641,11 +2641,20 @@ button.ekd-sync-control:hover {
    told it: in the description of the text region, or in `aria-placeholder`
    on it.
 
+   `--ekd-editor-placeholder-offset` starts the prompt after a control the
+   application draws at the start of the line, such as the Insert button at
+   the cursor, so the prompt is not drawn under it. It is an optional property
+   the application sets on the editor or an ancestor and no palette defines,
+   so it holds in all eight; unset, it is 0 and nothing moves. Padding on the
+   float, in a logical property, so it indents from the right in a right-to-
+   left document. The caret stays at the start of the line, under the control.
+
    The ink holds as text on the canvas and the two surfaces. It does not on
    every ground a block can have: see the README, "The document surface". */
 .ekd-editor [data-placeholder]::before {
   content: attr(data-placeholder);
   float: inline-start;
+  padding-inline-start: var(--ekd-editor-placeholder-offset, 0);
   block-size: 0;
   color: var(--fg-3);
   pointer-events: none;

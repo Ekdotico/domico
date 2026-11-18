@@ -18,3 +18,9 @@ compile; beside children, `label` is refused. `children` on `Button` and
 `ButtonLink` is now a required key in the labelled shape (a button with no
 children and no icon no longer type-checks). Icon-only needs
 `styles/tooltip.css` as well as `styles/button.css`. No token is added.
+
+The editor's empty-line prompt can start after a leading control: set the
+optional property `--ekd-editor-placeholder-offset` on the editor (or an
+ancestor) and `.ekd-editor [data-placeholder]::before` takes it as
+`padding-inline-start`, so it holds in right-to-left. It is a new public
+property, not a token, and unset it is `0`: nothing moves.

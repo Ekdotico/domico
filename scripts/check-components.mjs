@@ -854,14 +854,15 @@ await it('the icon set exports its 48 names', () => {
   }
 });
 
-await it('Button and ButtonLink draw a leading icon, decorative, at 1em', async () => {
+await it('Button and ButtonLink draw a leading icon, decorative, at 16px', async () => {
   const view = await mount(
     h('div', null, h(Button, { icon: SearchIcon }, 'Search'), h(ButtonLink, { href: '/x', icon: SearchIcon }, 'Open')),
   );
   for (const control of view.container.querySelectorAll('.ekd-button')) {
     const svg = control.firstElementChild;
     assert.equal(svg.tagName.toLowerCase(), 'svg');
-    assert.equal(svg.getAttribute('width'), '1em');
+    assert.equal(svg.getAttribute('width'), '16');
+    assert.equal(svg.getAttribute('height'), '16');
     assert.equal(svg.getAttribute('aria-hidden'), 'true');
   }
   await view.unmount();

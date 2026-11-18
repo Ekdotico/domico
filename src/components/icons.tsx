@@ -37,7 +37,9 @@ import type { SVGProps } from 'react';
 export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
   /**
    * Rendered size in pixels, applied to both axes. Omit it and the glyph is
-   * `1em`: the font size of where it sits, so it is 16×16 at 16px text.
+   * 16×16, whatever the font size around it: a control that sets its own text
+   * size (13px in a toolbar, 15px in an editor) does not shrink its icon. Pass
+   * `size` to scale one deliberately.
    */
   size?: number;
   /**
@@ -60,8 +62,8 @@ function Icon({ size, title, children, ...rest }: IconProps & { children: React.
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width={size ?? '1em'}
-      height={size ?? '1em'}
+      width={size ?? 16}
+      height={size ?? 16}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

@@ -1333,8 +1333,7 @@
 /* A leading icon keeps its 16px however narrow the label's line is. */
 .ekd-button > svg { flex: none; }
 /* A Button or ButtonLink with an icon and no children: a 20×20 box holding a
-   16×16 glyph, which is 1em at the 16px set here (no font-size token is 16px:
-   --fs-base is 15px). The variants, states and reduced-motion rule apply
+   16×16 glyph (the icon's own default, whatever the font size). The variants, states and reduced-motion rule apply
    unchanged, and the focus ring is the global one. The pointer target is 24×24
    (WCAG 2.5.8) without growing the box: a transparent ::after reaches 2px past
    it on every side. */
@@ -1343,7 +1342,6 @@
   inline-size: var(--sp-5);
   block-size: var(--sp-5);
   padding: 0;
-  font-size: var(--sp-4);
 }
 .ekd-button[data-icon-only]::after {
   content: "";

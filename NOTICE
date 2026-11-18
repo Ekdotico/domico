@@ -1,6 +1,6 @@
 @ekdotico/domico
 Copyright (C) 2026 Stavros Apostolou
-SPDX-License-Identifier: AGPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only AND LicenseRef-Ekdotico-Brand
 
 Source: https://github.com/Ekdotico/domico
 
@@ -10,8 +10,9 @@ Affero General Public License, version 3 only. The full text is in LICENSE.
 Logo files not under the AGPL
 -----------------------------
 
-These files are not licensed under the AGPL. All rights in them are reserved
-to the copyright holder:
+These files are not licensed under the AGPL. They are under the terms in this
+section, which package.json names LicenseRef-Ekdotico-Brand. All rights in
+them are reserved to the copyright holder:
 
 - every file under `assets/logo/` (the PNG and SVG files at every size, and
   `logo-mark.svg`, `logo-mark-branded.svg` and `logo-wordmark.svg`);

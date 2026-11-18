@@ -26,10 +26,10 @@
 .sect-rule {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin: 52px 0 24px;
+  gap: calc(16px * var(--scale));
+  margin: calc(52px * var(--scale)) 0 calc(24px * var(--scale));
 }
-.sect-rule-gilt { width: 40px; height: 1px; background: var(--gilt); }
+.sect-rule-gilt { width: calc(40px * var(--scale)); height: 1px; background: var(--gilt); }
 .sect-rule-line { flex: 1; height: 1px; background: var(--rule); }
 
 /* ============================================================
@@ -54,7 +54,7 @@
      `overflow-wrap: anywhere` below; without it a single unbreakable token is enough to push
      the table out, with nothing here to clip or scroll it. The two rules are a
      pair: this one may drop overflow only for as long as that one holds. */
-  margin: 14px 0 24px;
+  margin: calc(14px * var(--scale)) 0 calc(24px * var(--scale));
   border-radius: var(--radius-lg);
   /* Outline is no longer drawn by the wrap. Each header th carries its
      own top + side borders so they meet at the rounded top corner; body
@@ -63,7 +63,7 @@
      shadow. */
   box-shadow: var(--shadow-1);
 }
-.tbl-wrap table { width: 100%; min-width: 480px; border-collapse: separate; border-spacing: 0; font-size: var(--fs-xs); }
+.tbl-wrap table { width: 100%; min-width: calc(480px * var(--scale)); border-collapse: separate; border-spacing: 0; font-size: var(--fs-xs); }
 .tbl-wrap thead th {
   background: var(--bg-surface-2);
   color: var(--fg-3);
@@ -71,7 +71,7 @@
   font-weight: var(--fw-semi);
   font-size: var(--fs-2xs);
   letter-spacing: var(--tr-label);
-  padding: 10px 14px;
+  padding: calc(10px * var(--scale)) calc(14px * var(--scale));
   text-align: left;
   border-top: 2px solid var(--rule);
   border-bottom: 2px solid var(--rule);
@@ -99,7 +99,7 @@
   border-inline-end: 2px solid var(--rule);
 }
 .tbl-wrap tbody :is(td, th) {
-  padding: 9px 14px;
+  padding: calc(9px * var(--scale)) calc(14px * var(--scale));
   border-bottom: 1px solid var(--rule-soft);
   vertical-align: top;
   font-family: var(--font-sans);
@@ -227,7 +227,7 @@
    card so the thead beneath can drop its own top border + corner radii
    — otherwise the table renders as a second card nested inside .tbl-wrap. */
 .tbl-wrap .tbl-caption {
-  padding: 10px 14px;
+  padding: calc(10px * var(--scale)) calc(14px * var(--scale));
   background: var(--bg-surface-2);
   font-family: var(--font-sans);
   font-weight: var(--fw-semi);
@@ -325,9 +325,9 @@
     .ekd-margin-note {
       float: inline-start;
       clear: inline-start;
-      width: 200px;
+      width: calc(200px * var(--scale));
       margin-block: var(--sp-1) var(--sp-4);
-      margin-inline: calc(-200px - var(--sp-4)) 0;
+      margin-inline: calc(calc(-200px * var(--scale)) - var(--sp-4)) 0;
       padding-inline: 0 var(--sp-3);
       border-inline-start: 0;
       border-inline-end: 1px solid var(--rule);
@@ -407,15 +407,15 @@
        above. There the table is 480px wide and its notes are where they
        should be. In a parent that gives it a width, which is the common case,
        this changes nothing. */
-    .tbl-wrap:has(.tbl-notes) { container-type: inline-size; contain-intrinsic-inline-size: 480px; }
+    .tbl-wrap:has(.tbl-notes) { container-type: inline-size; contain-intrinsic-inline-size: calc(480px * var(--scale)); }
     .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted { display: grid; }
     .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted > * { grid-area: 1 / 1; min-width: 0; }
     .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted > .tbl-notes {
       justify-self: end;
       align-self: start;
-      width: 200px;
+      width: calc(200px * var(--scale));
       margin: 0;
-      margin-inline-start: -200px;
+      margin-inline-start: calc(-200px * var(--scale));
       position: relative;
       inset-inline-end: 100cqi;
     }
@@ -424,7 +424,7 @@
        column's 60px hold the table's 2px edge, which the sum above already
        counts as the cell's own, so 58px come off. */
     .tbl-wrap td.req-text:not(:last-child) > .tbl-noted > .tbl-notes {
-      inset-inline-end: calc(100cqi - 58px);
+      inset-inline-end: calc(100cqi - calc(58px * var(--scale)));
     }
     /* The gutter form of the note, without the float: the row places it. */
     .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted > .tbl-notes > .ekd-margin-note {
@@ -488,8 +488,8 @@
    column holds a code such as "NFR-PE-01" in mono on one line, and the
    priority column holds one badge. The 60px is also read by the row note
    above. */
-.tbl-wrap th.col-id { width: 110px; }
-.tbl-wrap th.col-priority { width: 60px; }
+.tbl-wrap th.col-id { width: calc(110px * var(--scale)); }
+.tbl-wrap th.col-priority { width: calc(60px * var(--scale)); }
 
 /* No priority on this row, in a table where other rows have one. */
 .tbl-wrap td .req-none { color: var(--fg-3); }
@@ -597,7 +597,7 @@
   font-family: var(--font-sans);
   font-size: var(--fs-2xs);
   font-weight: var(--fw-semi);
-  padding: 3px 9px;
+  padding: 3px calc(9px * var(--scale));
   border-radius: var(--radius-pill);
   letter-spacing: var(--tr-label);
   white-space: nowrap;
@@ -646,7 +646,7 @@
 .kv-list {
   display: flex;
   flex-direction: column;
-  margin: 14px 0 var(--sp-6);
+  margin: calc(14px * var(--scale)) 0 var(--sp-6);
   padding: 0;
 }
 .kv-list-card {
@@ -661,9 +661,9 @@
 }
 .kv-row {
   display: grid;
-  grid-template-columns: 180px 1fr;
-  gap: var(--sp-1) 28px;
-  padding: 14px 0;
+  grid-template-columns: calc(180px * var(--scale)) 1fr;
+  gap: var(--sp-1) calc(28px * var(--scale));
+  padding: calc(14px * var(--scale)) 0;
   border-bottom: 1px solid var(--rule-soft);
 }
 .kv-row:first-child { padding-top: 0; }
@@ -674,7 +674,7 @@
   font-weight: var(--fw-semi);
   letter-spacing: var(--tr-label);
   color: var(--fg-3);
-  margin: 4px 0 0;
+  margin: calc(4px * var(--scale)) 0 0;
   align-self: start;
 }
 .kv-val {
@@ -689,7 +689,7 @@
 @media (max-width: 760px) {
   .kv-row {
     grid-template-columns: 1fr;
-    gap: 6px;
+    gap: calc(6px * var(--scale));
   }
 }
 
@@ -699,19 +699,19 @@
    access conditions = accent). Keep neutral for non-categorical lists. */
 .kv-row[data-tone]:not([data-tone="neutral"]) {
   position: relative;
-  padding: 14px 16px 14px 24px;
+  padding: calc(14px * var(--scale)) calc(16px * var(--scale)) calc(14px * var(--scale)) calc(24px * var(--scale));
   border-bottom: none;
   border-radius: var(--radius-md);
-  margin: 4px 0;
+  margin: calc(4px * var(--scale)) 0;
 }
 .kv-row[data-tone]:not([data-tone="neutral"]):first-child { margin-top: 0; }
 .kv-row[data-tone]:not([data-tone="neutral"]):last-child  { margin-bottom: 0; }
 .kv-row[data-tone]:not([data-tone="neutral"])::before {
   content: "";
   position: absolute;
-  left: 8px;
-  top: 14px;
-  bottom: 14px;
+  left: calc(8px * var(--scale));
+  top: calc(14px * var(--scale));
+  bottom: calc(14px * var(--scale));
   width: 2px;
   border-radius: var(--radius-pill);
 }
@@ -777,8 +777,8 @@
   /* position and overflow are for the content, not for a stripe: they keep a
      wide child clipped to the rounded corner rather than squaring it off. */
   position: relative;
-  margin: 18px 0 22px;
-  padding: 14px 18px;
+  margin: calc(18px * var(--scale)) 0 calc(22px * var(--scale));
+  padding: calc(14px * var(--scale)) calc(18px * var(--scale));
   background: var(--bg-surface-2);
   border: 1px solid var(--rule-soft);
   border-radius: var(--radius-lg);
@@ -791,7 +791,7 @@
   font-weight: var(--fw-semi);
   letter-spacing: var(--tr-label);
   color: var(--fg-3);
-  margin: 0 0 6px;
+  margin: 0 0 calc(6px * var(--scale));
 }
 .callout-body {
   font-family: var(--font-serif);
@@ -807,7 +807,7 @@
   font-size: var(--fs-md);
   line-height: var(--lh-prose);
   color: var(--fg-1);
-  margin: 0 0 8px;
+  margin: 0 0 calc(8px * var(--scale));
 }
 .content-inner .callout-body > p:first-child { margin-top: 0; }
 .content-inner .callout-body > p:last-child  { margin-bottom: 0; }
@@ -866,7 +866,7 @@
 .callout[data-type="quote"] .callout-icon  { color: var(--burgundy); }
 
 @media (max-width: 760px) {
-  .callout { padding: 12px 14px; }
+  .callout { padding: calc(12px * var(--scale)) calc(14px * var(--scale)); }
 }
 
 /* ============================================================
@@ -882,7 +882,7 @@
    `center` and `wide` render the same width within the column.
    ============================================================ */
 .figure {
-  margin: 24px 0 32px;
+  margin: calc(24px * var(--scale)) 0 calc(32px * var(--scale));
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -898,7 +898,7 @@
   background: var(--bg-surface);
 }
 .figure-caption {
-  margin-top: 10px;
+  margin-top: calc(10px * var(--scale));
   font-family: var(--font-serif);
   font-size: var(--fs-sm);
   line-height: var(--lh-snug);
@@ -930,19 +930,19 @@
    the active state is signaled by underline presence, not hue.
    ============================================================ */
 .tabs {
-  margin: 18px 0 24px;
+  margin: calc(18px * var(--scale)) 0 calc(24px * var(--scale));
 }
 .tabs-list {
   display: flex;
   flex-wrap: wrap;
   gap: 0;
   border-bottom: 1px solid var(--rule);
-  margin: 0 0 16px;
+  margin: 0 0 calc(16px * var(--scale));
   padding: 0;
 }
 .tabs-tab {
   position: relative;
-  padding: 8px 14px 9px;
+  padding: calc(8px * var(--scale)) calc(14px * var(--scale)) calc(9px * var(--scale));
   font-family: var(--font-sans);
   font-size: var(--fs-xs);
   font-weight: var(--fw-medium);
@@ -958,7 +958,7 @@
 .tabs-tab[data-active] {
   color: var(--fg-1);
   border-bottom: 2px solid var(--accent);
-  padding-bottom: 7px;
+  padding-bottom: calc(7px * var(--scale));
 }
 .tabs-tab:focus-visible {
   outline: 2px solid var(--accent);
@@ -966,7 +966,7 @@
   border-radius: var(--radius-xs);
 }
 .tabs-panel {
-  padding: 20px 24px;
+  padding: calc(20px * var(--scale)) calc(24px * var(--scale));
   background: var(--bg-surface);
   border: 1px solid var(--rule);
   border-radius: var(--radius-lg);
@@ -985,8 +985,8 @@
 .content-inner .tabs-panel > ol:last-child { margin-bottom: 0; }
 
 @media (max-width: 760px) {
-  .tabs-tab { padding: 7px 10px 8px; }
-  .tabs-panel { padding: 16px 18px; }
+  .tabs-tab { padding: calc(7px * var(--scale)) calc(10px * var(--scale)) calc(8px * var(--scale)); }
+  .tabs-panel { padding: calc(16px * var(--scale)) calc(18px * var(--scale)); }
 }
 
 /* ============================================================
@@ -1001,8 +1001,8 @@
 .stat {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 4px 0;
+  gap: calc(4px * var(--scale));
+  padding: calc(4px * var(--scale)) 0;
 }
 .stat-value {
   font-family: var(--font-serif);
@@ -1028,8 +1028,8 @@
 
 .stat-grid {
   display: grid;
-  gap: 24px 32px;
-  margin: 20px 0 24px;
+  gap: calc(24px * var(--scale)) calc(32px * var(--scale));
+  margin: calc(20px * var(--scale)) 0 calc(24px * var(--scale));
 }
 .stat-grid[data-columns="2"] { grid-template-columns: repeat(2, 1fr); }
 .stat-grid[data-columns="3"] { grid-template-columns: repeat(3, 1fr); }
@@ -1158,7 +1158,7 @@
 }
 .unlock-card {
   width: 100%;
-  max-width: 380px;
+  max-width: calc(380px * var(--scale));
   margin-block: auto;
   background: var(--bg-surface);
   border: 1px solid var(--rule-soft);
@@ -1289,8 +1289,8 @@
   display: none;
   /* The chrome button size, as the appearance trigger; the icon is the whole
      control. */
-  width: 36px;
-  height: 36px;
+  width: calc(36px * var(--scale));
+  height: calc(36px * var(--scale));
   align-items: center;
   justify-content: center;
   background: var(--bg-canvas);
@@ -1347,7 +1347,7 @@
   display: flex;
   flex-direction: column;
   width: 90vw;
-  max-width: 360px;
+  max-width: calc(360px * var(--scale));
   background: var(--bg-surface);
   border-inline-end: 1px solid var(--rule);
   box-shadow: var(--shadow-drawer);
@@ -1380,8 +1380,8 @@
   top: var(--sp-2);
   right: var(--sp-2);
   z-index: 1;
-  width: 32px;
-  height: 32px;
+  width: calc(32px * var(--scale));
+  height: calc(32px * var(--scale));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1435,7 +1435,7 @@
   top: calc(var(--topbar-h) + var(--sp-9));
   margin-top: var(--sp-9);
   padding: 0 var(--sp-6) 0 var(--sp-7);
-  max-width: 240px;
+  max-width: calc(240px * var(--scale));
   border-inline-start: 1px solid var(--rule-soft);
 }
 .otp-eyebrow {
@@ -2149,7 +2149,7 @@ textarea.ekd-field-input {
    --bg-raised carries --fg-1 and --fg-2 as text. Not --fg-3, --accent or
    --danger: see the notes on the button and the fields. */
 .ekd-dialog {
-  inline-size: 30rem;
+  inline-size: calc(30rem * var(--scale));
   max-inline-size: calc(100% - 2 * var(--sp-4));
   max-block-size: calc(100% - 2 * var(--sp-4));
   padding: var(--sp-6);
@@ -2247,7 +2247,7 @@ textarea.ekd-field-input {
   inline-size: max-content;
   /* Never wider than the viewport less a margin each side, so the component's
      sideways shift always has somewhere to put it. */
-  max-inline-size: min(20rem, calc(100vw - 2 * var(--sp-4)));
+  max-inline-size: min(calc(20rem * var(--scale)), calc(100vw - 2 * var(--sp-4)));
   padding: var(--sp-2) var(--sp-3);
   background: var(--bg-raised);
   color: var(--fg-1);
@@ -2396,7 +2396,7 @@ textarea.ekd-field-input {
   inset-inline-start: 0;
   inline-size: max-content;
   min-inline-size: 100%;
-  max-inline-size: min(20rem, calc(100vw - 2 * var(--sp-4)));
+  max-inline-size: min(calc(20rem * var(--scale)), calc(100vw - 2 * var(--sp-4)));
   padding: var(--sp-1);
   background: var(--bg-raised);
   border: 1px solid var(--rule);
@@ -2504,7 +2504,7 @@ textarea.ekd-field-input {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  inline-size: min(20rem, calc(100vw - 2 * var(--sp-4)));
+  inline-size: min(calc(20rem * var(--scale)), calc(100vw - 2 * var(--sp-4)));
   block-size: auto; /* popover */
   max-block-size: calc(100vh - 2 * var(--sp-4));
   margin: 0; /* popover */

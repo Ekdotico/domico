@@ -18,6 +18,9 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { oklchToHex, hexToOklch, parseOklch } from './lib/color.mjs';
+import { scaleToken } from '../scripts/lib/scale.mjs';
+
+const SCALED = new Set(['type.json', 'space.json', 'radius.json', 'layout.json']);
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const SRC = join(ROOT, 'tokens', 'source');
@@ -53,7 +56,13 @@ async function block(file, indent = '  ') {
     },
   });
   const built = await sd.formatPlatform('css');
-  return built[0].output.replace(/\n$/, '');
+  const output = built[0].output.replace(/\n$/, '');
+  // The interface scale (scripts/lib/scale.mjs): a plain px or rem length in
+  // the type, space, radius and layout sets takes the factor, and so does the
+  // middle term of a fluid clamp; a shadow, a unitless number, an em or a ch
+  // does not.
+  if (!SCALED.has(file)) return output;
+  return output.replace(/^(\s*--[\w-]+: )([^;]+);$/gm, (_, head, value) => `${head}${scaleToken(value)};`);
 }
 
 // ---------------------------------------------------------------------------

@@ -80,8 +80,29 @@ permissions:
   issues: write
 
 jobs:
+  # Secrets cannot be read in a job-level `if:`, so this job maps the token to
+  # an environment variable and reports whether it is set. Without the secret (a
+  # fork, or a public clone) the consumers job is skipped instead of failing.
+  gate:
+    name: Suite token present
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - id: check
+        env:
+          EKDOTICO_SUITE_TOKEN: ${{ secrets.EKDOTICO_SUITE_TOKEN }}
+        run: |
+          if [ -n "$EKDOTICO_SUITE_TOKEN" ]; then
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run=false' >> "$GITHUB_OUTPUT"
+          fi
+
   consumers:
     name: Consumer pins against the published version
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       # The default branch rather than the release tag. package.json on main is

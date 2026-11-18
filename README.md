@@ -2064,6 +2064,16 @@ them.
   It is an optional property that the package reads and no palette defines,
   like `--theme-count`: it is not a token, and unset it is `0`, so nothing
   moves. The caret stays at the start of the line.
+- Controls that belong to one block can rest faint. Put `data-dim-at-rest` on
+  the block's container (with `styles/button.css` and `styles/code.css`
+  loaded), and the secondary, quiet and destructive `Button`, `ButtonLink`, the
+  `MenuButton` trigger and the code block header's label and Copy rest in
+  `--fg-3`. They return to their own ink while the pointer is over the
+  container, focus is inside it, or the application has set `data-active` on
+  it, as it does while the caret is in that block. It is a colour change, not
+  opacity: hairlines, size and place do not move, and nothing is hidden. Touch,
+  `prefers-contrast: more` and forced colours show every control at full
+  strength, and reduced motion drops the fade. A primary button is never dimmed.
 - The prompt is `--fg-3`, and that ink does not hold as text on every ground
   a block under the root can have. In the eight palettes it is 5.03:1 at its
   least on `--bg-canvas`, 5.12:1 on `--bg-surface` and 4.60:1 on

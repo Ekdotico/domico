@@ -1420,6 +1420,39 @@ a.ekd-button[data-variant="destructive"]:is(:hover, :active) {
 @media (prefers-reduced-motion: reduce) {
   .ekd-button { transition: none; }
 }
+/* Dim at rest. A container that carries `data-dim-at-rest` holds controls that
+   belong to one block (a Button of any variant but primary, a ButtonLink, a
+   MenuButton trigger, the code block header's label and Copy). They rest in
+   --fg-3 and return to their own ink while the pointer is over the container,
+   focus is inside it, or the application has set `data-active` on it, as it
+   does while the caret is in that block. A colour change, never opacity, so no
+   boundary fades: a secondary or destructive hairline keeps its own colour, and
+   the control's size and place do not move.
+
+   Only where the reader can hover and has asked for nothing stronger: touch,
+   `prefers-contrast: more` and forced colours leave every control at full
+   strength. The selector outranks the anchor rules above (0,3,1). Disabled
+   and busy controls already take --fg-3. */
+@media (hover: hover) and (prefers-contrast: no-preference) and (forced-colors: none) {
+  [data-dim-at-rest]:not(:hover, :focus-within, [data-active])
+    .ekd-button:is([data-variant="secondary"], [data-variant="quiet"], [data-variant="destructive"]):not(:disabled, [aria-disabled="true"], [aria-busy="true"]),
+  [data-dim-at-rest]:not(:hover, :focus-within, [data-active]) .ekd-code-header {
+    color: var(--fg-3);
+  }
+  [data-dim-at-rest] .ekd-button {
+    transition:
+      color var(--dur-fast) var(--ease-soft),
+      background var(--dur-fast) var(--ease-soft),
+      border-color var(--dur-fast) var(--ease-soft);
+  }
+  [data-dim-at-rest] .ekd-code-header {
+    transition: color var(--dur-fast) var(--ease-soft);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-dim-at-rest] .ekd-button,
+  [data-dim-at-rest] .ekd-code-header { transition: none; }
+}
 
 /* --- Form fields --------------------------------------------------------- */
 /* TextField, PasswordField, OneTimeCodeField and TextArea, and the label, hint

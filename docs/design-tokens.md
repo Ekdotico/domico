@@ -938,6 +938,55 @@ house reading geometry, and
 needs a sticky header to park somewhere unusual, set the offset on that surface
 rather than editing the token.
 
+## Interface scale
+
+| Token     | Value | Use                                                                 |
+| --------- | ----- | ------------------------------------------------------------------- |
+| `--scale` | `1`   | One factor for the whole interface: half as large again at `1.5`.   |
+
+An application that wants a larger interface on a very wide screen sets the
+factor on `:root`, and nowhere else:
+
+```css
+@media (min-width: 2200px) {
+  :root { --scale: 1.5; }
+}
+```
+
+It is the replacement for `zoom` on `body`. Zoom multiplies again any position a
+script writes from `getBoundingClientRect` — the selection toolbar and the option
+list land off by the zoomed difference — whereas the factor changes the lengths
+themselves, so a measured position is still a CSS position.
+
+**What takes it.** Every plain `px` or `rem` length in the type, spacing and
+layout sets (`--fs-*`, `--sp-*`, `--page-w`, `--content-w`, `--form-w`,
+`--gutter`, `--sidebar-w`, `--topbar-h`), written `calc(<length> * var(--scale))`.
+`--measure` is `72ch` and follows the type by itself. In the stylesheets, every
+length above 3px that is not a line or a shadow takes it in the same form:
+padding, gaps, margins, the sizes of controls, the widths of rails and notes.
+
+**What does not, and why.**
+
+- Lengths of 3px and under, and `border`, `outline`, `box-shadow`,
+  `text-shadow`, `text-decoration` and `text-underline-offset` at any length:
+  hairlines, rules, carets and focus rings stay crisp.
+- `--radius-*` and `--shadow-*`, which are not in the scaled sets.
+- Media-query breakpoints: a query cannot read a custom property, and a
+  breakpoint describes the viewport, not the interface.
+- The fluid middle term of `--fs-display` and `--fs-lede` (`1.6vw + 0.9rem`,
+  `1vw + 0.75rem`). Their bounds are scaled tokens; the term is not.
+- Icons, which are drawn at a pixel `size` by script, and the 16px edge margin a
+  script keeps between the option list and the viewport.
+
+**At `1` nothing changes.** `pnpm check:scale` holds every stylesheet source to
+the scaled form and holds every scaled token, unwrapped, to the value in its
+source file. `calc(16px * 1)` computes to `16px`.
+
+**When not to.** Do not set it on an element below `:root`: the tokens are
+computed where they are declared, so a factor set lower changes the stylesheets'
+own lengths and leaves the tokens at the root's value. Do not set it below 1 to
+fit a narrow screen; the targets of WCAG 2.5.8 are measured at 1.
+
 ## Brand
 
 | Token                   | Use                                              |

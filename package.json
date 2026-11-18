@@ -157,6 +157,7 @@
     "check:discipline": "node scripts/check-discipline.mjs .",
     "check:a11y": "node scripts/check-a11y.mjs .",
     "check:svg": "node scripts/check-svg.mjs",
+    "check:scale": "node scripts/check-scale.mjs",
     "check:components": "node scripts/check-components.mjs",
     "check:decay": "node scripts/check-decay.mjs .",
     "check:consumers": "node scripts/check-consumers.mjs",
@@ -167,7 +168,7 @@
     "hooks:check": "node scripts/install-agent-hooks.mjs --check --target .",
     "prepare": "node scripts/install-agent-hooks.mjs --target .",
     "lint:fixture": "node scripts/check-lint-fixture.mjs",
-    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:collaborators && pnpm check:styles && pnpm check:discipline && pnpm check:a11y && pnpm check:svg && pnpm check:components && pnpm check:ruleset && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
+    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:collaborators && pnpm check:styles && pnpm check:scale && pnpm check:discipline && pnpm check:a11y && pnpm check:svg && pnpm check:components && pnpm check:ruleset && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
     "release": "changeset publish"
   },
   "peerDependencies": {

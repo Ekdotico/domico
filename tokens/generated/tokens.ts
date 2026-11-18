@@ -780,6 +780,7 @@ export const scales = {
     "dur-slow": "380ms"
   },
   "layout": {
+    "scale": "1",
     "page-w": "1180px",
     "content-w": "760px",
     "measure": "72ch",

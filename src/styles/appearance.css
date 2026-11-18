@@ -34,8 +34,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: calc(8px * var(--scale));
+  margin-bottom: calc(6px * var(--scale));
 }
 .theme-header-label {
   font-family: var(--font-sans);
@@ -59,8 +59,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 6px 4px;
+  gap: calc(6px * var(--scale));
+  padding: calc(6px * var(--scale)) calc(4px * var(--scale));
   border: none;
   background: transparent;
   color: var(--fg-3);
@@ -79,8 +79,8 @@
   outline-offset: 1px;
 }
 .theme-swatch {
-  width: 18px;
-  height: 18px;
+  width: calc(18px * var(--scale));
+  height: calc(18px * var(--scale));
   border-radius: 50%;
   border: 1px solid var(--rule-strong);
   box-shadow: var(--shadow-swatch-ring);
@@ -142,8 +142,8 @@
   padding: 0;
   /* WCAG 2.2 SC 2.5.8 — 24px minimum target size. The buttons sit adjacent
      (gap:0) so the spacing exception does not apply (A11Y-6). */
-  width: 26px;
-  height: 26px;
+  width: calc(26px * var(--scale));
+  height: calc(26px * var(--scale));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -190,8 +190,8 @@
   appearance: none;
   /* WCAG 2.2 SC 2.5.8 wants 24px; 36px is the chrome button size, and the
      icon is the whole control, so there is no label to lean on. */
-  width: 36px;
-  height: 36px;
+  width: calc(36px * var(--scale));
+  height: calc(36px * var(--scale));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -237,7 +237,7 @@
   top: calc(100% + var(--sp-2));
   right: 0;
   z-index: 20;
-  min-width: 240px;
+  min-width: calc(240px * var(--scale));
   padding: var(--sp-3);
   background: var(--bg-surface);
   border: 1px solid var(--rule);
@@ -245,7 +245,7 @@
   box-shadow: var(--shadow-3);
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-4px);
+  transform: translateY(calc(-4px * var(--scale)));
   /* visibility is a DISCRETE property. Transitioned, it flips when the easing
      output passes 0.5 — with --ease-soft, roughly 15ms into a 220ms transition,
      which is inside the first frame. So `visibility var(--dur-base)` left a

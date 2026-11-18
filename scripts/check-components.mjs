@@ -17,6 +17,7 @@
 
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
+import { unscaleCss } from './lib/scale.mjs';
 
 // --- a document, installed before React is imported -------------------------
 // react-dom reads `window` and `document` when it loads, and the helpers test
@@ -348,7 +349,7 @@ await it('TableHeaderCell in a body row is the header of the row', async () => {
   };
   const cells = block('.tbl-wrap tbody :is(td, th)');
   assert.ok(cells, 'table.css does not give a th in tbody the padding of a body cell');
-  assert.match(cells, /padding:\s*9px 14px/);
+  assert.match(unscaleCss(cells), /padding:\s*9px 14px/);
   assert.match(cells, /overflow-wrap:\s*anywhere/);
   for (const selector of [
     '.tbl-wrap tbody tr :is(td, th):first-child',
@@ -4246,7 +4247,8 @@ await it('The image block is styled by the documented names, in tokens, and hold
   assert.match(handle, /inset-inline-end:\s*var\(--sp-1\);/, 'the handle is not on the inline-end edge, inside the frame: at the full width it widens the page');
   assert.match(handle, /inline-size:\s*var\(--sp-6\);/);
   assert.match(handle, /block-size:\s*var\(--sp-7\);/);
-  const tokens = read('../tokens/generated/tokens.css');
+  // At --scale: 1, the least the factor can be on a phone.
+  const tokens = unscaleCss(read('../tokens/generated/tokens.css'));
   const px = (name) => Number(new RegExp(`${escape(name)}:\\s*(\\d+(?:\\.\\d+)?)px`).exec(tokens)?.[1]);
   assert.ok(px('--sp-6') >= 24, 'the handle is narrower than the 24px of WCAG 2.5.8');
   assert.ok(px('--sp-7') >= 24, 'the handle is shorter than the 24px of WCAG 2.5.8');

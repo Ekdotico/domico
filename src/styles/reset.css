@@ -375,8 +375,8 @@ html {
 }
 
 *::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: calc(10px * var(--scale));
+  height: calc(10px * var(--scale));
 }
 
 *::-webkit-scrollbar-track,

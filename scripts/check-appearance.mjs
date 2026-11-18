@@ -68,6 +68,34 @@ assert.ok(script.includes('ekd-theme') && script.includes('ekd-mode'), 'bootstra
 assert.ok(/try\{/.test(script) && /catch\(e\)\{\}/.test(script), 'bootstrap is not guarded');
 assert.ok(script.includes('data-theme') && script.includes('data-mode'), 'bootstrap writes the wrong attributes');
 
+// Run the script against a stub document: with nothing stored it writes the
+// default theme, with the server's theme already there it keeps it, and with
+// storage that throws it still writes the default.
+{
+  const run = (initial, storage) => {
+    const attrs = { ...initial };
+    const documentElement = {
+      getAttribute: (name) => attrs[name] ?? null,
+      setAttribute: (name, value) => { attrs[name] = value; },
+    };
+    new Function('document', 'localStorage', script)({ documentElement }, storage);
+    return attrs;
+  };
+  const empty = { getItem: () => null };
+  assert.deepEqual(run({}, empty), { 'data-theme': 'parchment' }, 'no stored value got no default theme');
+  assert.equal(run({ 'data-theme': 'sepia' }, empty)['data-theme'], 'sepia', 'the init script overwrote the server theme');
+  assert.deepEqual(
+    run({}, { getItem: () => { throw new Error('blocked'); } }),
+    { 'data-theme': 'parchment' },
+    'blocked storage left no default theme',
+  );
+  assert.deepEqual(
+    run({}, { getItem: (key) => ({ 'ekd-theme': 'library', 'ekd-mode': 'dark' })[key] ?? null }),
+    { 'data-theme': 'library', 'data-mode': 'dark' },
+    'a stored choice was not restored',
+  );
+}
+
 // Auto must not be written as an attribute value: its absence is the mechanism
 // that lets the prefers-color-scheme block apply.
 assert.ok(!script.includes('"auto"'), 'bootstrap writes data-mode="auto", which disables Auto');
@@ -83,7 +111,18 @@ assert.ok(!/import|require\(|\$\{/.test(script), 'bootstrap is not self-containe
   const { appearanceAttributes } = await import('../dist/src/theme/server.js');
   const store = (values) => ({ get: (name) => (name in values ? { value: values[name] } : undefined) });
 
-  assert.deepEqual(appearanceAttributes(store({})), {}, 'a reader with no cookie got attributes');
+  // No cookie still carries the default theme: the dark tokens are keyed on
+  // `[data-theme=…]`, so without it Dark and device-dark never apply.
+  assert.deepEqual(
+    appearanceAttributes(store({})),
+    { 'data-theme': 'parchment' },
+    'a reader with no cookie did not get the default theme',
+  );
+  assert.deepEqual(
+    appearanceAttributes(store({ 'ekd-mode': 'dark' })),
+    { 'data-theme': 'parchment', 'data-mode': 'dark' },
+    'no theme cookie plus dark did not give both attributes',
+  );
 
   for (const theme of themeNames) {
     assert.deepEqual(
@@ -103,15 +142,16 @@ assert.ok(!/import|require\(|\$\{/.test(script), 'bootstrap is not self-containe
   // prefers-color-scheme block, so writing it would disable Auto entirely.
   assert.deepEqual(
     appearanceAttributes(store({ 'ekd-mode': 'auto' })),
-    {},
+    { 'data-theme': 'parchment' },
     'the server wrote data-mode="auto", which disables Auto',
   );
 
   // A corrupted or stale cookie degrades to the default, never to an applied
   // junk value that no stylesheet matches.
   for (const junk of ['', 'PARCHMENT', 'sepia; DROP', 'auto', 'nonsense']) {
-    assert.ok(
-      !('data-theme' in appearanceAttributes(store({ 'ekd-theme': junk }))),
+    assert.equal(
+      appearanceAttributes(store({ 'ekd-theme': junk }))['data-theme'],
+      'parchment',
       `the server applied an out-of-vocabulary theme cookie: ${JSON.stringify(junk)}`,
     );
   }
@@ -157,7 +197,7 @@ assert.ok(!/import|require\(|\$\{/.test(script), 'bootstrap is not self-containe
   // mechanism is being absent. A component has to be able to render Auto as
   // the selected option; the document has to omit it.
   assert.equal(appearanceState(store({ 'ekd-mode': 'auto' })).mode, 'auto');
-  assert.deepEqual(appearanceAttributes(store({ 'ekd-mode': 'auto' })), {});
+  assert.deepEqual(appearanceAttributes(store({ 'ekd-mode': 'auto' })), { 'data-theme': 'parchment' });
 
   // The two must agree on every valid cookie, or the page and the control that
   // reports it disagree — which is the defect this pair exists to close.

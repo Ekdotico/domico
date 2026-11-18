@@ -233,7 +233,10 @@ Two attributes on the document element, and nothing else:
 ```
 
 `data-theme` is one of `parchment`, `library`, `sepia`, or `mono`. Parchment is
-the default and is applied when the attribute is absent.
+the default. Always write it: the dark tokens are keyed on `[data-theme=…]`, so
+a document with no `data-theme` has no dark palette, whatever `data-mode` says.
+`appearanceAttributes` and `themeInitScript` write `parchment` when the reader
+has chosen nothing.
 
 `data-mode` is `light` or `dark`. **Leave it off to follow the operating
 system.** An absent `data-mode` is not an error state; it is the third,

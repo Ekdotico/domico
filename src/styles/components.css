@@ -377,7 +377,10 @@
    so that they ask nothing of the column they are written in.
 
    A cell that is not the last of its row keeps its notes under its content:
-   nothing here can know how far it is from either edge of the table.
+   nothing here can know how far it is from either edge of the table. The one
+   exception is the text cell of a requirement table (`.req-text`) with the
+   priority column after it. That column is 60px wide, set below, so the
+   distance is known and is taken off the shift.
 
    The wrapper is a container only where it holds notes and only while there
    is a gutter, because containment makes it the containing block of anything
@@ -385,9 +388,9 @@
 @media not print {
   @container style(--ekd-margin-gutter: on) {
     .tbl-wrap:has(.tbl-notes) { container-type: inline-size; }
-    .tbl-wrap :is(td, th):last-child > .tbl-noted { display: grid; }
-    .tbl-wrap :is(td, th):last-child > .tbl-noted > * { grid-area: 1 / 1; min-width: 0; }
-    .tbl-wrap :is(td, th):last-child > .tbl-noted > .tbl-notes {
+    .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted { display: grid; }
+    .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted > * { grid-area: 1 / 1; min-width: 0; }
+    .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted > .tbl-notes {
       justify-self: end;
       align-self: start;
       width: 200px;
@@ -396,8 +399,15 @@
       position: relative;
       inset-inline-end: 100cqi;
     }
+    /* A requirement's text cell with the priority column after it: the 60px
+       of that column lie between the cell and the end of the table. The
+       column's 60px hold the table's 2px edge, which the sum above already
+       counts as the cell's own, so 58px come off. */
+    .tbl-wrap td.req-text:not(:last-child) > .tbl-noted > .tbl-notes {
+      inset-inline-end: calc(100cqi - 58px);
+    }
     /* The gutter form of the note, without the float: the row places it. */
-    .tbl-wrap :is(td, th):last-child > .tbl-noted > .tbl-notes > .ekd-margin-note {
+    .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted > .tbl-notes > .ekd-margin-note {
       float: none;
       clear: none;
       width: auto;
@@ -406,11 +416,11 @@
          row, and the rule is as tall as the words. */
       padding-block: 0;
     }
-    .tbl-wrap :is(td, th):last-child > .tbl-noted > .tbl-notes > .ekd-margin-note + .ekd-margin-note {
+    .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted > .tbl-notes > .ekd-margin-note + .ekd-margin-note {
       margin-top: var(--sp-3);
     }
     /* In a cell that is not the last, the note keeps the form with no gutter. */
-    .tbl-wrap :is(td, th):not(:last-child) > .tbl-noted > .tbl-notes > .ekd-margin-note {
+    .tbl-wrap :is(td, th):not(:last-child, .req-text) > .tbl-noted > .tbl-notes > .ekd-margin-note {
       float: none;
       clear: none;
       width: auto;
@@ -419,11 +429,102 @@
       border-inline-start: 1px solid var(--rule);
       border-inline-end: 0;
     }
-    .tbl-wrap :is(td, th):not(:last-child) > .tbl-noted > .tbl-notes > .ekd-margin-note + .ekd-margin-note {
+    .tbl-wrap :is(td, th):not(:last-child, .req-text) > .tbl-noted > .tbl-notes > .ekd-margin-note + .ekd-margin-note {
       margin-top: var(--sp-3);
     }
   }
 }
+
+/* --- Requirement table --------------------------------------------------- */
+
+/* What `RequirementTable` adds to the table: two column widths, and the
+   content that can follow a requirement's lead-in text inside its cell. The
+   card, the header, the rows and the identifier (`.td-id`) are the table's.
+
+   The widths are layout dimensions and not steps of a scale: the identifier
+   column holds a code such as "NFR-PE-01" in mono on one line, and the
+   priority column holds one badge. The 60px is also read by the row note
+   above. */
+.tbl-wrap th.col-id { width: 110px; }
+.tbl-wrap th.col-priority { width: 60px; }
+
+/* No priority on this row, in a table where other rows have one. */
+.tbl-wrap td .req-none { color: var(--fg-3); }
+
+/* A further paragraph, and sub-items. The face is named because the rule has
+   to beat an application's own rules for a list or a paragraph in its text
+   column. */
+.tbl-wrap td .req-list,
+.tbl-wrap td .req-p {
+  margin: var(--sp-2) 0 0;
+  font-family: var(--font-sans);
+  font-size: inherit;
+  color: var(--fg-2);
+  line-height: var(--lh-normal);
+}
+.tbl-wrap td .req-list { padding-inline-start: var(--sp-5); }
+.tbl-wrap td .req-list li {
+  margin: var(--sp-1) 0;
+  padding-inline-start: var(--sp-1);
+}
+.tbl-wrap td .req-list li::marker { color: var(--accent); }
+
+/* A matrix that a requirement itself defines, inside its cell. Compact and
+   without the card, so that it reads as part of the requirement and not as a
+   second table inside the first. Every rule here also undoes one: the card's
+   rules reach any table inside `.tbl-wrap`, and without these the matrix
+   would take the sticky header, the outline, the corners and the hover wash. */
+.tbl-wrap td .req-subtable {
+  width: 100%;
+  min-width: 0;
+  margin: var(--sp-2) 0 0;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  color: var(--fg-2);
+  background: transparent;
+  border-radius: 0;
+}
+.tbl-wrap td .req-subtable thead th {
+  position: static;
+  top: auto;
+  z-index: auto;
+  background: transparent;
+  color: var(--fg-3);
+  font-family: var(--font-sans);
+  font-weight: var(--fw-semi);
+  font-size: var(--fs-3xs);
+  letter-spacing: var(--tr-wider);
+  padding: var(--sp-1) var(--sp-3) var(--sp-1) 0;
+  padding-inline: 0 var(--sp-3);
+  text-align: start;
+  white-space: normal;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+}
+.tbl-wrap td .req-subtable tbody td {
+  padding: var(--sp-1) var(--sp-3) var(--sp-1) 0;
+  padding-inline: 0 var(--sp-3);
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  color: var(--fg-2);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule-soft);
+  border-radius: 0;
+  vertical-align: top;
+  line-height: var(--lh-normal);
+  white-space: normal;
+}
+.tbl-wrap td .req-subtable tbody tr:last-child td { border-bottom: 0; }
+.tbl-wrap td .req-subtable tbody tr:hover td { background: transparent; }
+.tbl-wrap td .req-subtable :is(th, td):last-child { padding-inline-end: 0; }
+/* A column's alignment, as the source of the matrix gives it. */
+.tbl-wrap td .req-subtable :is(th, td)[data-align="left"] { text-align: start; }
+.tbl-wrap td .req-subtable :is(th, td)[data-align="center"] { text-align: center; }
+.tbl-wrap td .req-subtable :is(th, td)[data-align="right"] { text-align: end; }
 
 /* --- Badges -------------------------------------------------------------- */
 

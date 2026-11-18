@@ -819,7 +819,53 @@ table has.
 
 Only the last cell can reach the gutter, because the stylesheet measures
 across the table from its end edge. Notes given to any other cell stay under
-its content at every width.
+its content at every width. The requirement table is the one exception, since
+the width of its priority column is known.
+
+## The requirement table
+
+`RequirementTable` is `Table` with the columns decided: an identifier, the
+requirement, and a MoSCoW priority where any row has one. Its styles are in
+`styles/table.css`.
+
+```tsx
+<RequirementTable
+  caption={caption}
+  renderText={renderInlineWithRefs}
+  requirements={[
+    { id: 'FR-AA-01', text: '…', priority: 'M', notes: [{ label: '…', text: '…' }] },
+    { id: 'FR-AA-02', text: '…', blocks: [{ kind: 'list', ordered: true, items: ['…'] }] },
+  ]}
+/>
+```
+
+| Prop | Type | |
+| --- | --- | --- |
+| `requirements` | `Requirement[]` | `id`, `text`, and optionally `blocks`, `priority` (`'M'`, `'S'` or `'C'`) and `notes` |
+| `caption` | `string` | A caption row, and the name of the scroll area. Without one the area is named "Requirements" |
+| `renderText` | `(text: string) => ReactNode` | What a string of the data becomes. Without one it is shown as it is |
+
+The words of a requirement are strings, because a page of them is generated
+from a specification. The application says once what a string becomes:
+`renderText` is called for the text of each requirement, for each paragraph,
+list item and matrix cell in its `blocks`, and for the text of each note. The
+package does not know what an application links a requirement code to, so it
+imports no renderer. The component has no hook and is not a client module, so
+a server component can pass it a function.
+
+`blocks` follow the lead-in text in order: `{ kind: 'p', text }` is a further
+paragraph, `{ kind: 'list', ordered, items }` is a list, lettered when
+`ordered`, and `{ kind: 'table', headers, rows, align }` is a matrix the
+requirement itself defines, drawn compact inside the cell.
+
+`notes` are the margin notes of the row, each `{ label, text }` with the label
+optional. They are given to the cell that holds the requirement and are placed
+as the section above says: under the requirement with no gutter, and in the
+gutter beside the row where there is one, with or without a priority column.
+
+Each row takes its identifier in lower case as its `id`, so a link to
+`#fr-aa-01` lands on the row. A row with no priority, in a table where another
+row has one, shows a dash.
 
 ## The avatar and the avatar stack
 

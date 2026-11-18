@@ -56,6 +56,18 @@ export {
 } from './Table.js';
 /** @supersedes Margin */
 export { MarginNote, type MarginNoteProps } from './MarginNote.js';
+// The requirement table was the documentation site's, and "requirement tables"
+// are named above as what stays in an application. This one moved because the
+// margin notes of its rows are drawn by the table stylesheet here, and a table
+// half in the package and half in a site is the split `.td-strong` once was.
+// It holds no route and no renderer: the application passes `renderText`.
+export {
+  RequirementTable,
+  type Requirement,
+  type RequirementBlock,
+  type RequirementNote,
+  type RequirementTableProps,
+} from './RequirementTable.js';
 export { StickyTableHead } from './StickyTableHead.js';
 export { Tab, Tabs } from './Tabs.js';
 

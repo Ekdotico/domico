@@ -64,7 +64,7 @@ const {
   AccessGate, GateSubmitButton, NavDrawer, OnThisPage, InPageLinkDirection, OpeningSequence, DocMeta,
   Button, ButtonLink, TextField, OneTimeCodeField, PasswordField, TextArea, RadioGroup, Checkbox, FormFault, Dialog, Tooltip,
   PageHeading, Select, Toolbar, ToolbarSeparator, ToggleButton, MenuButton, SyncStatus, QrCode,
-  Avatar, AvatarStack, avatarInitials, MarginNote,
+  Avatar, AvatarStack, avatarInitials, MarginNote, RequirementTable,
   OptionList, optionListAttributes, optionListKey, optionListNavigating, optionListOptionId, placeOptionList,
 } = await import('../dist/src/components/index.js');
 const icons = await import('../dist/src/components/icons.js');
@@ -4638,7 +4638,7 @@ await it('MarginNote is a note named by its label, and a row carries it in its l
   assert.match(note, /\.ekd-margin-note\s*\{[^}]*border-inline-start:\s*1px solid var\(--rule\)/, 'the rule of the note is not a hairline');
   assert.match(note, /\.ekd-margin-note\s*\{[^}]*break-inside:\s*avoid/);
   // Only the last cell touches the end edge the gutter is measured from.
-  assert.match(table, /\.tbl-wrap :is\(td, th\):last-child > \.tbl-noted\s*\{\s*display:\s*grid/);
+  assert.match(table, /\.tbl-wrap :is\(td, th\):is\(:last-child, \.req-text\) > \.tbl-noted\s*\{\s*display:\s*grid/);
   assert.match(table, /inset-inline-end:\s*100cqi/);
   assert.match(table, /\.tbl-wrap:has\(\.tbl-notes\)\s*\{\s*container-type:\s*inline-size/);
 
@@ -4649,6 +4649,89 @@ await it('MarginNote is a note named by its label, and a row carries it in its l
   }
   const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.equal(manifest.exports['./styles/margin-note.css'], './dist/styles/margin-note.css');
+});
+
+// --- The requirement table --------------------------------------------------
+// `Table` with the columns decided. The words are strings, and the application
+// says what a string becomes.
+await it('RequirementTable is the table, renders every string through renderText, and gives a row its notes', async () => {
+  const seen = [];
+  const renderText = (text) => { seen.push(text); return h('span', { 'data-rendered': '' }, text); };
+  const requirements = [
+    { id: 'FR-AA-01', text: 'Lead', priority: 'M', notes: [{ label: 'Amendment', text: 'Was other' }, { text: 'Bare' }],
+      blocks: [
+        { kind: 'p', text: 'Para' },
+        { kind: 'list', ordered: true, items: ['Item a'] },
+        { kind: 'list', ordered: false, items: ['Item b'] },
+        { kind: 'table', headers: ['Head'], rows: [['Cell']], align: ['right'] },
+      ] },
+    { id: 'FR-AA-02', text: 'Plain' },
+  ];
+  const view = await mount(h('div', null,
+    h(RequirementTable, { requirements, caption: 'Accounts', renderText }),
+    h(RequirementTable, { requirements: [{ id: 'FR-BB-01', text: 'A **shall**', notes: [{ text: 'N' }] }] })));
+  const [first, second] = view.container.querySelectorAll('.tbl-wrap');
+
+  // The wrapper is the table's: a named group that holds focus.
+  assert.equal(first.getAttribute('role'), 'group');
+  assert.equal(first.getAttribute('tabindex'), '0');
+  assert.equal(view.container.ownerDocument.getElementById(first.getAttribute('aria-labelledby'))?.textContent, 'Accounts');
+  assert.equal(second.getAttribute('aria-label'), 'Requirements');
+  assert.equal(second.querySelector('.tbl-caption'), null);
+
+  // Three columns where a row has a priority, two where none has.
+  const heads = [...first.querySelectorAll(':scope > table > thead th')];
+  assert.deepEqual(heads.map((th) => th.textContent), ['ID', 'Requirement', 'P']);
+  assert.ok(heads.every((th) => th.getAttribute('scope') === 'col'));
+  assert.equal(heads[2].getAttribute('abbr'), 'Priority');
+  assert.equal(second.querySelectorAll(':scope > table > thead th').length, 2);
+
+  const [noted, plain] = first.querySelectorAll(':scope > table > tbody > tr');
+  assert.equal(noted.id, 'fr-aa-01', 'the row is not the target of a link to its requirement');
+  assert.equal(noted.children.length, 3, 'a note added a cell to its row');
+  assert.equal(noted.children[0].className, 'td-id');
+  assert.equal(noted.children[2].querySelector('.badge.badge-M')?.textContent, 'M');
+  assert.equal(plain.children[2].querySelector('.req-none')?.textContent, '—');
+
+  // The notes are in the cell that holds the requirement, after its text and
+  // its blocks, and each is a note.
+  const cell = noted.children[1];
+  assert.ok(cell.classList.contains('req-text'));
+  const text = cell.querySelector(':scope > .tbl-noted > .tbl-noted-text');
+  assert.ok(text.querySelector('p.req-p') && text.querySelector('ol.req-list[type="a"]') && text.querySelector('ul.req-list'));
+  assert.equal(text.querySelector('table.req-subtable td')?.getAttribute('data-align'), 'right');
+  assert.equal(text.querySelector('table.req-subtable th')?.getAttribute('scope'), 'col');
+  assert.equal(text.querySelector('[style]'), null, 'an alignment was written as an inline style');
+  const notes = cell.querySelectorAll(':scope > .tbl-noted > .tbl-notes > .ekd-margin-note[role="note"]');
+  assert.equal(notes.length, 2);
+  assert.equal(view.container.ownerDocument.getElementById(notes[0].getAttribute('aria-labelledby'))?.textContent, 'Amendment');
+  assert.ok(!notes[1].hasAttribute('aria-labelledby'));
+  // A row with no notes has the bare cell.
+  assert.equal(plain.children[1].querySelector('.tbl-noted'), null);
+
+  // Every string of the data went through the application's function, and
+  // the words the component writes itself did not.
+  assert.deepEqual(
+    [...seen].sort(),
+    ['Bare', 'Cell', 'Head', 'Item a', 'Item b', 'Lead', 'Para', 'Plain', 'Was other'].sort(),
+  );
+  // Without one, a string is shown as it is.
+  assert.equal(second.querySelector('.tbl-noted-text')?.textContent, 'A **shall**');
+  await view.unmount();
+
+  // No hook and no client boundary of its own, so a server component can pass
+  // it a function.
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync(new URL('../dist/src/components/RequirementTable.js', import.meta.url), 'utf8');
+  assert.ok(!/['"]use client['"]/.test(source), 'RequirementTable is a client module');
+  assert.ok(!/\buse[A-Z]\w*\(/.test(source), 'RequirementTable calls a hook');
+
+  const css = readFileSync(new URL('../dist/styles/table.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.match(css, /\.tbl-wrap th\.col-priority\s*\{\s*width:\s*60px/);
+  // The priority column lies between the text cell and the end of the table.
+  assert.match(css, /td\.req-text:not\(:last-child\) > \.tbl-noted > \.tbl-notes\s*\{\s*inset-inline-end:\s*calc\(100cqi - 58px\)/);
+  // The matrix inside a cell does not take the card's header.
+  assert.match(css, /\.req-subtable thead th\s*\{[^}]*position:\s*static/);
 });
 
 console.log(`check:components — ${cases} cases: the a11y helpers, and the components' names, roles and focus, against jsdom`);

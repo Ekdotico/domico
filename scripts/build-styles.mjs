@@ -20,7 +20,7 @@
  *   styles/logo.css
  *   styles/section-rule.css
  *   styles/stat.css
- *   styles/table.css          the table, its caption and the notes of a row
+ *   styles/table.css          the table, its caption, the notes of a row and the requirement table
  *   styles/margin-note.css
  *   styles/tabs.css
  *   styles/access-gate.css
@@ -201,7 +201,7 @@ const COMPONENTS = [
   ['logo', ['LOGO LOCKUP'], 'the logo lockup'],
   ['section-rule', ['Section rule'], 'the section rule'],
   ['stat', ['Stat and stat grid'], 'the stat and the stat grid'],
-  ['table', ['Tables', 'Table caption', 'Table row note'], 'the table, its caption and the notes of a row'],
+  ['table', ['Tables', 'Table caption', 'Table row note', 'Requirement table'], 'the table, its caption, the notes of a row and the requirement table'],
   ['margin-note', ['Margin note'], 'the margin note'],
   ['tabs', ['Tabs'], 'the tab panel'],
   ['access-gate', ['Access gate'], 'the access gate'],

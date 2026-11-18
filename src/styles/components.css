@@ -2149,7 +2149,7 @@ textarea.ekd-field-input {
    --bg-raised carries --fg-1 and --fg-2 as text. Not --fg-3, --accent or
    --danger: see the notes on the button and the fields. */
 .ekd-dialog {
-  inline-size: 30rem;
+  inline-size: calc(30rem * var(--scale));
   max-inline-size: calc(100% - 2 * var(--sp-4));
   max-block-size: calc(100% - 2 * var(--sp-4));
   padding: var(--sp-6);
@@ -2247,7 +2247,7 @@ textarea.ekd-field-input {
   inline-size: max-content;
   /* Never wider than the viewport less a margin each side, so the component's
      sideways shift always has somewhere to put it. */
-  max-inline-size: min(20rem, calc(100vw - 2 * var(--sp-4)));
+  max-inline-size: min(calc(20rem * var(--scale)), calc(100vw - 2 * var(--sp-4)));
   padding: var(--sp-2) var(--sp-3);
   background: var(--bg-raised);
   color: var(--fg-1);
@@ -2396,7 +2396,7 @@ textarea.ekd-field-input {
   inset-inline-start: 0;
   inline-size: max-content;
   min-inline-size: 100%;
-  max-inline-size: min(20rem, calc(100vw - 2 * var(--sp-4)));
+  max-inline-size: min(calc(20rem * var(--scale)), calc(100vw - 2 * var(--sp-4)));
   padding: var(--sp-1);
   background: var(--bg-raised);
   border: 1px solid var(--rule);
@@ -2504,7 +2504,7 @@ textarea.ekd-field-input {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  inline-size: min(20rem, calc(100vw - 2 * var(--sp-4)));
+  inline-size: min(calc(20rem * var(--scale)), calc(100vw - 2 * var(--sp-4)));
   block-size: auto; /* popover */
   max-block-size: calc(100vh - 2 * var(--sp-4));
   margin: 0; /* popover */

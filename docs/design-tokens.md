@@ -958,29 +958,37 @@ script writes from `getBoundingClientRect` — the selection toolbar and the opt
 list land off by the zoomed difference — whereas the factor changes the lengths
 themselves, so a measured position is still a CSS position.
 
-**What takes it.** Every plain `px` or `rem` length in the type, spacing and
-layout sets (`--fs-*`, `--sp-*`, `--page-w`, `--content-w`, `--form-w`,
-`--gutter`, `--sidebar-w`, `--topbar-h`), written `calc(<length> * var(--scale))`.
-`--measure` is `72ch` and follows the type by itself. In the stylesheets, every
-length above 3px that is not a line or a shadow takes it in the same form:
-padding, gaps, margins, the sizes of controls, the widths of rails and notes.
+**What takes it.**
+
+- Every plain `px` or `rem` length in the type, spacing, radius and layout sets
+  (`--fs-*`, `--sp-*`, `--radius-*`, `--page-w`, `--content-w`, `--form-w`,
+  `--gutter`, `--sidebar-w`, `--topbar-h`), written `calc(<length> * var(--scale))`.
+- The fluid middle term of `--fs-display` and `--fs-lede`, written
+  `calc((1.6vw + 0.9rem) * var(--scale))`; their limits are scaled tokens.
+- `--measure` is `72ch` and follows the type by itself.
+- In the stylesheets, every `rem` length and every `px` length above 3px that is
+  not a line or a shadow, in the same form: padding, gaps, margins, the sizes of
+  controls, the widths of rails, notes and lists.
+- Icons. Each icon writes its size in `--ekd-icon-size`, and the reset draws it
+  at that size times the factor, under `:where()` so a caller's own rule for its
+  width or height still wins. An icon given its own `width` or `height` keeps
+  them and does not take the factor. Without the reset, the `width` and `height`
+  attributes size it as before.
 
 **What does not, and why.**
 
 - Lengths of 3px and under, and `border`, `outline`, `box-shadow`,
   `text-shadow`, `text-decoration` and `text-underline-offset` at any length:
   hairlines, rules, carets and focus rings stay crisp.
-- `--radius-*` and `--shadow-*`, which are not in the scaled sets.
+- `--shadow-*`, which are not in the scaled sets.
 - Media-query breakpoints: a query cannot read a custom property, and a
   breakpoint describes the viewport, not the interface.
-- The fluid middle term of `--fs-display` and `--fs-lede` (`1.6vw + 0.9rem`,
-  `1vw + 0.75rem`). Their bounds are scaled tokens; the term is not.
-- Icons, which are drawn at a pixel `size` by script, and the 16px edge margin a
-  script keeps between the option list and the viewport.
+- The 16px edge margin and the 4px gap a script keeps around the option list.
 
 **At `1` nothing changes.** `pnpm check:scale` holds every stylesheet source to
-the scaled form and holds every scaled token, unwrapped, to the value in its
-source file. `calc(16px * 1)` computes to `16px`.
+the scaled form, holds every scaled token, unwrapped, to the value in its source
+file, and holds every icon to the same size by its attributes and by
+`--ekd-icon-size`. `calc(16px * 1)` computes to `16px`.
 
 **When not to.** Do not set it on an element below `:root`: the tokens are
 computed where they are declared, so a factor set lower changes the stylesheets'

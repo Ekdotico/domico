@@ -59,8 +59,17 @@ export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
  * them.
  */
 function Icon({ size, title, children, ...rest }: IconProps & { children: React.ReactNode }) {
+  // The interface scale (--scale): the reset draws the icon at its size times
+  // the factor, at no specificity, so a caller's own width, height or rule
+  // still wins. Without the reset the attributes alone size it, at the factor
+  // of 1. A caller that sets width or height itself keeps the old behaviour.
+  const scaled = rest.width == null && rest.height == null;
+  const style = scaled
+    ? ({ '--ekd-icon-size': `${size ?? 16}px`, ...rest.style } as React.CSSProperties)
+    : rest.style;
   return (
     <svg
+      data-ekd-icon={scaled ? '' : undefined}
       xmlns="http://www.w3.org/2000/svg"
       width={size ?? 16}
       height={size ?? 16}
@@ -74,6 +83,7 @@ function Icon({ size, title, children, ...rest }: IconProps & { children: React.
       aria-label={title}
       aria-hidden={title ? undefined : true}
       {...rest}
+      style={style}
     >
       {children}
     </svg>

@@ -20,28 +20,41 @@
  */
 
 const KEEP_PROPERTY = /^(border|outline|box-shadow|text-shadow|text-decoration|text-underline-offset|column-rule)/;
-const LENGTH = /(?<![\w.-])(-?\d*\.?\d+)px\b/g;
+// A px or rem length. An em follows the type, which carries the factor; vw,
+// %, ch and the container units follow what they measure.
+const LENGTH = /(?<![\w.-])(-?\d*\.?\d+)(px|rem)\b/g;
 const WRAPPED = /calc\((-?\d*\.?\d+(?:px|rem)) \* var\(--scale\)\)/g;
 
-/** A token's value with the factor, if it is a plain non-zero px or rem length. */
+// A fluid middle term, wrapped whole: `calc((1.6vw + 0.9rem) * var(--scale))`.
+const WRAPPED_TERM = /calc\(\(([^()]+)\) \* var\(--scale\)\)/g;
+const FLUID = /^clamp\((var\(--[\w-]+\)), ([^()]+), (var\(--[\w-]+\))\)$/;
+
+/**
+ * A token's value with the factor: a plain non-zero px or rem length, or the
+ * middle term of a clamp whose limits are tokens (which carry the factor
+ * themselves).
+ */
 export function scaleToken(value) {
-  return /^-?\d*\.?\d+(px|rem)$/.test(value) && Number.parseFloat(value) !== 0
-    ? `calc(${value} * var(--scale))`
-    : value;
+  if (/^-?\d*\.?\d+(px|rem)$/.test(value) && Number.parseFloat(value) !== 0) {
+    return `calc(${value} * var(--scale))`;
+  }
+  const fluid = FLUID.exec(value);
+  if (fluid) return `clamp(${fluid[1]}, calc((${fluid[2]}) * var(--scale)), ${fluid[3]})`;
+  return value;
 }
 export const HAIRLINE_MAX_PX = 3;
 
 /** Wrap one run of declaration text, whose property is `property`. */
 function wrapRun(run, property) {
   if (KEEP_PROPERTY.test(property)) return run;
-  return run.replace(LENGTH, (whole, n) =>
-    Math.abs(Number(n)) <= HAIRLINE_MAX_PX ? whole : `calc(${n}px * var(--scale))`,
+  return run.replace(LENGTH, (whole, n, unit) =>
+    unit === 'px' && Math.abs(Number(n)) <= HAIRLINE_MAX_PX ? whole : `calc(${n}${unit} * var(--scale))`,
   );
 }
 
 /** Remove every wrapper this module writes. */
 export function unscaleCss(text) {
-  return text.replace(WRAPPED, '$1');
+  return text.replace(WRAPPED, '$1').replace(WRAPPED_TERM, '$1');
 }
 
 /** Wrap every length that should grow. Idempotent. */

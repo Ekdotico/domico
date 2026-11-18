@@ -1091,9 +1091,9 @@
   --fs-4xl: calc(3rem * var(--scale));
   --fs-5xl: calc(3.75rem * var(--scale));
   --fs-6xl: calc(4.75rem * var(--scale));
-  --fs-display: clamp(var(--fs-xl), 1.6vw + 0.9rem, var(--fs-4xl));
-  --fs-lede: clamp(var(--fs-md), 1vw + 0.75rem, var(--fs-lg));
-  --fs-title: clamp(var(--fs-4xl), 7vw + 0.375rem, var(--fs-6xl));
+  --fs-display: clamp(var(--fs-xl), calc((1.6vw + 0.9rem) * var(--scale)), var(--fs-4xl));
+  --fs-lede: clamp(var(--fs-md), calc((1vw + 0.75rem) * var(--scale)), var(--fs-lg));
+  --fs-title: clamp(var(--fs-4xl), calc((7vw + 0.375rem) * var(--scale)), var(--fs-6xl));
   --lh-tight: 1.12;
   --lh-snug: 1.28;
   --lh-normal: 1.5;
@@ -1128,12 +1128,12 @@
   --sp-11: calc(96px * var(--scale));
   --sp-12: calc(128px * var(--scale));
 
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
-  --radius-pill: 999px;
+  --radius-xs: calc(2px * var(--scale));
+  --radius-sm: calc(4px * var(--scale));
+  --radius-md: calc(6px * var(--scale));
+  --radius-lg: calc(10px * var(--scale));
+  --radius-xl: calc(14px * var(--scale));
+  --radius-pill: calc(999px * var(--scale));
   --badge-cap-rise: -0.3em;
   --badge-cap-gap: 0.4em;
   --serif-fit: 0.84em;

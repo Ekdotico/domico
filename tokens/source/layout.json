@@ -3,7 +3,7 @@
   "scale": {
     "$value": "1",
     "$type": "number",
-    "$description": "The interface scale: one factor in the type, space and layout lengths and in the stylesheets' own lengths, 1 by default. Set it on :root, and only there, for a larger interface without zoom; at 1.5 everything that grows is half as large again, and a box a script positions by getBoundingClientRect still lands where it measures. Hairlines (3px and under), borders, outlines, shadows, radii, icons drawn at a pixel size, and media-query breakpoints do not take it."
+    "$description": "The interface scale: one factor in the type, space and layout lengths and in the stylesheets' own lengths, 1 by default. Set it on :root, and only there, for a larger interface without zoom; at 1.5 everything that grows is half as large again, and a box a script positions by getBoundingClientRect still lands where it measures. Radii and icons take it too. Hairlines (3px and under), borders, outlines, shadows and media-query breakpoints do not."
   },
   "page-w": {
     "$value": "1180px",

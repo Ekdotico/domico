@@ -42,7 +42,7 @@ for (const rel of SOURCES) {
 // 3. Tokens.
 const css = readFileSync(join(ROOT, 'tokens/generated/tokens.css'), 'utf8');
 if (!/--scale: 1;/.test(css)) failures.push('tokens.css: --scale: 1 is not declared');
-for (const file of ['space.json', 'type.json', 'layout.json']) {
+for (const file of ['space.json', 'type.json', 'radius.json', 'layout.json']) {
   const source = JSON.parse(readFileSync(join(ROOT, 'tokens/source', file), 'utf8'));
   for (const [name, token] of Object.entries(source)) {
     if (name.startsWith('$') || typeof token?.$value !== 'string') continue;
@@ -51,6 +51,25 @@ for (const file of ['space.json', 'type.json', 'layout.json']) {
     if (unscaleCss(m[1]) !== token.$value) failures.push(`tokens.css --${name}: ${m[1]} is not ${token.$value} at --scale: 1`);
   }
 }
+
+// 4. Icons: at --scale: 1 the reset's size equals the attributes' size, and a
+// caller that sizes the icon itself is left alone.
+const reset = readFileSync(join(ROOT, 'src/styles/reset.css'), 'utf8');
+if (!/:where\(svg\[data-ekd-icon\]\) \{\s*inline-size: calc\(var\(--ekd-icon-size\) \* var\(--scale\)\);\s*block-size: calc\(var\(--ekd-icon-size\) \* var\(--scale\)\);/.test(reset)) {
+  failures.push('reset.css: the icon rule is missing or changed');
+}
+const { renderToStaticMarkup } = await import('react-dom/server');
+const { createElement: h } = await import('react');
+const { XIcon } = await import(join(ROOT, 'dist/src/components/icons.js'));
+const icon = (props) => renderToStaticMarkup(h(XIcon, props));
+for (const [props, size] of [[{}, 16], [{ size: 18 }, 18], [{ size: 20, style: { color: 'red' } }, 20]]) {
+  const html = icon(props);
+  const attrs = html.includes(`width="${size}"`) && html.includes(`height="${size}"`);
+  const variable = html.includes(`--ekd-icon-size:${size}px`) && html.includes('data-ekd-icon=""');
+  if (!attrs || !variable) failures.push(`icons: ${JSON.stringify(props)} does not draw ${size}px by both the attributes and --ekd-icon-size: ${html.slice(0, 200)}`);
+  if (props.style && !html.includes('color:red')) failures.push('icons: a caller\'s style was dropped');
+}
+if (icon({ width: 24 }).includes('data-ekd-icon')) failures.push('icons: an icon given its own width still takes the scale');
 
 if (write) {
   console.log('check:scale --write: sources rewritten.');

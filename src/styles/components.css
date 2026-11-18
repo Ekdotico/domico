@@ -251,6 +251,342 @@
   border-top-right-radius: 0;
 }
 
+/* --- Margin note --------------------------------------------------------- */
+/* MarginNote: marginalia. A small italic aside behind a hairline, with an
+   optional gilt label, which is what --gilt is for. No surface, no radius and
+   no shadow: a note is type and one rule, on whatever it sits on.
+
+   Two forms. This one, the default, is a block in the text column with the
+   rule on its start edge. The second, below, stands in a gutter.
+
+   The inks are --fg-3 and --gilt. Both are measured on the canvas, on the
+   card and on the sunken step in all eight palettes (check:contrast), because
+   a note in a table cell is on the canvas at rest and on a wash of the sunken
+   step while its row is hovered. */
+.ekd-margin-note {
+  display: block;
+  margin-block: var(--sp-4);
+  margin-inline: 0;
+  padding-block: var(--sp-3);
+  padding-inline: var(--sp-3) 0;
+  border-inline-start: 1px solid var(--rule);
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-normal);
+  color: var(--fg-3);
+  text-align: start;
+  break-inside: avoid;
+}
+.ekd-margin-note-label {
+  margin: 0 0 var(--sp-1);
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-3xs);
+  letter-spacing: var(--tr-widest);
+  color: var(--gilt);
+}
+.ekd-margin-note-body { font-style: italic; }
+.ekd-margin-note-body :where(p) { margin: 0 0 var(--sp-2); }
+.ekd-margin-note-body :where(p:last-child) { margin-bottom: 0; }
+
+/* The gutter form.
+
+   Whether a page has a gutter is a fact about the application's layout, and
+   the width at which it opens is another, so neither is written here. The
+   application says so, on an ancestor of its text column, in its own
+   stylesheet and inside whatever media query its layout needs:
+
+     @media (min-width: 1480px) {
+       .content-inner { --ekd-margin-gutter: on; }
+     }
+
+   The property is a hook and not a token: no palette defines it, and unset
+   means no gutter. It promises 216px of empty space before the start edge of
+   the text column, which is the note's 200px and the --sp-4 between the note
+   and the text. Any other value, `off` for one, takes the promise back, which
+   is how an application closes the gutter again while a panel is open.
+
+   A container style query reads it, and every element is a style container,
+   so the application declares nothing else. A browser without style queries
+   (Firefox before 151) keeps the form above, which is complete on its own.
+
+   The note is pulled fully clear of the text and not wrapped by it: the
+   negative margin is its whole width and the gap, so the float has no width
+   left in the column and no line is shortened. The rule changes sides,
+   because it belongs between the note and the text. `clear` stacks two notes
+   that are close together down the gutter; a heading does not clear a note,
+   so the text never waits for one.
+
+   Print has no gutter, whatever the application said on screen. */
+@media not print {
+  @container style(--ekd-margin-gutter: on) {
+    .ekd-margin-note {
+      float: inline-start;
+      clear: inline-start;
+      width: 200px;
+      margin-block: var(--sp-1) var(--sp-4);
+      margin-inline: calc(-200px - var(--sp-4)) 0;
+      padding-inline: 0 var(--sp-3);
+      border-inline-start: 0;
+      border-inline-end: 1px solid var(--rule);
+    }
+  }
+}
+
+/* --- Table row note ------------------------------------------------------ */
+/* The margin notes of a table row: `<TableCell note={…}>`, which renders
+
+     td > .tbl-noted > .tbl-noted-text + .tbl-notes > .ekd-margin-note
+
+   The notes are inside a cell of their row. That is what ties a note to its
+   row for a screen reader, with no id to reference, and it leaves the table
+   the columns it had.
+
+   With no gutter the notes are under the cell's content, in the cell's own
+   width: the place the paragraph note has at the same widths, set off by the
+   same rule. This is the form at phone width too, where the table scrolls
+   inside its card and the notes scroll with their rows. */
+.tbl-notes { margin-top: var(--sp-3); }
+.tbl-notes > .ekd-margin-note { margin: 0; }
+.tbl-notes > .ekd-margin-note + .ekd-margin-note { margin-top: var(--sp-3); }
+
+/* In the gutter, beside the row.
+
+   The notes stay in the flow of the row. The cell's two children share one
+   grid cell, so the row is as tall as the taller of the two, and a row's
+   notes can neither reach the next row's nor move away from their own. A
+   table of eighteen notes is eighteen rows, each beside its note. A note out
+   of the flow (`position: absolute`) would be placed as well and would overlap
+   the next one whenever it was longer than its row, which an amendment
+   usually is.
+
+   Only across is the note moved, and by a distance the stylesheet can know.
+   The cell is the last of its row, so the end edge of its content is the end
+   edge of the table less the cell's own border and padding (2px and 14px,
+   above). The wrapper is made a size container, and 100cqi is then the width
+   of the table. The notes are aligned to the end of the cell and shifted one
+   table's width towards the start, which puts their far edge 16px before the
+   table begins: the same --sp-4 the paragraph note keeps from the text. The
+   2px and 14px are 16px, so they appear in no sum here; change the cell's
+   padding and this rule changes with it.
+
+   The shift is `position: relative`, which moves the box after layout and
+   takes nothing out of the flow. The negative margin cancels the notes' width
+   so that they ask nothing of the column they are written in.
+
+   A cell that is not the last of its row keeps its notes under its content:
+   nothing here can know how far it is from either edge of the table. The one
+   exception is the text cell of a requirement table (`.req-text`) with the
+   priority column after it. That column is 60px wide, set below, so the
+   distance is known and is taken off the shift.
+
+   The wrapper is a container only where it holds notes and only while there
+   is a gutter, because containment makes it the containing block of anything
+   fixed inside it.
+
+   The notes leave the wrapper because, above 920px, the wrapper clips
+   nothing: it has no overflow there (see `.tbl-wrap`, above). At 920px and
+   below it scrolls across, and a box that scrolls clips what is moved out of
+   it, on the start side with nothing to scroll to. So these rules hold only
+   above 920px. An application that says there is a gutter at a narrower
+   width gets the notes under the content, where they can be read.
+
+   The width is a query of its own, inside the first. Written as one,
+   `not print and (min-width: 921px)`, the `not` would negate the whole of it,
+   and the query would hold on a screen of any width. */
+@media not print {
+@media (min-width: 921px) {
+  @container style(--ekd-margin-gutter: on) {
+    /* A size container takes no width from what is inside it. In a parent
+       that fits its content (a flex item in a row, an inline-block, a float,
+       a grid track sized `max-content`) the wrapper would be 0 wide, with the
+       table 480px wide over the edge of it and the notes drawn on the text.
+       So it is told the least a table is: the 480px of `.tbl-wrap table`,
+       above. There the table is 480px wide and its notes are where they
+       should be. In a parent that gives it a width, which is the common case,
+       this changes nothing. */
+    .tbl-wrap:has(.tbl-notes) { container-type: inline-size; contain-intrinsic-inline-size: 480px; }
+    .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted { display: grid; }
+    .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted > * { grid-area: 1 / 1; min-width: 0; }
+    .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted > .tbl-notes {
+      justify-self: end;
+      align-self: start;
+      width: 200px;
+      margin: 0;
+      margin-inline-start: -200px;
+      position: relative;
+      inset-inline-end: 100cqi;
+    }
+    /* A requirement's text cell with the priority column after it: the 60px
+       of that column lie between the cell and the end of the table. The
+       column's 60px hold the table's 2px edge, which the sum above already
+       counts as the cell's own, so 58px come off. */
+    .tbl-wrap td.req-text:not(:last-child) > .tbl-noted > .tbl-notes {
+      inset-inline-end: calc(100cqi - 58px);
+    }
+    /* The gutter form of the note, without the float: the row places it. */
+    .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted > .tbl-notes > .ekd-margin-note {
+      float: none;
+      clear: none;
+      width: auto;
+      margin: 0;
+      /* No padding above or below: the note starts on the first line of its
+         row, and the rule is as tall as the words. */
+      padding-block: 0;
+    }
+    .tbl-wrap :is(td, th):is(:last-child, .req-text) > .tbl-noted > .tbl-notes > .ekd-margin-note + .ekd-margin-note {
+      margin-top: var(--sp-3);
+    }
+    /* In a cell that is not the last, the note keeps the form with no gutter. */
+    .tbl-wrap :is(td, th):not(:last-child, .req-text) > .tbl-noted > .tbl-notes > .ekd-margin-note {
+      float: none;
+      clear: none;
+      width: auto;
+      margin: 0;
+      padding-inline: var(--sp-3) 0;
+      border-inline-start: 1px solid var(--rule);
+      border-inline-end: 0;
+    }
+    .tbl-wrap :is(td, th):not(:last-child, .req-text) > .tbl-noted > .tbl-notes > .ekd-margin-note + .ekd-margin-note {
+      margin-top: var(--sp-3);
+    }
+  }
+}
+}
+/* At 920px and below, where an application has still said there is a gutter:
+   the notes of a row are under the content, and so they keep the form with no
+   gutter, in every cell. Without this they would be under the content in the
+   gutter's form, 200px wide with the rule on the far edge. */
+@media not print {
+@media (max-width: 920px) {
+  @container style(--ekd-margin-gutter: on) {
+    .tbl-wrap .tbl-notes > .ekd-margin-note {
+      float: none;
+      clear: none;
+      width: auto;
+      margin: 0;
+      padding-inline: var(--sp-3) 0;
+      border-inline-start: 1px solid var(--rule);
+      border-inline-end: 0;
+    }
+    .tbl-wrap .tbl-notes > .ekd-margin-note + .ekd-margin-note {
+      margin-top: var(--sp-3);
+    }
+  }
+}
+}
+
+/* --- Requirement table --------------------------------------------------- */
+
+/* What `RequirementTable` adds to the table: two column widths, and the
+   content that can follow a requirement's lead-in text inside its cell. The
+   card, the header, the rows and the identifier (`.td-id`) are the table's.
+
+   The widths are layout dimensions and not steps of a scale: the identifier
+   column holds a code such as "NFR-PE-01" in mono on one line, and the
+   priority column holds one badge. The 60px is also read by the row note
+   above. */
+.tbl-wrap th.col-id { width: 110px; }
+.tbl-wrap th.col-priority { width: 60px; }
+
+/* No priority on this row, in a table where other rows have one. */
+.tbl-wrap td .req-none { color: var(--fg-3); }
+/* The word a letter or a dash stands for: present for a screen reader and
+   absent from the page, the technique of .sr-only in the reset, restated so
+   this entry holds alone. The span round the pair is its containing block, so
+   the hidden box is laid out where the letter is and not against the page,
+   where it could add to the page's scroll. The cell is left as it is: a
+   header cell is `position: sticky`, and must stay so. */
+.req-drawn { position: relative; }
+.req-spoken {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A further paragraph, and sub-items. The face is named because the rule has
+   to beat an application's own rules for a list or a paragraph in its text
+   column. */
+.tbl-wrap td .req-list,
+.tbl-wrap td .req-p {
+  margin: var(--sp-2) 0 0;
+  font-family: var(--font-sans);
+  font-size: inherit;
+  color: var(--fg-2);
+  line-height: var(--lh-normal);
+}
+.tbl-wrap td .req-list { padding-inline-start: var(--sp-5); }
+.tbl-wrap td .req-list li {
+  margin: var(--sp-1) 0;
+  padding-inline-start: var(--sp-1);
+}
+.tbl-wrap td .req-list li::marker { color: var(--accent); }
+
+/* A matrix that a requirement itself defines, inside its cell. Compact and
+   without the card, so that it reads as part of the requirement and not as a
+   second table inside the first. Every rule here also undoes one: the card's
+   rules reach any table inside `.tbl-wrap`, and without these the matrix
+   would take the sticky header, the outline, the corners and the hover wash. */
+.tbl-wrap td .req-subtable {
+  width: 100%;
+  min-width: 0;
+  margin: var(--sp-2) 0 0;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  color: var(--fg-2);
+  background: transparent;
+  border-radius: 0;
+}
+.tbl-wrap td .req-subtable thead th {
+  position: static;
+  top: auto;
+  z-index: auto;
+  background: transparent;
+  color: var(--fg-3);
+  font-family: var(--font-sans);
+  font-weight: var(--fw-semi);
+  font-size: var(--fs-3xs);
+  letter-spacing: var(--tr-wider);
+  padding: var(--sp-1) var(--sp-3) var(--sp-1) 0;
+  padding-inline: 0 var(--sp-3);
+  text-align: start;
+  white-space: normal;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+}
+.tbl-wrap td .req-subtable tbody td {
+  padding: var(--sp-1) var(--sp-3) var(--sp-1) 0;
+  padding-inline: 0 var(--sp-3);
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  color: var(--fg-2);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule-soft);
+  border-radius: 0;
+  vertical-align: top;
+  line-height: var(--lh-normal);
+  white-space: normal;
+}
+.tbl-wrap td .req-subtable tbody tr:last-child td { border-bottom: 0; }
+.tbl-wrap td .req-subtable tbody tr:hover td { background: transparent; }
+.tbl-wrap td .req-subtable :is(th, td):last-child { padding-inline-end: 0; }
+/* A column's alignment, as the source of the matrix gives it. */
+.tbl-wrap td .req-subtable :is(th, td)[data-align="left"] { text-align: start; }
+.tbl-wrap td .req-subtable :is(th, td)[data-align="center"] { text-align: center; }
+.tbl-wrap td .req-subtable :is(th, td)[data-align="right"] { text-align: end; }
+
 /* --- Badges -------------------------------------------------------------- */
 
 /* BADGES

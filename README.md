@@ -84,7 +84,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `option-list.css`, `sync-status.css`, `avatar.css`, `editor.css`, and `code.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `margin-note.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `option-list.css`, `sync-status.css`, `avatar.css`, `editor.css`, and `code.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/icons` | The icon set: domico's own, built on Tabler, vendored, at the house stroke weight |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
@@ -730,6 +730,9 @@ off there is not a fault; a table with both, or with a row header past the
 first column, needs it (WCAG 1.3.1, technique H63). Use `colgroup` or
 `rowgroup` where one header covers several.
 
+`TableCell` also takes `note`, for the margin notes of its row. The margin
+note's section says where they are drawn.
+
 `Checkbox` takes `labelHidden` for a box whose row header already says what it
 is about. The label is kept for a screen reader and is not drawn, as `Select`
 keeps its own, and it stays required: it is the box's name. The hidden words
@@ -741,6 +744,166 @@ the box, so the empty line beside it does not toggle it, and keeps a 24px
 target (WCAG 2.5.8).
 
 ---
+
+## The margin note
+
+`MarginNote` is marginalia: a small italic aside with a hairline rule and an
+optional label above it, with the styles in `styles/margin-note.css`. It is
+for what belongs beside the text and not in it, such as an amendment.
+
+```tsx
+<MarginNote label={label}>{text}</MarginNote>
+<p>The passage the note is about.</p>
+```
+
+It takes `label` and `children`, and writes no word of its own. It is an
+`<aside role="note">` named by its label through `aria-labelledby`, as a
+`Callout` is, so a page of notes adds nothing to the landmark list. The label
+is a `<p class="ekd-margin-note-label">`, and the text is in a
+`<div class="ekd-margin-note-body">`. It is text, so it is not a tab stop, and
+it has no shadow.
+
+The note has two forms. With no gutter it is a block in the text column, with
+the rule on its start edge. Where there is a gutter it floats into the gutter
+at the start of the text column, 200px wide, and the rule moves to the edge
+that faces the text. Put it directly before the passage it is about.
+
+The package cannot know whether a page has a gutter, so the application says
+so. Set `--ekd-margin-gutter: on` on an ancestor of the text column, at the
+widths where the gutter at the start of the column is at least 216px wide, and
+set it to `off` wherever the gutter closes:
+
+```css
+@media (min-width: 1480px) {
+  .content { --ekd-margin-gutter: on; }
+  html[data-chat-open] .content { --ekd-margin-gutter: off; }
+}
+```
+
+It is an optional property that the package reads and no palette defines, like
+`--ekd-editor-placeholder-offset`: it is not a token, and unset there is no
+gutter. The package reads it with a container style query. A browser without
+style queries keeps the form with no gutter, and so does print.
+
+### A note on a table row
+
+Give the notes of a row to the **last cell** of the row, through `note`:
+
+```tsx
+<TableRow>
+  <TableCell>{id}</TableCell>
+  <TableCell note={<MarginNote label={label}>{amendment}</MarginNote>}>
+    {requirement}
+  </TableCell>
+</TableRow>
+```
+
+`note` takes one `MarginNote` or several. They are rendered inside the cell,
+after its content, so the table keeps its columns and its rows, and a screen
+reader reads the note at the end of the row it belongs to:
+
+```html
+<td>
+  <div class="tbl-noted">
+    <div class="tbl-noted-text">…</div>
+    <div class="tbl-notes"><aside class="ekd-margin-note" role="note">…</aside></div>
+  </div>
+</td>
+```
+
+With no gutter the notes are under the content of the cell. With a gutter they
+stand in the same gutter as a note on a paragraph, at the start of the table
+and level with the top of their row. The row is as tall as its notes, so the
+notes of two rows never meet and none moves away from its row, however many a
+table has.
+
+The notes of a row take the gutter only above 920px. At 920px and below the
+table scrolls inside its card, and a card that scrolls would clip a note moved
+out of it, so there the notes stay under the content whatever the application
+says of the gutter.
+
+A declared gutter must be there. The notes are 200px wide and stand 16px from
+the table, so the table needs 216px of free space at its start. The package
+cannot see whether the space exists: an application that says there is a
+gutter where there is none has its notes drawn over whatever is beside the
+table, or off the page.
+
+The table also needs a width from its parent. While there is a gutter the
+wrapper of a table with notes is a size container, which takes no width from
+its content. In a block parent, or as a flex or grid item that is stretched,
+it is as wide as it was. In a parent that fits its content, such as a flex
+item in a row, an inline-block, a float or a `max-content` grid track, it
+falls to 480px, the least width of a table, and the notes are placed against
+that. Give such a table a width, or a parent that has one.
+
+Only the last cell can reach the gutter, because the stylesheet measures
+across the table from its end edge. Notes given to any other cell stay under
+its content at every width. The requirement table is the one exception, since
+the width of its priority column is known.
+
+## The requirement table
+
+`RequirementTable` is `Table` with the columns decided: an identifier, the
+requirement, and a MoSCoW priority where any row has one. Its styles are in
+`styles/table.css`.
+
+```tsx
+<RequirementTable
+  caption={caption}
+  renderText={renderInlineWithRefs}
+  requirements={[
+    { id: 'FR-AA-01', text: '…', priority: 'M', notes: [{ label: '…', text: '…' }] },
+    { id: 'FR-AA-02', text: '…', blocks: [{ kind: 'list', ordered: true, items: ['…'] }] },
+  ]}
+/>
+```
+
+| Prop | Type | |
+| --- | --- | --- |
+| `requirements` | `Requirement[]` | `id`, `text`, and optionally `blocks`, `priority` (`'M'`, `'S'` or `'C'`) and `notes` |
+| `caption` | `string` | A caption row, and the name of the scroll area. Without one the area is named "Requirements" |
+| `renderText` | `(text: string) => ReactNode` | What a string of the data becomes. Without one it is shown as it is |
+| `labels` | `RequirementTableLabels` | The words the table writes itself. Each is optional |
+
+| `labels` | Default | |
+| --- | --- | --- |
+| `id` | "ID" | Header of the identifier column |
+| `requirement` | "Requirement" | Header of the requirement column |
+| `priority` | "Priority" | Header of the priority column, as a screen reader reads it |
+| `priorityShort` | "P" | The same header as it is drawn, in a column 60px wide |
+| `name` | "Requirements" | Name of the scroll area where there is no `caption` |
+| `priorities` | `{ M: 'Must have', S: 'Should have', C: 'Could have' }` | What each letter stands for, read in place of the letter |
+| `noPriority` | none | What the dash stands for. Until it is passed, the dash is all there is |
+
+A letter and a dash are drawn, and a screen reader is given the word instead:
+the drawn form is `aria-hidden` and the word is beside it, hidden from the
+page (`.req-drawn > .req-spoken`). The header cell has no `abbr` attribute,
+which is for the short form of a long header, and no `<abbr title>`, which a
+screen reader may not read and a touch screen cannot show. The defaults are
+the words the documentation site shows. `noPriority` has none because no
+application has given the dash a word, and the package does not choose one.
+
+The words of a requirement are strings, because a page of them is generated
+from a specification. The application says once what a string becomes:
+`renderText` is called for the text of each requirement, for each paragraph,
+list item and matrix cell in its `blocks`, and for the text of each note. The
+package does not know what an application links a requirement code to, so it
+imports no renderer. The component has no hook and is not a client module, so
+a server component can pass it a function.
+
+`blocks` follow the lead-in text in order: `{ kind: 'p', text }` is a further
+paragraph, `{ kind: 'list', ordered, items }` is a list, lettered when
+`ordered`, and `{ kind: 'table', headers, rows, align }` is a matrix the
+requirement itself defines, drawn compact inside the cell.
+
+`notes` are the margin notes of the row, each `{ label, text }` with the label
+optional. They are given to the cell that holds the requirement and are placed
+as the section above says: under the requirement with no gutter, and in the
+gutter beside the row where there is one, with or without a priority column.
+
+Each row takes its identifier in lower case as its `id`, so a link to
+`#fr-aa-01` lands on the row. A row with no priority, in a table where another
+row has one, shows a dash.
 
 ## The avatar and the avatar stack
 

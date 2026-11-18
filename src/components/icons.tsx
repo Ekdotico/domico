@@ -35,7 +35,10 @@ import type { SVGProps } from 'react';
  */
 
 export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
-  /** Rendered size in pixels, applied to both axes. Defaults to 16. */
+  /**
+   * Rendered size in pixels, applied to both axes. Omit it and the glyph is
+   * `1em`: the font size of where it sits, so it is 16×16 at 16px text.
+   */
   size?: number;
   /**
    * Accessible name. Omit for a decorative icon sitting beside a text label —
@@ -49,16 +52,16 @@ export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
  * Shared chrome for every icon.
  *
  * Stroke is 1.5 rather than Tabler's own 2: the house style is hairlines, and
- * a 2px stroke reads heavy against the type. At the 16px default it draws at
+ * a 2px stroke reads heavy against the type. At 16px it draws at
  * one pixel. It is set here rather than per-icon so it cannot vary between
  * them.
  */
-function Icon({ size = 16, title, children, ...rest }: IconProps & { children: React.ReactNode }) {
+function Icon({ size, title, children, ...rest }: IconProps & { children: React.ReactNode }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
+      width={size ?? '1em'}
+      height={size ?? '1em'}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

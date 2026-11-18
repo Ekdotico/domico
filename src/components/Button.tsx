@@ -114,7 +114,7 @@ export type ButtonIcon = ComponentType<IconProps>;
 function withIcon(Icon: ButtonIcon | undefined, children: ReactNode): ReactNode {
   return Icon ? (
     <>
-      <Icon size={16} />
+      <Icon />
       {children}
     </>
   ) : (
@@ -132,7 +132,7 @@ function withIcon(Icon: ButtonIcon | undefined, children: ReactNode): ReactNode 
  * (Expression Guidelines §5.1 rule 13). TypeScript refuses the nameless form.
  * `label` is `never` beside children: the children are the name.
  *
- * An icon-only button is a square of 32px, which clears the 24px a target owes
+ * An icon-only button is a 20×20 box with a 16×16 glyph, and its pointer target is 24×24 (a transparent ::after)
  * (WCAG 2.5.8). It takes the same variants as a labelled one. Write the label
  * as the term a labelled button would carry, naming its object where the
  * target is ambiguous: "Delete document", not "Delete". A touch has no hover,

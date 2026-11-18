@@ -2051,13 +2051,13 @@ them.
 - The prompt can start after a control the application draws at the start of
   the line, such as an Insert button at the cursor. Set
   `--ekd-editor-placeholder-offset` on the editor, or any ancestor of it, to
-  the control's width and its gap, from tokens, and the prompt is indented by
+  the control's width and its gap (a 20×20 control: `--sp-5` plus `--sp-2`), from tokens, and the prompt is indented by
   that much from the start of the line (the right, in a right-to-left
   document):
 
   ```css
   .document-editor {
-    --ekd-editor-placeholder-offset: calc(var(--sp-7) + var(--sp-2));
+    --ekd-editor-placeholder-offset: calc(var(--sp-5) + var(--sp-2));
   }
   ```
 

@@ -3795,6 +3795,19 @@ await it('The editor and code stylesheets answer to the documented names, and im
   const plain = new RegExp(`(?:^|\\n)${escaped} \\{([^}]*)\\}`).exec(rules);
   assert.ok(plain, 'editor.css has no rule of its own that draws the prompt of an empty block');
   const contents = (body) => [...body.matchAll(/(?:^|[;\s])content\s*:\s*([^;}]+)/g)].map(([, value]) => value.trim());
+  // As wide as the line and taking that width back with its end margin, so the
+  // caret stays at the start of the line, and as tall as its text, so a prompt
+  // that wraps makes its block as tall as the wrapped text. Not a float of no
+  // height, whose second line is drawn outside the block, and not a block
+  // inside the span an editor draws the prompt in.
+  for (const [pattern, why] of [
+    [/display:\s*inline-block/, 'is not an inline box, so it moves the caret or cannot hold a wrapped line'],
+    [/vertical-align:\s*top/, 'does not sit on the top of its line, so a one-line prompt changes the height of its block'],
+    [/inline-size:\s*100%/, 'is not as wide as the line, so it does not wrap with it'],
+    [/margin-inline-end:\s*-100%/, 'does not take its width back, so the caret is not at the start of the line'],
+    [/padding-inline-start:\s*var\(--ekd-editor-placeholder-offset, 0\)/, 'does not take the offset'],
+  ]) assert.match(plain[1], pattern, `the prompt of an empty block ${why}`);
+  assert.ok(!/float|block-size/.test(plain[1]), 'the prompt of an empty block is a float or has a height of its own');
   assert.deepEqual(contents(plain[1]), ['attr(data-placeholder)'],
     'the plain rule for the prompt does not hold the plain declaration alone: without it no prompt is drawn where the alternative text is not known, and with the alternative text beside it a browser that keeps a declaration it cannot compute draws none');
   // The rule that takes the prompt out of what is read: the same selector,

@@ -1,0 +1,38 @@
+@ekdotico/domico
+Copyright (C) 2026 Stavros Apostolou
+SPDX-License-Identifier: AGPL-3.0-only AND LicenseRef-Ekdotico-Brand
+
+Source: https://github.com/Ekdotico/domico
+
+Except for the files named below, this package is licensed under the GNU
+Affero General Public License, version 3 only. The full text is in LICENSE.
+
+Logo files not under the AGPL
+-----------------------------
+
+These files are not licensed under the AGPL. They are under the terms in this
+section, which package.json names LicenseRef-Ekdotico-Brand. All rights in
+them are reserved to the copyright holder:
+
+- every file under `assets/logo/` (the PNG and SVG files at every size, and
+  `logo-mark.svg`, `logo-mark-branded.svg` and `logo-wordmark.svg`);
+- the mark's path data in `src/components/Logo.tsx`, which is the same
+  drawing as the files under `assets/logo/`;
+- the four `--logo-tile-*` brand tokens (`logo-tile-dark-bg`,
+  `logo-tile-dark-ink`, `logo-tile-light-bg`, `logo-tile-light-ink`) in
+  `tokens/source/brand.json` and in the files generated from it,
+  `tokens/generated/tokens.css` and `tokens/generated/tokens.ts`;
+- the same path data and tokens wherever they appear in the built files
+  under `dist/`.
+
+You may show and redistribute these files unchanged when you are naming
+Ekdotico, and unchanged inside copies of this package. Any other use, and any
+change to them, needs written permission. Nothing here grants a right in the
+Ekdotico name or marks; see TRADEMARKS.md. Under
+section 7(e) of the AGPL, no rights under trade-mark law are granted for
+any name or mark of the copyright holder.
+
+Versions 0.24.0 up to and including 0.43.1 shipped these files under the AGPL,
+and copies of those versions keep that licence for those files.
+
+Third-party material keeps its own licence; see THIRD-PARTY-NOTICES.md.

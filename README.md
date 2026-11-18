@@ -233,7 +233,10 @@ Two attributes on the document element, and nothing else:
 ```
 
 `data-theme` is one of `parchment`, `library`, `sepia`, or `mono`. Parchment is
-the default and is applied when the attribute is absent.
+the default. Always write it: the dark tokens are keyed on `[data-theme=…]`, so
+a document with no `data-theme` has no dark palette, whatever `data-mode` says.
+`appearanceAttributes` and `themeInitScript` write `parchment` when the reader
+has chosen nothing.
 
 `data-mode` is `light` or `dark`. **Leave it off to follow the operating
 system.** An absent `data-mode` is not an error state; it is the third,
@@ -2048,6 +2051,32 @@ them.
   the application says what the prompt says in a place a screen reader is
   told it: the description of the text region, or `aria-placeholder` on it.
   In forced colours the prompt is `GrayText`.
+- The prompt can start after a control the application draws at the start of
+  the line, such as an Insert button at the cursor. Set
+  `--ekd-editor-placeholder-offset` on the editor, or any ancestor of it, to
+  the control's width and its gap (a 20×20 control: `--sp-5` plus `--sp-2`), from tokens, and the prompt is indented by
+  that much from the start of the line (the right, in a right-to-left
+  document):
+
+  ```css
+  .document-editor {
+    --ekd-editor-placeholder-offset: calc(var(--sp-5) + var(--sp-2));
+  }
+  ```
+
+  It is an optional property that the package reads and no palette defines,
+  like `--theme-count`: it is not a token, and unset it is `0`, so nothing
+  moves. The caret stays at the start of the line.
+- Controls that belong to one block can rest faint. Put `data-dim-at-rest` on
+  the block's container (with `styles/button.css` and `styles/code.css`
+  loaded), and the secondary, quiet and destructive `Button`, `ButtonLink`, the
+  `MenuButton` trigger and the code block header's label and Copy rest in
+  `--fg-3`. They return to their own ink while the pointer is over the
+  container, focus is inside it, or the application has set `data-active` on
+  it, as it does while the caret is in that block. It is a colour change, not
+  opacity: hairlines, size and place do not move, and nothing is hidden. Touch,
+  `prefers-contrast: more` and forced colours show every control at full
+  strength, and reduced motion drops the fade. A primary button is never dimmed.
 - The prompt is `--fg-3`, and that ink does not hold as text on every ground
   a block under the root can have. In the eight palettes it is 5.03:1 at its
   least on `--bg-canvas`, 5.12:1 on `--bg-surface` and 4.60:1 on

@@ -57,23 +57,23 @@ export interface CookieStore {
 }
 
 export interface AppearanceAttributes {
-  'data-theme'?: string;
+  'data-theme': string;
   'data-mode'?: string;
 }
 
 /**
  * Attributes to spread onto <html>.
  *
- * A stored value outside the vocabulary is dropped rather than applied, so a
- * corrupted or stale cookie yields the default theme rather than an unstyled
- * document. `data-mode` is omitted entirely for Auto, since its absence is
+ * `data-theme` is always emitted: the default theme when there is no cookie, or
+ * the cookie is outside the vocabulary, so a corrupted or stale cookie yields
+ * the default theme rather than an unstyled document. `data-mode` is omitted entirely for Auto, since its absence is
  * what re-arms the prefers-color-scheme block.
  */
 export function appearanceAttributes(cookies: CookieStore): AppearanceAttributes {
-  const attributes: AppearanceAttributes = {};
-
+  // Always present: the dark tokens are keyed on `[data-theme=…]`, so a
+  // document with no theme attribute has no dark palette to switch to.
   const theme = cookies.get(THEME_STORAGE_KEY)?.value;
-  if (isTheme(theme)) attributes['data-theme'] = theme;
+  const attributes: AppearanceAttributes = { 'data-theme': isTheme(theme) ? theme : DEFAULT_THEME };
 
   const mode = cookies.get(MODE_STORAGE_KEY)?.value;
   if (isMode(mode) && mode !== 'auto') attributes['data-mode'] = mode;

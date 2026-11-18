@@ -1330,6 +1330,26 @@
     border-color var(--dur-fast) var(--ease-soft);
 }
 .ekd-button:hover { background: var(--bg-surface-2); }
+/* A leading icon keeps its 16px however narrow the label's line is. */
+.ekd-button > svg { flex: none; }
+/* A Button or ButtonLink with an icon and no children: a 20×20 box holding a
+   16×16 glyph, which is 1em at the 16px set here (no font-size token is 16px:
+   --fs-base is 15px). The variants, states and reduced-motion rule apply
+   unchanged, and the focus ring is the global one. The pointer target is 24×24
+   (WCAG 2.5.8) without growing the box: a transparent ::after reaches 2px past
+   it on every side. */
+.ekd-button[data-icon-only] {
+  position: relative;
+  inline-size: var(--sp-5);
+  block-size: var(--sp-5);
+  padding: 0;
+  font-size: var(--sp-4);
+}
+.ekd-button[data-icon-only]::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--sp-1) / -2);
+}
 .ekd-button[data-variant="primary"] {
   background: var(--accent);
   color: var(--accent-ink);
@@ -1409,6 +1429,39 @@ a.ekd-button[data-variant="destructive"]:is(:hover, :active) {
 }
 @media (prefers-reduced-motion: reduce) {
   .ekd-button { transition: none; }
+}
+/* Dim at rest. A container that carries `data-dim-at-rest` holds controls that
+   belong to one block (a Button of any variant but primary, a ButtonLink, a
+   MenuButton trigger, the code block header's label and Copy). They rest in
+   --fg-3 and return to their own ink while the pointer is over the container,
+   focus is inside it, or the application has set `data-active` on it, as it
+   does while the caret is in that block. A colour change, never opacity, so no
+   boundary fades: a secondary or destructive hairline keeps its own colour, and
+   the control's size and place do not move.
+
+   Only where the reader can hover and has asked for nothing stronger: touch,
+   `prefers-contrast: more` and forced colours leave every control at full
+   strength. The selector outranks the anchor rules above (0,3,1). Disabled
+   and busy controls already take --fg-3. */
+@media (hover: hover) and (prefers-contrast: no-preference) and (forced-colors: none) {
+  [data-dim-at-rest]:not(:hover, :focus-within, [data-active])
+    .ekd-button:is([data-variant="secondary"], [data-variant="quiet"], [data-variant="destructive"]):not(:disabled, [aria-disabled="true"], [aria-busy="true"]),
+  [data-dim-at-rest]:not(:hover, :focus-within, [data-active]) .ekd-code-header {
+    color: var(--fg-3);
+  }
+  [data-dim-at-rest] .ekd-button {
+    transition:
+      color var(--dur-fast) var(--ease-soft),
+      background var(--dur-fast) var(--ease-soft),
+      border-color var(--dur-fast) var(--ease-soft);
+  }
+  [data-dim-at-rest] .ekd-code-header {
+    transition: color var(--dur-fast) var(--ease-soft);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-dim-at-rest] .ekd-button,
+  [data-dim-at-rest] .ekd-code-header { transition: none; }
 }
 
 /* --- Form fields --------------------------------------------------------- */
@@ -2631,11 +2684,20 @@ button.ekd-sync-control:hover {
    told it: in the description of the text region, or in `aria-placeholder`
    on it.
 
+   `--ekd-editor-placeholder-offset` starts the prompt after a control the
+   application draws at the start of the line, such as the Insert button at
+   the cursor, so the prompt is not drawn under it. It is an optional property
+   the application sets on the editor or an ancestor and no palette defines,
+   so it holds in all eight; unset, it is 0 and nothing moves. Padding on the
+   float, in a logical property, so it indents from the right in a right-to-
+   left document. The caret stays at the start of the line, under the control.
+
    The ink holds as text on the canvas and the two surfaces. It does not on
    every ground a block can have: see the README, "The document surface". */
 .ekd-editor [data-placeholder]::before {
   content: attr(data-placeholder);
   float: inline-start;
+  padding-inline-start: var(--ekd-editor-placeholder-offset, 0);
   block-size: 0;
   color: var(--fg-3);
   pointer-events: none;

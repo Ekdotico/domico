@@ -26,16 +26,21 @@
  */
 
 import { themeNames } from '../../tokens/generated/tokens.js';
-import { MODE_STORAGE_KEY, THEME_STORAGE_KEY } from './appearance.js';
+import { DEFAULT_THEME, MODE_STORAGE_KEY, THEME_STORAGE_KEY } from './appearance.js';
 
 export function themeInitScript(): string {
   const themes = JSON.stringify(themeNames);
+  const fallback = JSON.stringify(DEFAULT_THEME);
   const themeKey = JSON.stringify(THEME_STORAGE_KEY);
   const modeKey = JSON.stringify(MODE_STORAGE_KEY);
 
   return (
     `(function(){try{` +
     `var d=document.documentElement;` +
+    // The theme attribute is always present, since the dark tokens are keyed on
+    // it: the default first (so blocked storage still gets it), then a stored
+    // theme over that.
+    `if(!d.getAttribute("data-theme")){d.setAttribute("data-theme",${fallback});}` +
     `var t=localStorage.getItem(${themeKey});` +
     `if(${themes}.indexOf(t)!==-1){d.setAttribute("data-theme",t);}` +
     `var m=localStorage.getItem(${modeKey});` +

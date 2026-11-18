@@ -35,7 +35,10 @@ import type { SVGProps } from 'react';
  */
 
 export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
-  /** Rendered size in pixels, applied to both axes. Defaults to 16. */
+  /**
+   * Rendered size in pixels, applied to both axes. Omit it and the glyph is
+   * `1em`: the font size of where it sits, so it is 16×16 at 16px text.
+   */
   size?: number;
   /**
    * Accessible name. Omit for a decorative icon sitting beside a text label —
@@ -49,16 +52,16 @@ export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
  * Shared chrome for every icon.
  *
  * Stroke is 1.5 rather than Tabler's own 2: the house style is hairlines, and
- * a 2px stroke reads heavy against the type. At the 16px default it draws at
+ * a 2px stroke reads heavy against the type. At 16px it draws at
  * one pixel. It is set here rather than per-icon so it cannot vary between
  * them.
  */
-function Icon({ size = 16, title, children, ...rest }: IconProps & { children: React.ReactNode }) {
+function Icon({ size, title, children, ...rest }: IconProps & { children: React.ReactNode }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
+      width={size ?? '1em'}
+      height={size ?? '1em'}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -435,6 +438,153 @@ export function CircleAlertIcon(props: IconProps) {
       <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
       <path d="M12 8v4" />
       <path d="M12 16h.01" />
+    </Icon>
+  );
+}
+
+// --- The editor's blocks, and the app's own chrome --------------------------
+// Twelve more Tabler outline icons, copied verbatim: the block menu's
+// paragraph, three headings and two lists, the image block, and the document
+// and account controls that sit beside a label or as an icon-only `Button`.
+
+export function PilcrowIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M13 4v16" />
+      <path d="M17 4v16" />
+      <path d="M19 4h-9.5a4.5 4.5 0 0 0 0 9h3.5" />
+    </Icon>
+  );
+}
+
+export function Heading1Icon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M19 18v-8l-2 2" />
+      <path d="M4 6v12" />
+      <path d="M12 6v12" />
+      <path d="M11 18h2" />
+      <path d="M3 18h2" />
+      <path d="M4 12h8" />
+      <path d="M3 6h2" />
+      <path d="M11 6h2" />
+    </Icon>
+  );
+}
+
+export function Heading2Icon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M17 12a2 2 0 1 1 4 0c0 .591 -.417 1.318 -.816 1.858l-3.184 4.143l4 0" />
+      <path d="M4 6v12" />
+      <path d="M12 6v12" />
+      <path d="M11 18h2" />
+      <path d="M3 18h2" />
+      <path d="M4 12h8" />
+      <path d="M3 6h2" />
+      <path d="M11 6h2" />
+    </Icon>
+  );
+}
+
+export function Heading3Icon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M19 14a2 2 0 1 0 -2 -2" />
+      <path d="M17 16a2 2 0 1 0 2 -2" />
+      <path d="M4 6v12" />
+      <path d="M12 6v12" />
+      <path d="M11 18h2" />
+      <path d="M3 18h2" />
+      <path d="M4 12h8" />
+      <path d="M3 6h2" />
+      <path d="M11 6h2" />
+    </Icon>
+  );
+}
+
+export function ListIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M9 6l11 0" />
+      <path d="M9 12l11 0" />
+      <path d="M9 18l11 0" />
+      <path d="M5 6l0 .01" />
+      <path d="M5 12l0 .01" />
+      <path d="M5 18l0 .01" />
+    </Icon>
+  );
+}
+
+export function ListNumbersIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M11 6h9" />
+      <path d="M11 12h9" />
+      <path d="M12 18h8" />
+      <path d="M4 16a2 2 0 1 1 4 0c0 .591 -.5 1 -1 1.5l-3 2.5h4" />
+      <path d="M6 10v-6l-2 2" />
+    </Icon>
+  );
+}
+
+export function PhotoIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M15 8h.01" />
+      <path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12" />
+      <path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" />
+      <path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" />
+    </Icon>
+  );
+}
+
+export function CopyIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667l0 -8.666" />
+      <path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" />
+    </Icon>
+  );
+}
+
+export function UsersIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+      <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      <path d="M21 21v-2a4 4 0 0 0 -3 -3.85" />
+    </Icon>
+  );
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 7l16 0" />
+      <path d="M10 11l0 6" />
+      <path d="M14 11l0 6" />
+      <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+      <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+    </Icon>
+  );
+}
+
+export function BellIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
+      <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
+    </Icon>
+  );
+}
+
+export function SettingsIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" />
+      <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
     </Icon>
   );
 }

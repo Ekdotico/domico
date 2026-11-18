@@ -141,6 +141,10 @@ export function applyTheme(theme: Theme): void {
 
 /** Write the mode to the document and remember it. Auto removes the attribute. */
 export function applyMode(mode: Mode): void {
+  // The dark tokens are keyed on `[data-theme]`; a document without one has none.
+  if (!document.documentElement.hasAttribute('data-theme')) {
+    document.documentElement.setAttribute('data-theme', DEFAULT_THEME);
+  }
   if (mode === 'auto') {
     document.documentElement.removeAttribute('data-mode');
   } else {

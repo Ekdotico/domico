@@ -1,7 +1,9 @@
 'use client';
 
 import * as ReactDOM from 'react-dom';
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ComponentType, ReactElement, ReactNode } from 'react';
+import type { IconProps } from './icons.js';
+import { Tooltip } from './Tooltip.js';
 
 /**
  * A button, in four variants, which can report an operation in flight.
@@ -102,19 +104,87 @@ export function PendingButton({
   );
 }
 
+/** A domico icon component, as `icons` exports them: `SearchIcon`, not `<SearchIcon />`. */
+export type ButtonIcon = ComponentType<IconProps>;
+
+/**
+ * The icon drawn before a label: 16px, decorative (the label names the
+ * control), with the button's own gap between them.
+ */
+function withIcon(Icon: ButtonIcon | undefined, children: ReactNode): ReactNode {
+  return Icon ? (
+    <>
+      <Icon />
+      {children}
+    </>
+  ) : (
+    children
+  );
+}
+
+/**
+ * The two shapes a button with an icon takes.
+ *
+ * With children, the icon sits before them and the children name the control.
+ * With an icon and no children the button is icon-only, and then `label` is
+ * required: it is the accessible name (`aria-label`) and the text of a
+ * `Tooltip` on hover and on keyboard focus, so the two are identical
+ * (Expression Guidelines §5.1 rule 13). TypeScript refuses the nameless form.
+ * `label` is `never` beside children: the children are the name.
+ *
+ * An icon-only button is a 20×20 box with a 16×16 glyph, and its pointer target is 24×24 (a transparent ::after)
+ * (WCAG 2.5.8). It takes the same variants as a labelled one. Write the label
+ * as the term a labelled button would carry, naming its object where the
+ * target is ambiguous: "Delete document", not "Delete". A touch has no hover,
+ * so where width allows, prefer a visible word. The tooltip needs
+ * `@ekdotico/domico/styles/tooltip.css` as well as `button.css`.
+ *
+ * The union is the whole guard, and a type is not a runtime check. Its known
+ * gap: children that are only `undefined` or `null` at run time, such as
+ * `{maybeText}`, type as the first shape, so a labelless icon-only button can
+ * still be built that way. Write the icon-only form with no children at all.
+ */
+export type ButtonContent =
+  | {
+      children: ReactNode;
+      /** An icon drawn before the label, at 16px. It is lost while a `pendingLabel` shows. */
+      icon?: ButtonIcon;
+      label?: never;
+    }
+  | {
+      children?: undefined;
+      /** With no children, the button is icon-only. */
+      icon: ButtonIcon;
+      /** The accessible name and the tooltip text. Required when there are no children. */
+      label: string;
+    };
+
+/** Wraps an icon-only control in the tooltip that repeats its name. */
+function named(iconOnly: boolean, label: string | undefined, control: ReactElement): ReactElement {
+  return iconOnly && label ? <Tooltip content={label}>{control}</Tooltip> : control;
+}
+
 export function Button({
   variant = 'secondary',
   className,
+  icon,
+  label,
+  children,
   ...button
-}: PendingButtonProps & {
-  variant?: ButtonVariant;
-}) {
-  return (
+}: Omit<PendingButtonProps, 'children'> & { variant?: ButtonVariant } & ButtonContent) {
+  const iconOnly = icon != null && children == null;
+  return named(
+    iconOnly,
+    label,
     <PendingButton
       {...button}
+      aria-label={iconOnly ? label : button['aria-label']}
       className={['ekd-button', className].filter(Boolean).join(' ')}
       data-variant={variant}
-    />
+      data-icon-only={iconOnly ? '' : undefined}
+    >
+      {withIcon(icon, children)}
+    </PendingButton>,
   );
 }
 
@@ -147,16 +217,26 @@ export function Button({
 export function ButtonLink({
   variant = 'secondary',
   className,
+  icon,
+  label,
+  children,
   ...link
-}: AnchorHTMLAttributes<HTMLAnchorElement> & {
+}: Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children'> & {
   href: string;
   variant?: ButtonVariant;
-}) {
-  return (
+} & ButtonContent) {
+  const iconOnly = icon != null && children == null;
+  return named(
+    iconOnly,
+    label,
     <a
       {...link}
+      aria-label={iconOnly ? label : link['aria-label']}
       className={['ekd-button', className].filter(Boolean).join(' ')}
       data-variant={variant}
-    />
+      data-icon-only={iconOnly ? '' : undefined}
+    >
+      {withIcon(icon, children)}
+    </a>,
   );
 }

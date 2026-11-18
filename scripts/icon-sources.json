@@ -106,5 +106,17 @@
   },
   "CircleAlertIcon": {
     "tabler": "alert-circle"
-  }
+  },
+  "PilcrowIcon": { "tabler": "pilcrow" },
+  "Heading1Icon": { "tabler": "h-1" },
+  "Heading2Icon": { "tabler": "h-2" },
+  "Heading3Icon": { "tabler": "h-3" },
+  "ListIcon": { "tabler": "list" },
+  "ListNumbersIcon": { "tabler": "list-numbers" },
+  "PhotoIcon": { "tabler": "photo" },
+  "CopyIcon": { "tabler": "copy" },
+  "UsersIcon": { "tabler": "users" },
+  "TrashIcon": { "tabler": "trash" },
+  "BellIcon": { "tabler": "bell" },
+  "SettingsIcon": { "tabler": "settings" }
 }

@@ -67,6 +67,8 @@ const {
   Avatar, AvatarStack, avatarInitials,
   OptionList, optionListAttributes, optionListKey, optionListNavigating, optionListOptionId, placeOptionList,
 } = await import('../dist/src/components/index.js');
+const icons = await import('../dist/src/components/icons.js');
+const { SearchIcon, TrashIcon } = icons;
 const { AppearanceMenu, ThemeSwitcher } = await import('../dist/src/theme/index.js');
 
 /** Mount into a fresh container; returns it with a rerender and an unmount. */
@@ -838,6 +840,61 @@ await it('ButtonLink', async () => {
   await view.rerender(h(ButtonLink, { href: '/a', variant: 'primary' }, 'Apply'));
   assert.equal(a.getAttribute('data-variant'), 'primary');
   assert.ok(!a.hasAttribute('aria-busy') && !a.hasAttribute('aria-disabled'));
+  await view.unmount();
+});
+
+await it('the icon set exports its 48 names', () => {
+  const names = Object.keys(icons).filter((name) => name.endsWith('Icon'));
+  assert.equal(names.length, 48);
+  for (const name of [
+    'PilcrowIcon', 'Heading1Icon', 'Heading2Icon', 'Heading3Icon', 'ListIcon', 'ListNumbersIcon',
+    'PhotoIcon', 'CopyIcon', 'UsersIcon', 'TrashIcon', 'BellIcon', 'SettingsIcon',
+  ]) {
+    assert.equal(typeof icons[name], 'function', `${name} is not exported`);
+  }
+});
+
+await it('Button and ButtonLink draw a leading icon, decorative, at 1em', async () => {
+  const view = await mount(
+    h('div', null, h(Button, { icon: SearchIcon }, 'Search'), h(ButtonLink, { href: '/x', icon: SearchIcon }, 'Open')),
+  );
+  for (const control of view.container.querySelectorAll('.ekd-button')) {
+    const svg = control.firstElementChild;
+    assert.equal(svg.tagName.toLowerCase(), 'svg');
+    assert.equal(svg.getAttribute('width'), '1em');
+    assert.equal(svg.getAttribute('aria-hidden'), 'true');
+  }
+  await view.unmount();
+});
+
+await it('an icon-only Button or ButtonLink is named, and its tooltip says the same', async () => {
+  let pressed = 0;
+  const view = await mount(
+    h('div', null,
+      h(Button, { icon: TrashIcon, label: 'Delete document', variant: 'destructive', onClick: () => pressed++ }),
+      h(ButtonLink, { icon: TrashIcon, label: 'Open settings', href: '/settings' }),
+    ),
+  );
+  const button = view.container.querySelector('button');
+  const link = view.container.querySelector('a');
+  for (const [control, name] of [[button, 'Delete document'], [link, 'Open settings']]) {
+    const tip = control.closest('.ekd-tooltip').querySelector('[role="tooltip"]');
+    assert.equal(control.getAttribute('aria-label'), name);
+    assert.equal(tip.textContent, control.getAttribute('aria-label'), 'the tooltip and the name differ');
+    assert.equal(control.getAttribute('aria-describedby'), tip.id);
+    assert.ok(control.hasAttribute('data-icon-only'));
+    assert.equal(control.textContent, '', 'an icon-only control carries text');
+    assert.equal(control.querySelector('svg').getAttribute('aria-hidden'), 'true');
+  }
+  assert.equal(button.getAttribute('type'), 'button');
+  assert.equal(view.container.querySelectorAll('button').length, 1, 'the tooltip added a second control');
+  await act(async () => button.click());
+  assert.equal(pressed, 1);
+  // With children there is no icon-only form, no tooltip and no `aria-label`.
+  await view.rerender(h(Button, { icon: TrashIcon }, 'Delete document'));
+  const labelled = view.container.querySelector('button');
+  assert.ok(!labelled.hasAttribute('data-icon-only') && !labelled.hasAttribute('aria-label'));
+  assert.ok(!view.container.querySelector('.ekd-tooltip'));
   await view.unmount();
 });
 

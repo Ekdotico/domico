@@ -72,7 +72,10 @@ an app stylesheet shadows the package in one theme and not the others, so it
 resolves correctly in the palette you tested and silently wrongly in the other
 seven. There are eight. The one exception is the three chrome dimensions,
 `--sidebar-w`, `--topbar-h` and `--table-sticky-offset`, which an application
-re-declares on `:root` and nothing else (see the catalogue).
+re-declares on `:root` and nothing else (see the catalogue). A property the
+package documents as an optional hook, which no palette defines and which has
+no value to shadow, is set as the README says: `--ekd-editor-placeholder-offset`
+on the editor, for a prompt that starts after a control.
 
 **4 — Stop and recommend; do not improvise.** If a change cannot be made with
 the tokens that exist: stop, name the closest existing token, and recommend

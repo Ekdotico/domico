@@ -2066,7 +2066,11 @@ them.
 
   It is an optional property that the package reads and no palette defines,
   like `--theme-count`: it is not a token, and unset it is `0`, so nothing
-  moves. The caret stays at the start of the line.
+  moves. The caret stays at the start of the line. A prompt that wraps makes
+  its empty block as tall as the wrapped text, so it does not draw outside the
+  block; a prompt of one line is unchanged. This holds when `data-placeholder`
+  is on the block and when it is on an element inside it, as an editor draws a
+  prompt as a decoration.
 - Controls that belong to one block can rest faint. Put `data-dim-at-rest` on
   the block's container (with `styles/button.css` and `styles/code.css`
   loaded), and the secondary, quiet and destructive `Button`, `ButtonLink`, the

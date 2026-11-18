@@ -4,9 +4,7 @@
 version 3 only. That licence is in [LICENSE](./LICENSE), and it is a copyright
 licence. It grants no rights in trade marks.
 
-Stavros Apostolou uses the Ekdotico name, the Ekdotico logo mark, and the
-Ekdotico wordmarks as trade marks. They are not registered. This page claims no
-registration, and the lack of one does not give anyone else a right to use them.
+"Ekdotico", the Ekdotico logo mark and the Ekdotico wordmarks are used by Stavros Apostolou, the copyright holder named in [NOTICE](NOTICE), as unregistered trade marks. No registration is claimed, and the lack of one gives no one else a right to use them.
 
 The logo files are also outside the AGPL; [NOTICE](./NOTICE) lists them.
 
@@ -25,8 +23,7 @@ The logo files are also outside the AGPL; [NOTICE](./NOTICE) lists them.
   something it did not.
 - Changing the logo files, or making a mark that is confusingly similar.
 
-If you publish a modified version, give it a different name and remove the
-logo files.
+Rename it and remove the Ekdotico name and logo before you distribute it or run it as a service.
 
 Crimson Pro, Commissioner, Fira Code, Tabler, Phosphor, and MingCute are the
 names of other people's work. Their licences are in

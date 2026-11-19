@@ -2,7 +2,7 @@
 /**
  * Assemble the shipped stylesheets.
  *
- * Thirty-four entries, so a consumer can take as much or as little as it needs.
+ * Thirty-five entries, so a consumer can take as much or as little as it needs.
  * Tokens are separate again, so the values can be had without any of the
  * opinions.
  *
@@ -13,6 +13,7 @@
  *   styles/components.css     primitives, appearance controls, shared components
  *   styles/appearance.css     the appearance controls alone
  *   styles/primitives.css     Container, Stack, Cluster alone
+ *   styles/frame.css          the wide-screen frame: a page capped at 1440px on a darker ground
  *   styles/badge.css          one entry per component, from here down
  *   styles/callout.css
  *   styles/figure.css
@@ -276,6 +277,11 @@ const files = [
     'primitives.css',
     `${header('layout primitives only', "   import '@ekdotico/domico/styles/primitives.css';")}\n${primitives}\n`,
     'Container + Stack + Cluster',
+  ],
+  [
+    'frame.css',
+    `${header('wide-screen frame only', "   import '@ekdotico/domico/styles/frame.css';")}\n${source('frame.css')}\n`,
+    'the wide-screen frame',
   ],
   ...COMPONENTS.map(([name, sections, what]) => [
     `${name}.css`,

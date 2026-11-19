@@ -67,6 +67,7 @@
     "./styles/components.css": "./dist/styles/components.css",
     "./styles/appearance.css": "./dist/styles/appearance-only.css",
     "./styles/primitives.css": "./dist/styles/primitives.css",
+    "./styles/frame.css": "./dist/styles/frame.css",
     "./styles/badge.css": "./dist/styles/badge.css",
     "./styles/callout.css": "./dist/styles/callout.css",
     "./styles/figure.css": "./dist/styles/figure.css",

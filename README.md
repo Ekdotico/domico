@@ -2338,7 +2338,6 @@ import { AccessGate } from '@ekdotico/domico/components';
 import '@ekdotico/domico/styles/access-gate.css';
 
 <AccessGate
-  eyebrow="Ekdotico"
   title="Enter the access code"
   lede="This site is restricted while it is in development. Enter the four-digit access code to continue."
   contact={<>If you do not have a code, write to <a href="mailto:…">…</a>.</>}

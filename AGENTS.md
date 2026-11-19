@@ -174,6 +174,22 @@ with Mermaid's own `accTitle:` and `accDescr:` so it travels with the diagram.
 Never put `tabIndex` on a non-operable role: keep the pan surface a
 `role="group"` wrapping the `role="img"` stage.
 
+## Labels above titles
+
+Do not put a small label above a heading: no "The platform" over "One tab.
+Every tool.", no site name over a page title. The owner decided this on
+2026-11-19. A heading says what its section is, and a label above it says the
+same thing twice in a smaller voice.
+
+The pieces remain in the package and are not to be reached for by default:
+the `.eyebrow` role in `type.css` and the `eyebrow` prop of `AccessGate`. Use
+one only where a heading cannot carry what the label says and you can state
+why, and say so in the pull request. Do not write a local copy under another
+name (`.section-eyebrow`, `.doc-eyebrow`) to get the same effect.
+
+A heading that names a region of the interface is not such a label: "On this
+page" above the heading rail stays, because it is the name of that navigation.
+
 ## The appearance control
 
 One trigger, top right, disclosing the full optionset: `AppearanceMenu` from

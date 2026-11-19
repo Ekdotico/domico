@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { scaleCss, unscaleCss } from './lib/scale.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SOURCES = ['src/styles/reset.css', 'src/styles/appearance.css', 'src/styles/components.css'];
+const SOURCES = ['src/styles/reset.css', 'src/styles/appearance.css', 'src/styles/components.css', 'src/styles/frame.css'];
 const write = process.argv.includes('--write');
 const failures = [];
 

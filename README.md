@@ -84,6 +84,7 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/components.css` | The layout primitives, the appearance controls, and the shared components |
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
+| `@ekdotico/domico/styles/frame.css` | The wide-screen frame: above 1440px the body is capped and centred on a slightly darker ground. Not in `styles.css`; taken by importing it |
 | `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `margin-note.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `option-list.css`, `sync-status.css`, `avatar.css`, `editor.css`, and `code.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/icons` | The icon set: domico's own, built on Tabler, vendored, at the house stroke weight |

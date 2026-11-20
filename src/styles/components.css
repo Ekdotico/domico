@@ -1423,6 +1423,57 @@
   }
 }
 
+/* --- Navigation shortcuts ------------------------------------------------ */
+/* The number `useNavShortcuts` gives a navigation item, shown while Shift is
+   held. There is no class and no element: the helper sets `data-nav-shortcut`
+   on each numbered item and `data-nav-shortcuts="visible"` on the navigation,
+   and the badge is the item's generated content, at the end of its row.
+
+   Placed, not laid out, so showing it moves no label. The item becomes the
+   box it is placed in through `:where()`, which has no specificity, so an
+   item an application has already positioned keeps its own rule.
+
+   The second `content` gives the number an empty text alternative where the
+   engine reads one: `aria-keyshortcuts` on the item already says the chord,
+   and a number read after the item's name would say it twice.
+
+   No transition, so there is nothing for reduced motion to remove. Under
+   forced colours the fill is flattened and the border, drawn in the system
+   text colour, is what keeps the badge a box. */
+:where([data-nav-shortcuts="visible"] [data-nav-shortcut]) {
+  position: relative;
+}
+[data-nav-shortcuts="visible"] [data-nav-shortcut]::after {
+  content: attr(data-nav-shortcut);
+  content: attr(data-nav-shortcut) / "";
+  position: absolute;
+  inset-inline-end: var(--sp-2);
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  min-inline-size: var(--sp-5);
+  block-size: var(--sp-5);
+  padding-inline: var(--sp-1);
+  background: var(--bg-surface-2);
+  color: var(--fg-1);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--fs-2xs);
+  font-style: normal;
+  font-weight: var(--fw-semi);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tr-normal);
+  line-height: 1;
+  text-transform: none;
+  pointer-events: none;
+}
+@media print {
+  [data-nav-shortcut]::after { content: none; }
+}
+
 /* --- On this page -------------------------------------------------------- */
 /* The rail OnThisPage renders, from the two copies it replaces, which were
    identical once deree's spacing had been moved onto the scale. Where the rail

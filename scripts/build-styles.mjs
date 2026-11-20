@@ -2,7 +2,7 @@
 /**
  * Assemble the shipped stylesheets.
  *
- * Thirty-five entries, so a consumer can take as much or as little as it needs.
+ * Thirty-six entries, so a consumer can take as much or as little as it needs.
  * Tokens are separate again, so the values can be had without any of the
  * opinions.
  *
@@ -26,6 +26,7 @@
  *   styles/tabs.css
  *   styles/access-gate.css
  *   styles/nav-drawer.css
+ *   styles/nav-shortcuts.css  the number on a navigation item while Shift is held
  *   styles/on-this-page.css
  *   styles/doc-meta.css
  *   styles/opening-sequence.css
@@ -207,6 +208,9 @@ const COMPONENTS = [
   ['tabs', ['Tabs'], 'the tab panel'],
   ['access-gate', ['Access gate'], 'the access gate'],
   ['nav-drawer', ['Navigation drawer'], 'the navigation drawer'],
+  // No component behind this one: it styles two attributes a helper in
+  // `/a11y` sets on the application's own navigation.
+  ['nav-shortcuts', ['Navigation shortcuts'], 'the navigation shortcut badge'],
   ['on-this-page', ['On this page'], 'the on-this-page rail'],
   ['doc-meta', ['Document meta'], 'the document version strip'],
   ['opening-sequence', ['Opening sequence'], 'the opening sequence'],

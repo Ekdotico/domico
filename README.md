@@ -85,11 +85,11 @@ packages are being installed, and fatal when this one is.
 | `@ekdotico/domico/styles/appearance.css` | The appearance controls alone: the two switchers, the header row, and the menu |
 | `@ekdotico/domico/styles/primitives.css` | The layout primitives alone — Container, Stack, and Cluster |
 | `@ekdotico/domico/styles/frame.css` | The wide-screen frame: above 1440px the body is capped and centred on a slightly darker ground. Not in `styles.css`; taken by importing it |
-| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `margin-note.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `option-list.css`, `sync-status.css`, `avatar.css`, `editor.css`, and `code.css` |
+| `@ekdotico/domico/styles/badge.css` | One entry per component. The rest are `callout.css`, `figure.css`, `keyvalue.css`, `logo.css`, `section-rule.css`, `stat.css`, `table.css`, `margin-note.css`, `tabs.css`, `access-gate.css`, `nav-drawer.css`, `nav-shortcuts.css`, `on-this-page.css`, `doc-meta.css`, `opening-sequence.css`, `button.css`, `form.css`, `dialog.css`, `tooltip.css`, `page-heading.css`, `toolbar.css`, `menu.css`, `option-list.css`, `sync-status.css`, `avatar.css`, `editor.css`, and `code.css` |
 | `@ekdotico/domico/components` | The shared React components |
 | `@ekdotico/domico/icons` | The icon set: domico's own, built on Tabler, vendored, at the house stroke weight |
 | `@ekdotico/domico/theme` | Theme and mode switching, and the first-paint init script |
-| `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord, and `attachImageResize` for the handle on an image block |
+| `@ekdotico/domico/a11y` | `useModalSurface` and `inertOutside` for a modal surface, `isShortcut` and `shortcutLabel` for a ⌘/Ctrl chord, `useNavShortcuts` and `attachNavShortcuts` for numbered navigation shortcuts, and `attachImageResize` for the handle on an image block |
 | `@ekdotico/domico/fonts` | Font loading configuration for the three locked families |
 | `@ekdotico/domico/color` | `oklchToHex` and the rest of the package's OKLCH and sRGB maths, for a surface that cannot paint `oklch()`, such as an Open Graph image |
 | `@ekdotico/domico/mermaid` | Mermaid `themeVariables` for all eight palettes |
@@ -318,6 +318,54 @@ Ctrl+K elsewhere — never both, so Ctrl+K is left to a macOS text field — and
 `shortcutLabel('k')` gives the same chord for the screen and for
 `aria-keyshortcuts`. All four read the document or the platform, so call them
 from an effect or an event handler, not during render.
+
+### Navigation shortcuts
+
+`useNavShortcuts` numbers the first nine items of a navigation. Shift and a
+digit follows the item with that number, as a click would, and holding Shift
+alone shows each number as a badge at the end of its row.
+
+```tsx
+import { useNavShortcuts } from '@ekdotico/domico/a11y';
+import '@ekdotico/domico/styles/nav-shortcuts.css';
+
+const navRef = useRef<HTMLElement>(null);
+useNavShortcuts(navRef, { enabled: preferences.navShortcuts });
+
+<nav ref={navRef} aria-label="Site navigation">{links}</nav>
+```
+
+The navigation stays the application's. The hook renders nothing: it sets
+`data-nav-shortcut` and `aria-keyshortcuts="Shift+3"` on each numbered item,
+and `data-nav-shortcuts="visible"` on the navigation while the numbers are
+shown, and the stylesheet draws the badge from those attributes. Items are
+`a[href]` inside the navigation unless `items` gives another selector. An item
+with no box, or inside an `inert` subtree, takes no number, so a link in a
+collapsed group or in a closed drawer does not use one up.
+`attachNavShortcuts(element, options)` is the same behaviour without React,
+and returns the function that removes it.
+
+| It does this | For this reason |
+| --- | --- |
+| Nothing while focus is in a text field, a textarea, a select or an editable region | Shift and a digit types a character there, and Shift is held for every capital letter |
+| Shows the numbers only after Shift is held alone for `delay` milliseconds, 400 unless set | A capital typed elsewhere on the page does not flash them |
+| Hides the numbers on releasing Shift, on any other key or modifier, on a pointer press, and when the window loses focus | The numbers are on screen only while they can be used |
+| Matches the digit by its physical key | The character Shift and a digit types differs between keyboard layouts, Greek among them |
+| Nothing with Ctrl, Alt or Meta held | Those chords belong to the browser and the platform |
+
+The shortcut does not wait for the numbers: Shift and 3 works as soon as it is
+pressed.
+
+**An application that turns this on owes its readers a way to turn it off.**
+Shift and a digit types a character, so WCAG 2.1.4 (Character Key Shortcuts)
+applies, and a person who dictates text or presses keys by accident must be
+able to switch the shortcut off. Offer that as a setting, remember it, and pass
+it as `enabled`. Turned off, the items carry no number and no
+`aria-keyshortcuts`.
+
+The number is decorative. `aria-keyshortcuts` tells a screen reader the chord,
+and the badge has an empty text alternative where the engine supports one. The
+badge has no transition, and under forced colours its border keeps it a box.
 
 ---
 

@@ -13,6 +13,8 @@
  *                     Tab cycle, Escape, and focus returned in the right order
  *   isShortcut        a ⌘/Ctrl chord that means one thing on every platform
  *   shortcutLabel     the same chord, for the screen and aria-keyshortcuts
+ *   useNavShortcuts   Shift and a digit for the first nine items of a
+ *                     navigation, with the numbers shown while Shift is held
  *   attachImageResize the handle on an image block: a slider that is dragged
  *                     or moved by the keys, and says each width as an event
  */
@@ -25,6 +27,7 @@ export {
   type ModalSurfaceOptions,
 } from './useModalSurface.js';
 export { isShortcut, shortcutLabel, type ShortcutLabel } from './shortcut.js';
+export { attachNavShortcuts, useNavShortcuts, type NavShortcutsOptions } from './navShortcuts.js';
 export {
   attachImageResize,
   clampImageWidth,

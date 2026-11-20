@@ -59,7 +59,7 @@ const { createRoot } = await import('react-dom/client');
 const act = React.act ?? (await import('react-dom/test-utils')).act;
 const h = React.createElement;
 
-const { inertOutside, useModalSurface, isShortcut, shortcutLabel } = await import('../dist/src/a11y/index.js');
+const { inertOutside, useModalSurface, isShortcut, shortcutLabel, attachNavShortcuts, useNavShortcuts } = await import('../dist/src/a11y/index.js');
 const {
   Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
   AccessGate, GateSubmitButton, NavDrawer, OnThisPage, InPageLinkDirection, OpeningSequence, DocMeta,
@@ -154,6 +154,179 @@ await it('isShortcut and shortcutLabel', () => {
   assert.ok(isShortcut(ev({ key: 'K', code: 'KeyK', ctrlKey: true }), 'k'));
   assert.ok(!isShortcut(ev({ key: 'k', code: 'KeyK', metaKey: true }), 'k'), 'Meta+K taken off Apple');
   assert.ok(isShortcut(ev({ key: '/', code: 'Slash', ctrlKey: true }), '/'), 'a non-letter key missed');
+});
+
+// --- navigation shortcuts ---------------------------------------------------
+await it('attachNavShortcuts and useNavShortcuts', async () => {
+  const links = Array.from({ length: 11 }, (_, i) => `<a id="l${i + 1}" href="/p${i + 1}">Page ${i + 1}</a>`);
+  document.body.innerHTML = `
+    <nav id="nav">
+      <div data-nobox><a id="collapsed" href="/collapsed">Collapsed</a></div>
+      <div inert><a id="inert" href="/inert">Inert</a></div>
+      ${links.join('')}
+    </nav>
+    <input id="input" /><textarea id="textarea"></textarea>
+    <select id="select"><option>One</option></select>
+    <div id="editable" contenteditable="true" tabindex="0"></div>
+    <button id="button">Elsewhere</button>`;
+  const $ = (id) => document.getElementById(id);
+  const nav = $('nav');
+  const DELAY = 15;
+  const wait = (ms = DELAY * 3) => new Promise((resolve) => setTimeout(resolve, ms));
+  const shown = () => nav.getAttribute('data-nav-shortcuts') === 'visible';
+  const keyup = (init) =>
+    document.dispatchEvent(new window.KeyboardEvent('keyup', { bubbles: true, ...init }));
+  const shiftDown = (init) => key(document.body, { key: 'Shift', code: 'ShiftLeft', shiftKey: true, ...init });
+  const shiftUp = () => keyup({ key: 'Shift', code: 'ShiftLeft' });
+
+  // A click is the whole of an activation here: jsdom follows no link.
+  const followed = [];
+  nav.addEventListener('click', (event) => {
+    event.preventDefault();
+    followed.push(event.target.id);
+  });
+
+  const detach = attachNavShortcuts(nav, { delay: DELAY });
+
+  // The first nine with a box, outside an inert subtree, in document order.
+  for (let n = 1; n <= 9; n++) {
+    assert.equal($(`l${n}`).getAttribute('data-nav-shortcut'), String(n));
+    assert.equal($(`l${n}`).getAttribute('aria-keyshortcuts'), `Shift+${n}`);
+  }
+  for (const id of ['l10', 'l11', 'collapsed', 'inert']) {
+    assert.ok(!$(id).hasAttribute('data-nav-shortcut'), `${id} was numbered`);
+    assert.ok(!$(id).hasAttribute('aria-keyshortcuts'), `${id} was given a shortcut`);
+  }
+
+  // Shift and the digit follows the item, and the key is used up.
+  const digit = (n, init) => key(document.body, { key: '!', code: `Digit${n}`, shiftKey: true, ...init });
+  assert.ok(digit(3).defaultPrevented, 'the key was left to type its character');
+  assert.deepEqual(followed, ['l3']);
+  // The physical key decides: a layout that types something else under Shift.
+  digit(2, { key: '"' });
+  digit(9, { key: '(' });
+  assert.deepEqual(followed, ['l3', 'l2', 'l9']);
+
+  // What does not follow anything, and leaves the key alone.
+  const refused = [
+    ['no Shift', digit(1, { key: '1', shiftKey: false })],
+    ['Ctrl', digit(1, { ctrlKey: true })],
+    ['Alt', digit(1, { altKey: true })],
+    ['Meta', digit(1, { metaKey: true })],
+    ['a held key repeating', digit(1, { repeat: true })],
+    ['zero', digit(0)],
+    ['the numeric keypad', key(document.body, { key: '1', code: 'Numpad1', shiftKey: true })],
+  ];
+  for (const id of ['input', 'textarea', 'select', 'editable']) {
+    $(id).focus();
+    refused.push([`focus in the ${id}`, key($(id), { key: '!', code: 'Digit1', shiftKey: true })]);
+  }
+  $('button').focus();
+  for (const [what, event] of refused) assert.ok(!event.defaultPrevented, `fired with ${what}`);
+  assert.deepEqual(followed, ['l3', 'l2', 'l9']);
+  // A key another handler used is that handler's.
+  const taken = (event) => event.preventDefault();
+  document.body.addEventListener('keydown', taken);
+  digit(1);
+  document.body.removeEventListener('keydown', taken);
+  assert.deepEqual(followed, ['l3', 'l2', 'l9']);
+
+  // The numbers show once Shift has been held alone for the delay, and go
+  // when it is released.
+  shiftDown();
+  assert.ok(!shown(), 'the numbers showed at once');
+  await wait();
+  assert.ok(shown(), 'the numbers never showed');
+  shiftDown({ repeat: true });
+  assert.ok(shown(), 'a repeat of the held key hid them');
+  // With the other Shift still down, one release is not the release.
+  keyup({ key: 'Shift', code: 'ShiftRight', shiftKey: true });
+  assert.ok(shown(), 'releasing one of two Shift keys hid them');
+  shiftUp();
+  assert.ok(!shown(), 'the numbers outlived Shift');
+
+  // A capital letter: Shift, then a key inside the delay.
+  shiftDown();
+  key(document.body, { key: 'A', code: 'KeyA', shiftKey: true });
+  await wait();
+  assert.ok(!shown(), 'typing a capital flashed the numbers');
+  shiftUp();
+
+  // Each of these ends a showing: another modifier, a pointer press, the
+  // window losing focus, focus moving into a field, and using the shortcut.
+  const enders = [
+    ['Ctrl joining', () => key(document.body, { key: 'Control', code: 'ControlLeft', shiftKey: true, ctrlKey: true })],
+    ['a pointer press', () => document.body.dispatchEvent(new window.Event('pointerdown', { bubbles: true }))],
+    ['the window losing focus', () => window.dispatchEvent(new window.Event('blur'))],
+    ['focus moving into a field', () => $('input').dispatchEvent(new window.Event('focusin', { bubbles: true }))],
+    ['the shortcut being used', () => digit(1)],
+  ];
+  for (const [what, end] of enders) {
+    shiftDown();
+    await wait();
+    assert.ok(shown(), `no numbers before ${what}`);
+    end();
+    assert.ok(!shown(), `the numbers outlived ${what}`);
+    shiftUp();
+  }
+  followed.length = 0;
+
+  // Never while typing, and never with another modifier already held.
+  $('input').focus();
+  shiftDown();
+  await wait();
+  assert.ok(!shown(), 'the numbers showed over a text field');
+  shiftUp();
+  $('button').focus();
+  shiftDown({ metaKey: true });
+  await wait();
+  assert.ok(!shown(), 'the numbers showed with Meta held');
+  shiftUp();
+
+  // The navigation changes and the numbers follow it: at once for a removed
+  // item, and at the press for one that only lost its box.
+  $('l1').remove();
+  await wait(0);
+  assert.equal($('l2').getAttribute('aria-keyshortcuts'), 'Shift+1');
+  assert.equal($('l10').getAttribute('aria-keyshortcuts'), 'Shift+9');
+  $('l2').setAttribute('data-nobox', '');
+  digit(1);
+  assert.deepEqual(followed, ['l3']);
+  assert.ok(!$('l2').hasAttribute('aria-keyshortcuts'), 'an item with no box kept its shortcut');
+
+  // Fewer items than the digit: nothing, and the key is left alone.
+  for (const id of ['l6', 'l7', 'l8', 'l9', 'l10', 'l11']) $(id).remove();
+  assert.ok(!digit(9).defaultPrevented, 'a digit past the last item was used up');
+
+  // Detached, nothing is left on the navigation and nothing answers.
+  shiftDown();
+  detach();
+  await wait();
+  assert.ok(!shown(), 'a pending showing survived the detach');
+  assert.equal(nav.querySelectorAll('[data-nav-shortcut], [aria-keyshortcuts]').length, 0);
+  assert.ok(!digit(1).defaultPrevented, 'the shortcut answered after the detach');
+  document.body.innerHTML = '';
+
+  // The hook: off, the items say nothing; on, they are numbered.
+  function Nav({ enabled }) {
+    const ref = React.useRef(null);
+    useNavShortcuts(ref, { enabled });
+    return h('nav', { ref }, h('a', { href: '/define' }, 'Define'), h('a', { href: '/design' }, 'Design'));
+  }
+  const view = await mount(h(Nav, { enabled: false }));
+  const first = view.container.querySelector('a');
+  assert.ok(!first.hasAttribute('aria-keyshortcuts'), 'turned off, the item still names a shortcut');
+  await view.rerender(h(Nav, { enabled: true }));
+  assert.equal(first.getAttribute('aria-keyshortcuts'), 'Shift+1');
+  await view.rerender(h(Nav, { enabled: false }));
+  assert.ok(!first.hasAttribute('aria-keyshortcuts') && !first.hasAttribute('data-nav-shortcut'));
+  await view.unmount();
+
+  // The badge is drawn from the two attributes, and nothing animates it.
+  const css = (await import('node:fs')).readFileSync(new URL('../dist/styles/nav-shortcuts.css', import.meta.url), 'utf8');
+  assert.ok(css.includes('[data-nav-shortcuts="visible"] [data-nav-shortcut]::after'));
+  assert.ok(css.includes('content: attr(data-nav-shortcut) / "";'), 'the number has no empty text alternative');
+  assert.ok(!/transition|animation/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')), 'the badge moves');
 });
 
 // --- useModalSurface --------------------------------------------------------

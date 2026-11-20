@@ -5,7 +5,6 @@ import { GateSubmitButton } from './GateSubmitButton.js';
  * The passcode form a pre-release site shows in place of itself.
  *
  *   <AccessGate
- *     eyebrow="Ekdotico"
  *     title="Enter the access code"
  *     lede="This site is restricted while it is in development."
  *     contact={<>If you do not have a code, write to <a href="mailto:…">…</a>.</>}
@@ -65,7 +64,7 @@ export function AccessGate({
   pendingLabel,
   pending,
 }: {
-  /** A short line above the title, naming the site or the area. */
+  /** A short line above the title. Avoid it: the title names the page (AGENTS.md, "Labels above titles"). */
   eyebrow?: ReactNode;
   /** The page's one heading. */
   title: ReactNode;

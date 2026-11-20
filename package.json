@@ -1,6 +1,6 @@
 {
   "name": "@ekdotico/domico",
-  "version": "0.44.0",
+  "version": "0.47.0",
   "private": false,
   "description": "Domico — the Ekdotico house style: design tokens, base styles, shared components, and the Expression Guidelines with their machine-readable vocabulary and prohibited terms.",
   "license": "AGPL-3.0-only AND LicenseRef-Ekdotico-Brand",
@@ -67,6 +67,7 @@
     "./styles/components.css": "./dist/styles/components.css",
     "./styles/appearance.css": "./dist/styles/appearance-only.css",
     "./styles/primitives.css": "./dist/styles/primitives.css",
+    "./styles/frame.css": "./dist/styles/frame.css",
     "./styles/badge.css": "./dist/styles/badge.css",
     "./styles/callout.css": "./dist/styles/callout.css",
     "./styles/figure.css": "./dist/styles/figure.css",
@@ -75,6 +76,7 @@
     "./styles/section-rule.css": "./dist/styles/section-rule.css",
     "./styles/stat.css": "./dist/styles/stat.css",
     "./styles/table.css": "./dist/styles/table.css",
+    "./styles/margin-note.css": "./dist/styles/margin-note.css",
     "./styles/tabs.css": "./dist/styles/tabs.css",
     "./styles/access-gate.css": "./dist/styles/access-gate.css",
     "./styles/nav-drawer.css": "./dist/styles/nav-drawer.css",
@@ -157,6 +159,7 @@
     "check:discipline": "node scripts/check-discipline.mjs .",
     "check:a11y": "node scripts/check-a11y.mjs .",
     "check:svg": "node scripts/check-svg.mjs",
+    "check:scale": "node scripts/check-scale.mjs",
     "check:components": "node scripts/check-components.mjs",
     "check:decay": "node scripts/check-decay.mjs .",
     "check:consumers": "node scripts/check-consumers.mjs",
@@ -167,7 +170,7 @@
     "hooks:check": "node scripts/install-agent-hooks.mjs --check --target .",
     "prepare": "node scripts/install-agent-hooks.mjs --target .",
     "lint:fixture": "node scripts/check-lint-fixture.mjs",
-    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:collaborators && pnpm check:styles && pnpm check:discipline && pnpm check:a11y && pnpm check:svg && pnpm check:components && pnpm check:ruleset && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
+    "check": "pnpm check:generated && pnpm check:expression && pnpm check:exports && pnpm check:icons && pnpm check:appearance && pnpm check:contrast && pnpm check:collaborators && pnpm check:styles && pnpm check:scale && pnpm check:discipline && pnpm check:a11y && pnpm check:svg && pnpm check:components && pnpm check:ruleset && pnpm lint:fixture && pnpm lint:copy && tsc -p tsconfig.json --noEmit",
     "release": "changeset publish"
   },
   "peerDependencies": {

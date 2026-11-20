@@ -149,6 +149,13 @@ const PAIRS = [
   // and that fork then failed on every dark palette. A surface a consumer
   // actually draws on belongs here.
   ['gilt', 'gilt-soft', 4.5],
+  // The label of a margin note. A note in a table cell is on the canvas at
+  // rest and, while its row is hovered, on a wash of --bg-surface-2 at 60%;
+  // the full step is the worse of the two and is the one measured. A note on
+  // a card is on --bg-surface. The note's text is --fg-3, listed above on all
+  // three.
+  ['gilt', 'bg-surface', 4.5],
+  ['gilt', 'bg-surface-2', 4.5],
   ['warn', 'bg-canvas', 4.5],
   ['danger', 'bg-canvas', 4.5],
   ['ok', 'bg-canvas', 4.5],

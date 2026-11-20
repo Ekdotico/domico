@@ -2,7 +2,7 @@
 /**
  * Assemble the shipped stylesheets.
  *
- * Thirty-four entries, so a consumer can take as much or as little as it needs.
+ * Thirty-six entries, so a consumer can take as much or as little as it needs.
  * Tokens are separate again, so the values can be had without any of the
  * opinions.
  *
@@ -13,6 +13,7 @@
  *   styles/components.css     primitives, appearance controls, shared components
  *   styles/appearance.css     the appearance controls alone
  *   styles/primitives.css     Container, Stack, Cluster alone
+ *   styles/frame.css          the wide-screen frame: a page capped at 1440px on a darker ground
  *   styles/badge.css          one entry per component, from here down
  *   styles/callout.css
  *   styles/figure.css
@@ -20,7 +21,8 @@
  *   styles/logo.css
  *   styles/section-rule.css
  *   styles/stat.css
- *   styles/table.css
+ *   styles/table.css          the table, its caption, the notes of a row and the requirement table
+ *   styles/margin-note.css
  *   styles/tabs.css
  *   styles/access-gate.css
  *   styles/nav-drawer.css
@@ -201,7 +203,8 @@ const COMPONENTS = [
   ['logo', ['LOGO LOCKUP'], 'the logo lockup'],
   ['section-rule', ['Section rule'], 'the section rule'],
   ['stat', ['Stat and stat grid'], 'the stat and the stat grid'],
-  ['table', ['Tables', 'Table caption'], 'the table and its caption'],
+  ['table', ['Tables', 'Table caption', 'Table row note', 'Requirement table'], 'the table, its caption, the notes of a row and the requirement table'],
+  ['margin-note', ['Margin note'], 'the margin note'],
   ['tabs', ['Tabs'], 'the tab panel'],
   ['access-gate', ['Access gate'], 'the access gate'],
   ['nav-drawer', ['Navigation drawer'], 'the navigation drawer'],
@@ -278,6 +281,11 @@ const files = [
     'primitives.css',
     `${header('layout primitives only', "   import '@ekdotico/domico/styles/primitives.css';")}\n${primitives}\n`,
     'Container + Stack + Cluster',
+  ],
+  [
+    'frame.css',
+    `${header('wide-screen frame only', "   import '@ekdotico/domico/styles/frame.css';")}\n${source('frame.css')}\n`,
+    'the wide-screen frame',
   ],
   ...COMPONENTS.map(([name, sections, what]) => [
     `${name}.css`,

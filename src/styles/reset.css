@@ -240,6 +240,15 @@ canvas {
   max-inline-size: 100%;
 }
 
+/* A domico icon at its size times the interface scale (--scale). The icon
+   writes its size in --ekd-icon-size; at --scale: 1 this is the size its own
+   attributes give it. :where() keeps it at no specificity, so a caller's
+   rule for the icon's width or height wins as it did before. */
+:where(svg[data-ekd-icon]) {
+  inline-size: calc(var(--ekd-icon-size) * var(--scale));
+  block-size: calc(var(--ekd-icon-size) * var(--scale));
+}
+
 /* Form controls do not inherit type from the document in any engine. Without
    this a button renders in the user agent's font at its own size, which is the
    single most common way a design system's type scale is broken. */
@@ -375,8 +384,8 @@ html {
 }
 
 *::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: calc(10px * var(--scale));
+  height: calc(10px * var(--scale));
 }
 
 *::-webkit-scrollbar-track,

@@ -112,7 +112,58 @@ export function TableHeaderCell(props: ThHTMLAttributes<HTMLTableCellElement>) {
   return <th {...props} />;
 }
 
-/** A data cell. `colSpan`, `rowSpan` and `headers` pass through to the `<td>`. */
-export function TableCell(props: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td {...props} />;
+export interface TableCellProps extends TdHTMLAttributes<HTMLTableCellElement> {
+  /**
+   * The margin notes of this cell's row: one `MarginNote`, or several. Give it
+   * to the last cell of the row.
+   */
+  note?: ReactNode;
+}
+
+/**
+ * A data cell. `colSpan`, `rowSpan` and `headers` pass through to the `<td>`.
+ *
+ * `note` is how a row carries a margin note. The notes are rendered inside
+ * the cell, after its content:
+ *
+ *   <td>
+ *     <div class="tbl-noted">
+ *       <div class="tbl-noted-text">…the cell's content…</div>
+ *       <div class="tbl-notes">…the notes…</div>
+ *     </div>
+ *   </td>
+ *
+ * Inside the cell, and not in a cell or a row of their own, for three reasons.
+ * The table keeps its columns: no column without a header, no row that is not
+ * a record. A screen reader reading the row reaches the note as the end of the
+ * cell it is read with, in every browser, with no reference between ids to
+ * break. And the note is in the flow of the row, so the row is as tall as its
+ * notes and two rows' notes cannot meet, however many a table has.
+ *
+ * With no gutter the notes sit under the cell's content. Where the application
+ * has said there is one (`--ekd-margin-gutter: on`, see `MarginNote`) the
+ * notes of a row's LAST cell stand in the gutter beside the row: the
+ * stylesheet measures from the end edge of the table, which only the last cell
+ * touches. In any other cell they stay under the content at every width.
+ *
+ * Without `note` the cell renders what it always rendered. So does a `note`
+ * that holds nothing: `null`, a boolean, an empty string, an empty array or
+ * one of empty values, and `0`, which is what `count && <MarginNote />` leaves
+ * behind when there are none.
+ */
+function holdsNothing(note: ReactNode): boolean {
+  if (note == null || typeof note === 'boolean' || note === '' || note === 0) return true;
+  return Array.isArray(note) && note.every(holdsNothing);
+}
+
+export function TableCell({ note, children, ...rest }: TableCellProps) {
+  if (holdsNothing(note)) return <td {...rest}>{children}</td>;
+  return (
+    <td {...rest}>
+      <div className="tbl-noted">
+        <div className="tbl-noted-text">{children}</div>
+        <div className="tbl-notes">{note}</div>
+      </div>
+    </td>
+  );
 }

@@ -28,6 +28,10 @@ h1.display {
 }
 
 /* The category label above a title.
+   Avoid it. The owner decided on 2026-11-19 that a title stands without a
+   label above it, as common practice: the role stays for the rare case with a
+   stated reason, and a new page or section does not get one (AGENTS.md,
+   "Labels above titles").
    Case is authored, never applied — see rule 17. This role rendered
    `text-transform: uppercase` until 0.15.0, which erased the sentence case the
    Expression Guidelines require of every label (§4.1, universal). Size, weight,

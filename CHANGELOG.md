@@ -1,5 +1,110 @@
 # @ekdotico/domico
 
+## 0.47.0
+
+### Minor Changes
+
+- 361d957: A wide-screen frame, as a stylesheet an application takes by importing it:
+  `@ekdotico/domico/styles/frame.css`.
+
+  Above 1440 CSS pixels the body is capped at 1440px at the interface scale and
+  centred, with a one-pixel rule on each side. The ground beside it is the
+  theme's page colour under a 3% layer of black. It is not part of `styles.css`,
+  so nothing changes for an application that does not import it. An application
+  that enlarges its page with `zoom` on body sets `--frame-zoom` to that factor.
+
+## 0.46.1
+
+### Patch Changes
+
+- 34db332: docs: a label above a title is avoided as common practice
+
+  The owner decided on 2026-11-19 that a heading stands without a small label
+  above it. Nothing is removed: the `.eyebrow` role and the `eyebrow` prop of
+  `AccessGate` remain for the rare case with a stated reason. `AGENTS.md` gains
+  "Labels above titles", the role and the prop say to avoid them, and the
+  `AccessGate` examples no longer pass the prop.
+
+## 0.46.0
+
+### Minor Changes
+
+- fab9da7: Add `--scale`, the interface scale. It is one factor, 1 by default, that an application sets on `:root` (for example `:root { --scale: 1.5 }` under a media query) for an interface half as large again on a very wide screen. It replaces `zoom`, which displaced the positions scripts write from `getBoundingClientRect`.
+
+  The factor applies to:
+
+  - the type, spacing, radius and layout tokens, including the fluid middle term of `--fs-display` and `--fs-lede`;
+  - every `rem` length in the stylesheets, and every `px` length above 3px that is not a line or a shadow;
+  - icons, through a new reset rule and an `--ekd-icon-size` custom property each icon writes.
+
+  Icon props are unchanged. An icon given its own `width` or `height` does not take the factor.
+
+  At 1, every computed value is unchanged; `check:scale` holds the sources, tokens and icons to that. Shadows, hairlines and breakpoints do not take the factor.
+
+## 0.45.0
+
+### Minor Changes
+
+- 443704a: feat: a margin note, a requirement table, and a table row that carries a note
+
+  `MarginNote` is the marginalia the documentation site drew for itself: a small
+  italic aside with a hairline rule and an optional label, in
+  `styles/margin-note.css`. It is `role="note"`, named by its label, and writes
+  no word of its own.
+
+  `RequirementTable` is the documentation site's requirement table, built from
+  `Table` and its parts: an identifier, the requirement, and a priority column
+  where a row has one. The data is strings, and the application passes
+  `renderText` to say what a string becomes. Each requirement takes `notes`.
+  The words the table writes are in `labels`, with the site's own as defaults;
+  a priority letter is read as its word ("Must have"), and the dash has a word
+  only when `noPriority` is passed. Its styles, the `.req-*` classes and the two column widths, are in
+  `styles/table.css`.
+
+  `TableCell` takes `note`. The notes of a row are rendered inside the cell, so
+  the table keeps its columns and a screen reader reads the note with its row.
+  With no gutter they sit under the cell's content. A `note` that holds nothing
+  (`null`, a boolean, `''`, `0`, an empty array) is no note.
+
+  The application says where there is a gutter by setting
+  `--ekd-margin-gutter: on` on an ancestor of the text column, and `off` where it
+  closes. A note then floats into the gutter at the start of the column, and the
+  notes of a table row stand in the same gutter, level with the row: those of a
+  row's last cell, and those of a requirement. The row is as tall as its notes,
+  so many notes neither meet nor move away from their rows. A row's notes take
+  the gutter only above 920px, where the table's card does not scroll, and the
+  table needs 216px free at its start. Unset, in print, and
+  in a browser without container style queries, there is no gutter.
+
+  Nothing that existed changes: a `TableCell` without `note` renders the `<td>`
+  it rendered.
+
+## 0.44.2
+
+### Patch Changes
+
+- 3c02902: fix: an empty block grows to hold a prompt that wraps
+
+  The editor's prompt was a float with no height, so on a narrow editor or with a
+  wide `--ekd-editor-placeholder-offset` its second line was drawn outside the
+  block and over what came after. It is now an inline box as wide as the line,
+  whose end margin takes that width back, and as tall as its text: a prompt that
+  wraps makes its line, and so its block, as tall as the wrapped text, whether
+  `data-placeholder` is on the block or on an element inside it. A prompt of one
+  line, the caret at the start of the line and the offset are unchanged.
+
+## 0.44.1
+
+### Patch Changes
+
+- 05eb8fd: fix: an icon with no `size` is 16×16 again, not `1em`
+
+  0.44.0 made the default `1em`, so an icon followed the font size of its
+  control: a 15px editor control drew 15×15, and a 13px toolbar button drew
+  13×13. The default is a fixed 16×16 whatever the font size around it. Pass
+  `size` to scale one deliberately. Icon-only `Button` and `ButtonLink` are
+  unchanged: a 20×20 box, a 16×16 glyph, a 24×24 pointer target.
+
 ## 0.44.0
 
 ### Minor Changes

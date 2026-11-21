@@ -48,7 +48,13 @@ import {
  *
  * `floating` gives the row a surface of its own: the raised ground, a hairline
  * and a shadow, for a toolbar shown over a selection. **The application
- * places it**, and owns when it is shown. It owes two things the package
+ * places it**, and owns when it is shown, because the package cannot see the
+ * editor's pointer state. Over a text selection it opens once the selection is
+ * complete. While a pointer button is held down to drag a selection the toolbar
+ * stays hidden, and it opens when the button is released, wherever that
+ * happens. A selection made by keyboard shows it at once. A toolbar that
+ * appeared and moved during the drag would cover the text being selected and
+ * pull the eye away. The application also owes two things the package
  * cannot supply. A way to reach the toolbar from the text by keyboard, since
  * the toolbar is not in the text's Tab order while the caret is in a document:
  * every mark also has its own shortcut, and a key that moves focus to the
@@ -81,7 +87,7 @@ export function Toolbar({
 }: Omit<HTMLAttributes<HTMLDivElement>, 'role' | 'aria-label'> & {
   /** What the row is for. It names the toolbar. */
   label: string;
-  /** Draws the row as a raised surface, for a toolbar placed over a selection. */
+  /** Draws the row as a raised surface, for a toolbar placed over a selection. Show it once the selection is complete, not during a drag. */
   floating?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);

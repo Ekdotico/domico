@@ -1194,8 +1194,13 @@ text field needs all of those keys for its caret: put a text field beside a
 toolbar, not in one.
 
 `floating` draws the row as a raised surface, for a toolbar shown over a
-selection. The application places it and decides when it is shown. The
-application also owes two things the package cannot supply: a key that moves
+selection. The application places it and decides when it is shown, because
+the package cannot see the editor's pointer state. Over a text selection it
+opens once the selection is complete. While a pointer button is held down to
+drag a selection the toolbar stays hidden, and it opens when the button is
+released, wherever that happens. A selection made by keyboard shows it at
+once. A toolbar that appeared and moved during the drag would cover the text
+being selected and pull the eye away. The application also owes two things the package cannot supply: a key that moves
 focus from the text to the toolbar, and Escape to return it. Without
 `floating` the row has no surface and sits in the header of a block.
 
@@ -2364,8 +2369,9 @@ The package's own name comes first and is the one to use where there is a
 choice.
 
 Three things are the application's and not here: where a floating toolbar is
-placed, a collaborator's caret and selection, which take the `--collab-N`
-tokens, and the white-space handling its editor needs on the root.
+placed and when it opens (see "The toolbar and the toggle button"), a
+collaborator's caret and selection, which take the `--collab-N` tokens, and
+the white-space handling its editor needs on the root.
 
 ---
 

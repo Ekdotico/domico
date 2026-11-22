@@ -533,6 +533,13 @@ at the specificity of a bare `a` — and leaves a classed one undecorated, on th
 reading that a class means chrome whose position already says "link". An
 application that gives a prose link a class takes the underline over with it.
 
+**A link that leaves the site opens in a new tab and says so.** This applies to
+`http(s):` links to another origin, sister sites included, and to `mailto:` and
+`tel:`. The anchor carries `target="_blank" rel="noopener noreferrer"` and a
+`.sr-only` " (opens in a new tab)", or the same words in its `aria-label` when
+it shows only an icon. Internal links never open in a new tab. The owner decided
+this on 2026-11-23. `AGENTS.md` has the pattern.
+
 *Enforced by* `check:contrast`, across all eight palettes, at 4.5:1 for text and
 3:1 for non-text. The underline is carried by `styles/reset.css` rather than
 checked: a guard cannot tell prose from chrome.

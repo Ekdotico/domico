@@ -174,6 +174,26 @@ with Mermaid's own `accTitle:` and `accDescr:` so it travels with the diagram.
 Never put `tabIndex` on a non-operable role: keep the pan surface a
 `role="group"` wrapping the `role="img"` stage.
 
+## External links open in a new tab
+
+Every link that leaves the site opens in a new tab: `http:` and `https:` to any
+other origin, sister sites such as `docs.ekdoti.co` included, and `mailto:` and
+`tel:`. The owner decided this on 2026-11-23, after an email link on
+deree.ekdoti.co replaced the page it was on. Write all three parts every time:
+
+```tsx
+<a href="mailto:name@example.org" target="_blank" rel="noopener noreferrer">
+  name@example.org<span className="sr-only"> (opens in a new tab)</span>
+</a>
+```
+
+The `rel` stops the new page reaching back through `window.opener`. The hidden
+text tells a screen-reader user the tab is about to change, which sighted users
+learn from the browser (WCAG 3.2.5). On an icon-only link, say it in the
+`aria-label` instead. Internal links (`/path`, `#anchor`) stay in the same tab
+and go through `next/link`. A Markdown or MDX renderer applies the rule in its
+`a` component, so prose authors never write it by hand.
+
 ## Labels above titles
 
 Do not put a small label above a heading: no "The platform" over "One tab.

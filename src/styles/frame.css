@@ -1,7 +1,7 @@
 /* ===========================================================================
    Ekdotico wide-screen frame.
 
-   A page is never wider than 1440px, at the interface scale. On a wider
+   A page is never wider than 1920px, at the interface scale. On a wider
    screen it stands as a sheet in the middle of a ground a little darker than
    itself, set off from it by a one-pixel rule on each side. The ground is
    each theme's page colour under a 3% layer of black. No shadow.
@@ -16,13 +16,13 @@
    stays one screen tall and not one and a half.
    =========================================================================== */
 
-@media (min-width: 1441px) {
+@media (min-width: 1921px) {
   html {
     background: color-mix(in srgb, var(--bg-canvas) 97%, black);
   }
 
   body {
-    max-width: calc(1440px * var(--scale));
+    max-width: calc(1920px * var(--scale));
     min-height: calc(100dvh / var(--frame-zoom, 1));
     margin-inline: auto;
     border-inline: 1px solid var(--rule);

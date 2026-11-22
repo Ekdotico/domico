@@ -13,7 +13,7 @@
  *   styles/components.css     primitives, appearance controls, shared components
  *   styles/appearance.css     the appearance controls alone
  *   styles/primitives.css     Container, Stack, Cluster alone
- *   styles/frame.css          the wide-screen frame: a page capped at 1440px on a darker ground
+ *   styles/frame.css          the wide-screen frame: a page capped at 1920px on a darker ground
  *   styles/badge.css          one entry per component, from here down
  *   styles/callout.css
  *   styles/figure.css

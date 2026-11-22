@@ -38,9 +38,12 @@ import { FieldShell, describedBy, errorId, hintId, type FieldProps } from './Fie
  *
  * `ref` reaches the textarea.
  *
- * The count is the length of the value as the browser holds it. A server that
- * trims, or counts a line break as two characters, can differ by a few at the
- * boundary, and is the authority when it does.
+ * The count is the length of the value as the browser holds it, in UTF-16 units.
+ * A server that trims, counts a line break as two characters, or counts code
+ * points can differ, and is the authority when it does. Pass `count`, a
+ * function from the value to its number, to measure as the server does:
+ * `count={(text) => [...text.trim()].length}`. The remaining number, the
+ * invalid state and the announcement all follow it.
  */
 type CountProps =
   | {
@@ -48,8 +51,14 @@ type CountProps =
       maximum: number;
       /** The count, in words. Called with the number remaining, negative when over. */
       remainingLabel: (remaining: number) => ReactNode;
+      /**
+       * How the value is measured against `maximum`. Leave it out for the length of the string, which is the units of
+       * the browser. Pass a function where the server counts otherwise: code points, or after trimming white space.
+       * It is called with the value as the browser holds it, on every change, so keep it cheap and pure.
+       */
+      count?: (value: string) => number;
     }
-  | { maximum?: undefined; remainingLabel?: undefined };
+  | { maximum?: undefined; remainingLabel?: undefined; count?: undefined };
 
 /** How long typing has to stop before the count is announced. */
 const ANNOUNCE_AFTER_MS = 1000;
@@ -68,6 +77,7 @@ export const TextArea = forwardRef<
     className,
     maximum,
     remainingLabel,
+    count,
     onChange,
     'aria-describedby': describedby,
     ...textarea
@@ -79,8 +89,9 @@ export const TextArea = forwardRef<
   const countId = `${fieldId}-count`;
 
   const { value, defaultValue } = textarea;
-  const [ownLength, setOwnLength] = useState(typeof defaultValue === 'string' ? defaultValue.length : 0);
-  const length = typeof value === 'string' ? value.length : ownLength;
+  const measure = count ?? ((text: string) => text.length);
+  const [ownLength, setOwnLength] = useState(typeof defaultValue === 'string' ? measure(defaultValue) : 0);
+  const length = typeof value === 'string' ? measure(value) : ownLength;
 
   const [announced, setAnnounced] = useState(length);
   useEffect(() => {
@@ -106,7 +117,7 @@ export const TextArea = forwardRef<
           describedby,
         )}
         onChange={(event) => {
-          setOwnLength(event.target.value.length);
+          setOwnLength(measure(event.target.value));
           onChange?.(event);
         }}
       />

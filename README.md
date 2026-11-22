@@ -468,6 +468,13 @@ the field is marked invalid and the number goes negative. Because
 `remainingLabel` is a function, a counted `TextArea` is rendered from a client
 component; a Server Component cannot pass it one.
 
+The count is the length of the string, in UTF-16 units. Where the server counts
+otherwise, pass `count`, a function from the value to its number, and the
+remaining number, the invalid state and the announcement all follow it:
+`count={(text) => [...text.trim()].length}` counts code points after the white
+space at both ends. It is called on every change, with the value as the browser
+holds it, and is read only together with `maximum`.
+
 `TextField`, `PasswordField`, `OneTimeCodeField`, `TextArea`, and `Checkbox`
 each hand their native element to a `ref`. `Checkbox` takes `labelHidden`, for a
 box in a row of a table, described under The table below.

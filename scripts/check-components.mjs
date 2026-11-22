@@ -1270,6 +1270,38 @@ await it('TextArea counts against a maximum, and announces after typing stops', 
   await plain.unmount();
 });
 
+await it('TextArea measures with `count` where the server counts otherwise', async () => {
+  const remaining = (n) => (n >= 0 ? `${n} characters remaining` : `${-n} characters over the limit`);
+  const points = (text) => [...text.trim()].length;
+  const emoji = '\u{1F600}';
+  // Uncontrolled, with a default.
+  const view = await mount(
+    h(TextArea, { name: 'message', label: 'Message', maximum: 3, count: points, remainingLabel: remaining, defaultValue: ` ${emoji} ` }),
+  );
+  const area = view.container.querySelector('textarea');
+  const shown = () => view.container.querySelector('.ekd-field-count');
+  assert.equal(shown().textContent, '2 characters remaining', 'the default was not measured by `count`');
+  const type = (text) =>
+    act(async () => {
+      Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set.call(area, text);
+      area.dispatchEvent(new window.Event('input', { bubbles: true }));
+    });
+  // Three emoji are six UTF-16 units and three code points: at the maximum, not over it.
+  await type(emoji.repeat(3));
+  assert.equal(shown().textContent, '0 characters remaining');
+  assert.ok(!shown().hasAttribute('data-over') && area.getAttribute('aria-invalid') !== 'true', 'units were counted');
+  await type(emoji.repeat(4));
+  assert.equal(shown().textContent, '1 characters over the limit');
+  assert.equal(area.getAttribute('aria-invalid'), 'true');
+  await view.unmount();
+  // Controlled.
+  const controlled = await mount(
+    h(TextArea, { name: 'm', label: 'M', maximum: 3, count: points, remainingLabel: remaining, value: emoji.repeat(3), onChange() {} }),
+  );
+  assert.equal(controlled.container.querySelector('.ekd-field-count').textContent, '0 characters remaining');
+  await controlled.unmount();
+});
+
 await it('RadioGroup and Checkbox', async () => {
   const options = [
     { value: 'problem', label: 'Problem' },

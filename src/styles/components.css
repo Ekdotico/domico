@@ -1748,6 +1748,18 @@
 /* No boundary at rest. The transparent border keeps it the height of its
    neighbours in a row. */
 .ekd-button[data-variant="quiet"] { border-color: transparent; }
+/* A quiet button that leads or ends a row: its text, not its box, stands on the
+   edge of the column. The margin is what lies between the box and the text (the
+   padding and the 1px border), taken on the side of the edge, so the box, the
+   press area and the focus ring keep their size and reach that far outside the
+   column. Logical, so it holds in a right-to-left row. Not for an icon-only
+   button, whose glyph is centred in its box. */
+.ekd-button[data-variant="quiet"][data-edge="start"]:not([data-icon-only]) {
+  margin-inline-start: calc(-1 * (var(--sp-4) + 1px));
+}
+.ekd-button[data-variant="quiet"][data-edge="end"]:not([data-icon-only]) {
+  margin-inline-end: calc(-1 * (var(--sp-4) + 1px));
+}
 /* The danger hairline, and its wash on hover. Not a filled button: there is no
    ink token for a --danger ground, and white on it fails in the dark palettes. */
 .ekd-button[data-variant="destructive"] { border-color: var(--danger); }

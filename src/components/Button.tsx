@@ -22,6 +22,12 @@ import { Tooltip } from './Tooltip.js';
  * - `destructive` takes the danger hairline. Its label names what is removed:
  *   "Delete account", not "Delete".
  *
+ * `edge="start"` or `edge="end"` (quiet only) sets the button's text on the edge
+ * of the column when it leads or ends a row, by a negative margin of the
+ * padding and the border: the box, the press area and the focus ring are
+ * unchanged and reach that far outside the column, so the container must not
+ * clip them. Not for an icon-only button.
+ *
  * The pending state is the one `GateSubmitButton` has always had, moved here
  * so that button is this one with the gate's class and defaults.
  *
@@ -61,6 +67,17 @@ const useFormStatus: () => FormStatus =
   (() => ({ pending: false }));
 
 export type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'destructive';
+
+/**
+ * The edge of a row a quiet button leads or ends: its text then stands on the
+ * edge of the column, and its box, press area and focus ring reach past it.
+ */
+export type ButtonEdge = 'start' | 'end';
+
+/** `edge` is for the quiet variant alone: no other variant has an edge to give up. */
+type ButtonShape =
+  | { variant: 'quiet'; edge?: ButtonEdge }
+  | { variant?: Exclude<ButtonVariant, 'quiet'>; edge?: never };
 
 type PendingButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-disabled' | 'aria-busy'> & {
   /** The label while the operation is in flight: the operation, named. */
@@ -166,12 +183,13 @@ function named(iconOnly: boolean, label: string | undefined, control: ReactEleme
 
 export function Button({
   variant = 'secondary',
+  edge,
   className,
   icon,
   label,
   children,
   ...button
-}: Omit<PendingButtonProps, 'children'> & { variant?: ButtonVariant } & ButtonContent) {
+}: Omit<PendingButtonProps, 'children'> & ButtonShape & ButtonContent) {
   const iconOnly = icon != null && children == null;
   return named(
     iconOnly,
@@ -181,6 +199,7 @@ export function Button({
       aria-label={iconOnly ? label : button['aria-label']}
       className={['ekd-button', className].filter(Boolean).join(' ')}
       data-variant={variant}
+      data-edge={variant === 'quiet' ? edge : undefined}
       data-icon-only={iconOnly ? '' : undefined}
     >
       {withIcon(icon, children)}
@@ -216,6 +235,7 @@ export function Button({
  */
 export function ButtonLink({
   variant = 'secondary',
+  edge,
   className,
   icon,
   label,
@@ -223,8 +243,8 @@ export function ButtonLink({
   ...link
 }: Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children'> & {
   href: string;
-  variant?: ButtonVariant;
-} & ButtonContent) {
+} & ButtonShape &
+  ButtonContent) {
   const iconOnly = icon != null && children == null;
   return named(
     iconOnly,
@@ -234,6 +254,7 @@ export function ButtonLink({
       aria-label={iconOnly ? label : link['aria-label']}
       className={['ekd-button', className].filter(Boolean).join(' ')}
       data-variant={variant}
+      data-edge={variant === 'quiet' ? edge : undefined}
       data-icon-only={iconOnly ? '' : undefined}
     >
       {withIcon(icon, children)}

@@ -2345,6 +2345,7 @@ package styles them.
 | `class="ekd-editor"` | The editable root | The document surface |
 | `lang="el"` | The root, or any block or span | Text in Greek, set in the sans |
 | `h1`, `h2`, `h3`, `p`, `ul`, `ol`, `li`, `blockquote`, `hr` | Elements | The blocks, with no class |
+| `data-level="1"`, `"2"`, `"3"` | A heading element of any tag (`h1` to `h6`) | The look of that level, so the text's headings can be drawn one level lower (`h2`, `h3`, `h4`) without changing it. A heading with no `data-level` is styled by its tag, as before. On a table of contents `li` it is the entry's depth, not this |
 | `strong`, `em`, `u`, `s`, `code`, `sup`, `sub`, `a`, `mark` | Elements | The nine marks, with no class |
 | `data-placeholder="…"` | A block or a caption, while it is empty | The prompt shown in it. Drawn, and not read by a screen reader |
 | `data-node-selected` | A block selected as a whole | An outline in the accent. `ProseMirror-selectednode` is answered too |

@@ -2966,17 +2966,34 @@ button.ekd-sync-control:hover {
 
 /* Flow. No block carries a margin of its own; the space is between two
    blocks, and one rule sets it wherever blocks follow each other. */
-.ekd-editor :where(p, h1, h2, h3, ul, ol, li, blockquote, hr, figure, pre, table) { margin: 0; }
+.ekd-editor :where(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, hr, figure, pre, table) { margin: 0; }
 .ekd-editor :where(.callout, .ekd-code, .ekd-toc, .ekd-page-break) { margin: 0; }
 .ekd-editor > * + *,
 .ekd-editor :where(blockquote, .callout-body) > * + * { margin-block-start: var(--sp-4); }
 .ekd-editor :where(li, td, th) > * + * { margin-block-start: var(--sp-1); }
 .ekd-editor :where(li) + :where(li) { margin-block-start: var(--sp-1); }
-.ekd-editor > * + :where(h1, h2, h3) { margin-block-start: var(--sp-7); }
-.ekd-editor > :where(h1, h2, h3) + * { margin-block-start: var(--sp-3); }
-.ekd-editor > :where(p, h1, h2, h3, ul, ol, blockquote) { max-inline-size: var(--measure); }
+.ekd-editor > * + :where(h1, h2, h3),
+.ekd-editor > * + :where(h1, h2, h3, h4, h5, h6)[data-level] { margin-block-start: var(--sp-7); }
+.ekd-editor > :where(h1, h2, h3) + *,
+.ekd-editor > :where(h1, h2, h3, h4, h5, h6)[data-level] + * { margin-block-start: var(--sp-3); }
+.ekd-editor > :where(p, h1, h2, h3, ul, ol, blockquote),
+.ekd-editor > :where(h1, h2, h3, h4, h5, h6)[data-level] { max-inline-size: var(--measure); }
 
-.ekd-editor :where(h1, h2, h3) {
+/* A heading is styled by its LEVEL where the editor sets one, and by its tag
+   where it sets none. `data-level="1"`, `"2"` or `"3"` on any heading element
+   gives that level's look, so an application can draw the text's headings one
+   level lower in the outline (h2, h3, h4 under the page's h1) and keep the
+   look. The tag rules stay for an editor that writes no level; an h1, h2 or
+   h3 without `data-level` looks as it always did.
+
+   Specificity. A tag rule is one class (`.ekd-editor` plus a `:where()`
+   that counts nothing). A level rule has the attribute outside `:where()`, so
+   it is two: it beats the tag rule of an h2 that carries level 3, in any
+   source order, and it is still below a block's own stylesheet. The attribute
+   is kept to heading elements so the table of contents' `li[data-level]`,
+   which may sit inside the document, is not matched. */
+.ekd-editor :where(h1, h2, h3),
+.ekd-editor :where(h1, h2, h3, h4, h5, h6)[data-level] {
   /* No family: a heading takes the document's, which is the sans in Greek. */
   font-weight: var(--fw-semi);
   line-height: var(--lh-snug);
@@ -2986,6 +3003,9 @@ button.ekd-sync-control:hover {
 .ekd-editor :where(h1) { font-size: var(--fs-2xl); }
 .ekd-editor :where(h2) { font-size: var(--fs-xl); }
 .ekd-editor :where(h3) { font-size: var(--fs-lg); }
+.ekd-editor :where(h1, h2, h3, h4, h5, h6)[data-level="1"] { font-size: var(--fs-2xl); }
+.ekd-editor :where(h1, h2, h3, h4, h5, h6)[data-level="2"] { font-size: var(--fs-xl); }
+.ekd-editor :where(h1, h2, h3, h4, h5, h6)[data-level="3"] { font-size: var(--fs-lg); }
 
 .ekd-editor :where(ul, ol) { padding-inline-start: var(--sp-6); }
 .ekd-editor :where(ul) { list-style: disc; }

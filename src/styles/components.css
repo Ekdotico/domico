@@ -1696,6 +1696,8 @@
 .ekd-editable-title-box {
   display: grid;
   margin-inline: calc(-1 * (var(--sp-1) + 1px));
+  /* The field has a 1px border above and below; the box takes it back, so the editable title is exactly the heading's height. */
+  margin-block: -1px;
 }
 .ekd-editable-title-box::after,
 .ekd-editable-title-input {

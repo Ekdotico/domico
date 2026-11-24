@@ -1626,6 +1626,17 @@ await it('EditableTitle saves on Enter and on blur when changed, reverts on Esca
   const css = unscaleCss(readFileSync(new URL('../dist/styles/page-heading.css', import.meta.url), 'utf8'));
   assert.match(css, /\.ekd-editable-title-input:hover\s*\{\s*border-color:\s*var\(--rule-control\)/);
   assert.match(css, /prefers-reduced-motion[^{]*\{\s*\.ekd-editable-title-input\s*\{\s*transition:\s*none/);
+
+  // The editable title takes exactly the heading's height: the field's border above and below is taken back by the
+  // box's block margin, and the two numbers are held together here (jsdom lays nothing out, so the rule is what can be
+  // asserted; the pixel heights were compared in a browser).
+  const border = /\.ekd-editable-title-input\s*\{[^}]*border:\s*(\d+)px solid transparent/.exec(
+    css.replace(/\.ekd-editable-title-box::after,\s*\.ekd-editable-title-input/, '.ekd-editable-title-input'),
+  );
+  const boxRule = /\.ekd-editable-title-box\s*\{([^}]*)\}/.exec(css);
+  const blockMargin = /margin-block:\s*-(\d+)px/.exec(boxRule?.[1] ?? '');
+  assert.ok(border && blockMargin, 'the field has a px border and the box a negative block margin');
+  assert.equal(blockMargin[1], border[1], 'the box takes back exactly the border the field has above and below');
 });
 
 // --- Dialog ---------------------------------------------------------------------

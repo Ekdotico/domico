@@ -2,7 +2,7 @@
 
 import { forwardRef, useId, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { describedBy, errorId } from './Field.js';
-import { PageHeading } from './PageHeading.js';
+import { PageHeading, containsGreek, setGreek } from './PageHeading.js';
 
 /**
  * The title of a page, edited where it stands: the name of a document.
@@ -127,11 +127,18 @@ export const EditableTitle = forwardRef<HTMLTextAreaElement, EditableTitleProps>
   const fieldId = id ?? ownId;
   const messageId = errorId(fieldId);
   const hasError = error != null;
+  const greek = containsGreek(draft);
 
   return (
     <>
       <h1 className={['ekd-page-heading', 'ekd-editable-title', className].filter(Boolean).join(' ')}>
-        <span className="ekd-editable-title-box" data-value={draft}>
+        <span
+          className="ekd-editable-title-box"
+          data-value={draft}
+          // While the field is edited it has one face: the sans where the title holds a Greek letter, by the heading's
+          // own test. At rest the field shows the heading's look, a Greek run in the sans, through the view below.
+          data-greek={greek || undefined}
+        >
           <textarea
             ref={ref}
             id={fieldId}
@@ -149,6 +156,11 @@ export const EditableTitle = forwardRef<HTMLTextAreaElement, EditableTitleProps>
             onKeyDown={onKeyDown}
             onBlur={save}
           />
+          {greek ? (
+            <span className="ekd-editable-title-view" aria-hidden="true">
+              {setGreek(draft)}
+            </span>
+          ) : null}
         </span>
       </h1>
       {hasError ? (

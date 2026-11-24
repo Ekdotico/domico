@@ -1631,12 +1631,81 @@ await it('EditableTitle saves on Enter and on blur when changed, reverts on Esca
   // box's block margin, and the two numbers are held together here (jsdom lays nothing out, so the rule is what can be
   // asserted; the pixel heights were compared in a browser).
   const border = /\.ekd-editable-title-input\s*\{[^}]*border:\s*(\d+)px solid transparent/.exec(
-    css.replace(/\.ekd-editable-title-box::after,\s*\.ekd-editable-title-input/, '.ekd-editable-title-input'),
+    css.replace(
+      /\.ekd-editable-title-box::after,\s*\.ekd-editable-title-view,\s*\.ekd-editable-title-input/,
+      '.ekd-editable-title-input',
+    ),
   );
   const boxRule = /\.ekd-editable-title-box\s*\{([^}]*)\}/.exec(css);
   const blockMargin = /margin-block:\s*-(\d+)px/.exec(boxRule?.[1] ?? '');
   assert.ok(border && blockMargin, 'the field has a px border and the box a negative block margin');
   assert.equal(blockMargin[1], border[1], 'the box takes back exactly the border the field has above and below');
+
+  // The view, the mirror and the field share one box model, so the face can change without the height moving.
+  assert.match(
+    css,
+    /\.ekd-editable-title-box::after,\s*\.ekd-editable-title-view,\s*\.ekd-editable-title-input\s*\{[^}]*padding:\s*0 var\(--sp-1\)[^}]*border:\s*1px solid transparent/,
+  );
+  // The face while editing: the field and its mirror, together, on the sans.
+  assert.match(
+    css,
+    /\.ekd-editable-title-box\[data-greek\]:focus-within::after,\s*\.ekd-editable-title-box\[data-greek\] \.ekd-editable-title-input:focus\s*\{\s*font-family:\s*var\(--font-sans\)/,
+  );
+});
+
+await it('EditableTitle sets a title with a Greek letter in the sans while edited, by the heading\'s own test, and as the heading at rest', async () => {
+  const { containsGreek } = await import('../dist/src/components/PageHeading.js');
+  const type = async (el, text) => {
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+    await act(async () => {
+      setter.call(el, text);
+      el.dispatchEvent(new window.Event('input', { bubbles: true }));
+    });
+  };
+  const onSave = () => {};
+  const mark = (view) => view.container.querySelector('.ekd-editable-title-box');
+  const hasView = (view) => view.container.querySelector('.ekd-editable-title-view') !== null;
+  // The two tests never disagree: a title is marked for the sans exactly where the heading wraps a run in a span.
+  const samples = ['Notes', 'Research notes for the term', 'Εκδοτικό', 'Εκδοτικό notes', 'notes σημειώσεις term', 'ἀρχή', '', '12 / 34', 'café'];
+  for (const sample of samples) {
+    const heading = await mount(h(PageHeading, null, sample));
+    const field = await mount(h(EditableTitle, { label: 'Title', value: sample, onSave }));
+    const headingSetsGreek = heading.container.querySelector('.ekd-page-heading-greek') !== null;
+    assert.equal(containsGreek(sample), headingSetsGreek, `containsGreek and PageHeading disagree on ${JSON.stringify(sample)}`);
+    assert.equal(mark(field).hasAttribute('data-greek'), headingSetsGreek, `the field and the heading disagree on ${JSON.stringify(sample)}`);
+    assert.equal(hasView(field), headingSetsGreek);
+    await heading.unmount();
+    await field.unmount();
+  }
+
+  // Latin: nothing of this is on the field. Greek: the view carries the heading's own runs and is hidden from a reader.
+  const latin = await mount(h(EditableTitle, { label: 'Title', value: 'Research notes', onSave }));
+  assert.equal(mark(latin).hasAttribute('data-greek'), false);
+  assert.equal(hasView(latin), false);
+  await latin.unmount();
+  const mixed = await mount(h(EditableTitle, { label: 'Title', value: 'Εκδοτικό notes', onSave }));
+  const viewEl = mixed.container.querySelector('.ekd-editable-title-view');
+  assert.equal(viewEl.getAttribute('aria-hidden'), 'true');
+  assert.equal(viewEl.querySelectorAll('.ekd-page-heading-greek').length, 1);
+  assert.equal(viewEl.querySelector('.ekd-page-heading-greek').textContent, 'Εκδοτικό');
+  assert.equal(viewEl.textContent, 'Εκδοτικό notes');
+  assert.equal(mixed.container.querySelectorAll('h1').length, 1);
+  assert.equal(mixed.container.querySelector('textarea').getAttribute('aria-label'), 'Title', 'the view is not what names the field');
+  await mixed.unmount();
+
+  // Typed: a title gains and loses its Greek letter, and the mark and the view follow it.
+  const typed = await mount(h(EditableTitle, { label: 'Title', value: 'Notes', onSave }));
+  const field = typed.container.querySelector('textarea');
+  field.focus();
+  assert.equal(mark(typed).hasAttribute('data-greek'), false);
+  await type(field, 'Notes α');
+  assert.equal(mark(typed).hasAttribute('data-greek'), true, 'gained a Greek letter');
+  assert.equal(hasView(typed), true);
+  assert.equal(field.value, 'Notes α', 'the text is the field\'s, whatever the view shows');
+  await type(field, 'Notes');
+  assert.equal(mark(typed).hasAttribute('data-greek'), false, 'lost it again');
+  assert.equal(hasView(typed), false);
+  await typed.unmount();
 });
 
 // --- Dialog ---------------------------------------------------------------------

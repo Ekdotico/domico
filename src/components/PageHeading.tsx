@@ -55,7 +55,10 @@ export interface PageHeadingProps extends HTMLAttributes<HTMLHeadingElement> {
 const LETTER = '[\\u0370-\\u03FF\\u1F00-\\u1FFF][\\u0300-\\u036F\\u0370-\\u03FF\\u1F00-\\u1FFF]*';
 const GREEK_RUN = new RegExp(`(${LETTER}(?:\\s+${LETTER})*)`);
 
-function setGreek(node: ReactNode): ReactNode {
+/** Whether the text holds a Greek letter: the test the heading uses to set a run in the sans, shared so that a field that edits a title never disagrees with it. */
+export const containsGreek = (text: string): boolean => GREEK_RUN.test(text);
+
+export function setGreek(node: ReactNode): ReactNode {
   return Children.map(node, (child) => {
     if (typeof child === 'string') {
       if (!GREEK_RUN.test(child)) return child;

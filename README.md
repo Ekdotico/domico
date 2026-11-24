@@ -666,8 +666,21 @@ nothing. Tab or a click away saves a change.
 **Accessibility.** The name comes from `label` through `aria-label`, because a
 visible label inside a heading would be read as part of the title. The field
 is at least the height of its text, far over 24px. The message is not an alert;
-state the fault where the page announces its faults. While a title is edited
-the text is the textarea's, which cannot set a Greek run in the sans; in
+state the fault where the page announces its faults.
+
+**A title with a Greek letter.** The reading serif has no Greek, and a textarea
+has one face for all its text. So while the field is edited, a title that holds a
+Greek letter is set whole in the sans; the field and the mirror that sizes it
+change face together, so the height follows the text as it is drawn. When
+editing ends, the field looks as the heading does: a copy of the text, with each
+Greek run set as `PageHeading` sets it, shows over the field (it is `aria-hidden`,
+takes no pointer, and is not what names or holds the text). "Holds a Greek
+letter" is `PageHeading`'s own test, the same function, so the two never
+disagree; the Greek Extended block is included. A title with no Greek letter is
+untouched. In forced colours the field's own text is drawn and the copy stands
+down. The height does not move when a Greek letter is typed into a Latin title,
+as long as the lines break where they did; the sans is wider than the serif, so
+a title near the end of a line can wrap a word earlier while it is edited. In
 `readOnly` it is `PageHeading`'s.
 
 **When not to use it.** Not for a field that needs a visible label, a hint or a

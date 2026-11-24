@@ -1,5 +1,12 @@
 # @ekdotico/domico
 
+## 0.51.0
+
+### Minor Changes
+
+- 3533bdc: `EditableTitle`, a page title that is edited where it stands. It looks like `PageHeading`, is the page's one `<h1>` with a textarea inside it, and wraps and grows with a long title. `label` is its accessible name and has no default; Enter or leaving the field calls `onSave(value)` when the title changed, and Escape puts the saved title back. `pending` sets `aria-busy` and ignores input without disabling the field, `error` draws a field message linked by `aria-describedby`, and `readOnly` draws a `PageHeading`. Its styles are in `styles/page-heading.css`.
+- 7a49c9c: The editor stylesheet styles a heading by `data-level="1"`, `"2"` or `"3"` when the editor sets one, on any heading tag, so an application can draw the text's headings as `h2`, `h3` and `h4` and keep their look. The tag rules stay: an `h1`, `h2` or `h3` with no level looks as it did. One thing changes for a consumer that has one: an `h4`, `h5` or `h6` inside `.ekd-editor` with no `data-level` loses the browser's default margin, because the editor's margin reset now names `h1` to `h6`.
+
 ## 0.50.0
 
 ### Minor Changes

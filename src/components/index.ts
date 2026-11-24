@@ -92,6 +92,8 @@ export { Tooltip } from './Tooltip.js';
 // The heading of an application page. The application had composed one from
 // tokens, with a class of its own to set a Greek letter in the sans.
 export { PageHeading, type PageHeadingProps } from './PageHeading.js';
+// The page heading, edited where it stands: the name of a document.
+export { EditableTitle, type EditableTitleProps } from './EditableTitle.js';
 // A QR code, for the secret of a second sign-in factor. Dark on light in every
 // theme, encoded by the package, and rendered on the server.
 export { QrCode } from './QrCode.js';

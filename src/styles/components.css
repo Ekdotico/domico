@@ -1685,6 +1685,85 @@
   font-size: var(--serif-fit);
 }
 
+/* EditableTitle: the page heading with a textarea inside it. The heading's own
+   type is on the h1 and inherited by the field. No box at rest; the border is
+   always there and transparent, so the text does not move when a cue appears,
+   and in forced colours a transparent border is drawn in a system colour, which
+   is the cue there. The field grows with its text: the box is a grid, the
+   textarea and a hidden mirror of the value share its one cell, and the mirror
+   sets the height. The margin takes back the padding and the border, so the
+   text stands where a PageHeading's would. */
+.ekd-editable-title-box {
+  display: grid;
+  margin-inline: calc(-1 * (var(--sp-1) + 1px));
+  /* The field has a 1px border above and below; the box takes it back, so the editable title is exactly the heading's height. */
+  margin-block: -1px;
+}
+.ekd-editable-title-box::after,
+.ekd-editable-title-view,
+.ekd-editable-title-input {
+  grid-area: 1 / 1;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0 var(--sp-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  letter-spacing: inherit;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+.ekd-editable-title-box::after {
+  content: attr(data-value) " ";
+  visibility: hidden;
+  pointer-events: none;
+}
+.ekd-editable-title-input {
+  display: block;
+  inline-size: 100%;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: inherit;
+  cursor: text;
+  transition: border-color var(--dur-fast) var(--ease-soft);
+}
+.ekd-editable-title-input:hover { border-color: var(--rule-control); }
+.ekd-editable-title-input:focus-visible { border-color: var(--accent); }
+.ekd-editable-title-input[aria-invalid="true"] { border-color: var(--danger); }
+.ekd-editable-title-input[aria-busy="true"] {
+  color: var(--fg-3);
+  cursor: progress;
+}
+.ekd-editable-title-error { margin-block-start: var(--sp-2); }
+
+/* A title with a Greek letter. A textarea has one face for all its text, and the reading serif has no Greek (rule 4), so
+   while the field is edited the whole of it is set in the sans, and the mirror that sizes it too, so the height follows
+   the text as it is drawn. At rest the field looks as the heading does: the view, a copy of the text with each Greek run
+   set as PageHeading sets it, shows over the field, whose own text is transparent for that time. The view is for the
+   eye alone (aria-hidden) and takes no pointer, so the field is still what is read and clicked. While the view shows,
+   it sizes the box, and the mirror does not. */
+.ekd-editable-title-box[data-greek]:focus-within::after,
+.ekd-editable-title-box[data-greek] .ekd-editable-title-input:focus {
+  font-family: var(--font-sans);
+}
+.ekd-editable-title-box[data-greek]:focus-within .ekd-editable-title-view,
+.ekd-editable-title-box[data-greek]:not(:focus-within)::after {
+  display: none;
+}
+.ekd-editable-title-box[data-greek] .ekd-editable-title-input:not(:focus) { color: transparent; }
+.ekd-editable-title-view { pointer-events: none; }
+.ekd-editable-title-box:has(.ekd-editable-title-input[aria-busy="true"]) .ekd-editable-title-view { color: var(--fg-3); }
+@media (forced-colors: active) {
+  .ekd-editable-title-input[aria-invalid="true"] { border-width: 2px; }
+  /* Forced colours draw the field's own text, so the view stands down and the mirror sizes the box. */
+  .ekd-editable-title-view { display: none; }
+  .ekd-editable-title-box[data-greek]:not(:focus-within)::after { display: block; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ekd-editable-title-input { transition: none; }
+}
+
 /* --- Button -------------------------------------------------------------- */
 /* Button's four variants. The `ekd-` prefix, as on the layout primitives: a
    class called `button` or `dialog` is one an application may already own, and

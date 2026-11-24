@@ -393,6 +393,7 @@ the platform's, and every attribute the native element takes passes through.
 | `Dialog` | A modal dialog, on the native element | `styles/dialog.css` |
 | `Tooltip` | An explanation shown on hover and on focus | `styles/tooltip.css` |
 | `PageHeading` | The heading of an application page, an `h1` unless told otherwise | `styles/page-heading.css` |
+| `EditableTitle` | The page heading, edited where it stands, for the name of a document | `styles/page-heading.css` |
 | `QrCode` | A QR code as an inline SVG, dark on light in every theme | None. It needs `tokens.css` alone |
 
 ```tsx
@@ -622,6 +623,69 @@ which passes through to the heading with every other attribute. `ref` reaches
 the heading, for a page that moves focus to its title when it is shown. The
 component holds no state, so a server component renders it. The heading has no
 margin: the space under it is the layout's.
+
+### The editable title
+
+```tsx
+<EditableTitle
+  label="Title"
+  value={document.title}
+  onSave={(title) => rename(document.id, title)}
+  pending={renaming}
+  error={renameError}
+/>
+```
+
+`EditableTitle` is the page heading, edited where it stands: the name of a
+document. It looks like `PageHeading` and has no box. A hairline shows on
+hover, the focus ring on focus and a danger hairline when `error` is set. It is
+the page's one `h1`, with the field inside it, so the heading outline holds. In
+forced colours the field shows a border at rest, which is right: forced colours
+exist to show where a control is. The hover colour is lost there, and the focus
+ring and the danger border stay.
+
+| Prop | |
+|---|---|
+| `value` | The saved title. The component holds the draft; a new `value` replaces it. |
+| `label` | The accessible name. Required, with no default, and no placeholder or status text either. |
+| `onSave(value)` | On Enter and when focus leaves, only if the draft differs from `value`. May return a promise. |
+| `pending` | A save is in flight. Sets `aria-busy` and `aria-disabled`, ignores typing, Enter and Escape, and does not disable the field. |
+| `error` | The message, under the heading, named by `aria-describedby`, with `aria-invalid` on the field. The tie holds with no `id` given: the component makes one of its own. |
+| `maxLength` | The browser's own limit. |
+| `readOnly` | Draws a `PageHeading`, the same `h1`, with no field. |
+| `id`, `className` | `id` reaches the field, `className` the heading. |
+
+It is a `textarea` so that a long title wraps as `PageHeading` wraps it; an
+`input` is one line and scrolls sideways. A mirror of the value in the same grid
+cell sets its height, so it needs no script to measure. A line break in a paste
+becomes a space.
+
+**Keyboard.** Enter saves and keeps focus. Escape puts `value` back and saves
+nothing. Tab or a click away saves a change.
+
+**Accessibility.** The name comes from `label` through `aria-label`, because a
+visible label inside a heading would be read as part of the title. The field
+is at least the height of its text, far over 24px. The message is not an alert;
+state the fault where the page announces its faults.
+
+**A title with a Greek letter.** The reading serif has no Greek, and a textarea
+has one face for all its text. So while the field is edited, a title that holds a
+Greek letter is set whole in the sans; the field and the mirror that sizes it
+change face together, so the height follows the text as it is drawn. When
+editing ends, the field looks as the heading does: a copy of the text, with each
+Greek run set as `PageHeading` sets it, shows over the field (it is `aria-hidden`,
+takes no pointer, and is not what names or holds the text). "Holds a Greek
+letter" is `PageHeading`'s own test, the same function, so the two never
+disagree; the Greek Extended block is included. A title with no Greek letter is
+untouched. In forced colours the field's own text is drawn and the copy stands
+down. The height does not move when a Greek letter is typed into a Latin title,
+as long as the lines break where they did; the sans is wider than the serif, so
+a title near the end of a line can wrap a word earlier while it is edited. In
+`readOnly` it is `PageHeading`'s.
+
+**When not to use it.** Not for a field that needs a visible label, a hint or a
+place in a form: the heading names itself, and a field whose purpose is not
+plain from where it stands is a `TextField`.
 
 ### The QR code
 

@@ -393,6 +393,7 @@ the platform's, and every attribute the native element takes passes through.
 | `Dialog` | A modal dialog, on the native element | `styles/dialog.css` |
 | `Tooltip` | An explanation shown on hover and on focus | `styles/tooltip.css` |
 | `PageHeading` | The heading of an application page, an `h1` unless told otherwise | `styles/page-heading.css` |
+| `EditableTitle` | The page heading, edited where it stands, for the name of a document | `styles/page-heading.css` |
 | `QrCode` | A QR code as an inline SVG, dark on light in every theme | None. It needs `tokens.css` alone |
 
 ```tsx
@@ -622,6 +623,54 @@ which passes through to the heading with every other attribute. `ref` reaches
 the heading, for a page that moves focus to its title when it is shown. The
 component holds no state, so a server component renders it. The heading has no
 margin: the space under it is the layout's.
+
+### The editable title
+
+```tsx
+<EditableTitle
+  label="Title"
+  value={document.title}
+  onSave={(title) => rename(document.id, title)}
+  pending={renaming}
+  error={renameError}
+/>
+```
+
+`EditableTitle` is the page heading, edited where it stands: the name of a
+document. It looks like `PageHeading` and has no box. A hairline shows on
+hover, the focus ring on focus and a danger hairline when `error` is set, each
+a border, so each survives forced colours. It is the page's one `h1`, with the
+field inside it, so the heading outline holds.
+
+| Prop | |
+|---|---|
+| `value` | The saved title. The component holds the draft; a new `value` replaces it. |
+| `label` | The accessible name. Required, with no default, and no placeholder or status text either. |
+| `onSave(value)` | On Enter and when focus leaves, only if the draft differs from `value`. May return a promise. |
+| `pending` | A save is in flight. Sets `aria-busy` and `aria-disabled`, ignores typing, Enter and Escape, and does not disable the field. |
+| `error` | The message, under the heading, named by `aria-describedby`, with `aria-invalid` on the field. |
+| `maxLength` | The browser's own limit. |
+| `readOnly` | Draws a `PageHeading`, the same `h1`, with no field. |
+| `id`, `className` | `id` reaches the field, `className` the heading. |
+
+It is a `textarea` so that a long title wraps as `PageHeading` wraps it; an
+`input` is one line and scrolls sideways. A mirror of the value in the same grid
+cell sets its height, so it needs no script to measure. A line break in a paste
+becomes a space.
+
+**Keyboard.** Enter saves and keeps focus. Escape puts `value` back and saves
+nothing. Tab or a click away saves a change.
+
+**Accessibility.** The name comes from `label` through `aria-label`, because a
+visible label inside a heading would be read as part of the title. The field
+is at least the height of its text, far over 24px. The message is not an alert;
+state the fault where the page announces its faults. While a title is edited
+the text is the textarea's, which cannot set a Greek run in the sans; in
+`readOnly` it is `PageHeading`'s.
+
+**When not to use it.** Not for a field that needs a visible label, a hint or a
+place in a form: the heading names itself, and a field whose purpose is not
+plain from where it stands is a `TextField`.
 
 ### The QR code
 

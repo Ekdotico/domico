@@ -64,7 +64,7 @@ const {
   Callout, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell, Tabs, Tab, SkipLink, StickyTableHead,
   AccessGate, GateSubmitButton, NavDrawer, OnThisPage, InPageLinkDirection, OpeningSequence, DocMeta,
   Button, ButtonLink, TextField, OneTimeCodeField, PasswordField, TextArea, RadioGroup, Checkbox, FormFault, Dialog, Tooltip,
-  PageHeading, Select, Toolbar, ToolbarSeparator, ToggleButton, MenuButton, SyncStatus, QrCode,
+  PageHeading, EditableTitle, Select, Toolbar, ToolbarSeparator, ToggleButton, MenuButton, SyncStatus, QrCode,
   Avatar, AvatarStack, avatarInitials, MarginNote, RequirementTable,
   OptionList, optionListAttributes, optionListKey, optionListNavigating, optionListOptionId, placeOptionList,
 } = await import('../dist/src/components/index.js');
@@ -1529,6 +1529,95 @@ await it('PageHeading is an h1, and sets a Greek run in the sans by itself', asy
   const css = unscaleCss(readFileSync(new URL('../dist/styles/page-heading.css', import.meta.url), 'utf8'));
   assert.match(css, /\.ekd-page-heading-greek\s*\{\s*font-family:\s*var\(--font-sans\);\s*font-size:\s*var\(--serif-fit\);?\s*\}/);
   assert.match(css, /\.ekd-page-heading\s*\{[^}]*font-family:\s*var\(--font-serif\)/);
+});
+
+// --- EditableTitle --------------------------------------------------------------
+await it('EditableTitle saves on Enter and on blur when changed, reverts on Escape, and guards while pending', async () => {
+  const saved = [];
+  const onSave = (v) => saved.push(v);
+  const type = async (el, text) => {
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+    await act(async () => {
+      setter.call(el, text);
+      el.dispatchEvent(new window.Event('input', { bubbles: true }));
+    });
+  };
+  const view = await mount(h(EditableTitle, { id: 't', label: 'Title', value: 'Notes', onSave }));
+  const heading = view.container.querySelector('h1');
+  const field = heading.querySelector('textarea');
+  assert.ok(heading && field, 'the field is not inside the h1');
+  assert.equal(view.container.querySelectorAll('h1').length, 1);
+  assert.equal(field.getAttribute('aria-label'), 'Title');
+  assert.equal(field.getAttribute('placeholder'), null, 'a placeholder of its own');
+  assert.equal(view.container.textContent, 'Notes', 'words of its own');
+  assert.equal(field.hasAttribute('disabled'), false);
+
+  // Enter with no change saves nothing; blur with no change likewise.
+  field.focus();
+  await act(async () => { key(field, { key: 'Enter' }); });
+  await act(async () => field.blur());
+  assert.deepEqual(saved, []);
+
+  // Enter saves the draft and does not break the line.
+  field.focus();
+  await type(field, 'Notes 2');
+  const enter = key(field, { key: 'Enter' });
+  assert.ok(enter.defaultPrevented);
+  assert.deepEqual(saved, ['Notes 2']);
+  // A pasted line break becomes a space.
+  await type(field, 'a\nb');
+  assert.equal(field.value, 'a b');
+
+  // Leaving the field saves a change.
+  await act(async () => field.blur());
+  assert.deepEqual(saved, ['Notes 2', 'a b']);
+
+  // Escape puts the old title back, and the blur after it saves nothing.
+  field.focus();
+  await type(field, 'Changed');
+  await act(async () => { key(field, { key: 'Escape' }); });
+  assert.equal(field.value, 'Notes');
+  await act(async () => field.blur());
+  assert.equal(saved.length, 2);
+
+  // A new `value` replaces the draft.
+  await view.rerender(h(EditableTitle, { id: 't', label: 'Title', value: 'Other', onSave }));
+  assert.equal(field.value, 'Other');
+
+  // Pending: not disabled, busy, and every route to a save or an edit is shut.
+  await view.rerender(h(EditableTitle, { id: 't', label: 'Title', value: 'Other', onSave, pending: true }));
+  assert.equal(field.getAttribute('aria-busy'), 'true');
+  assert.equal(field.getAttribute('aria-disabled'), 'true');
+  assert.equal(field.hasAttribute('disabled'), false);
+  field.focus();
+  await type(field, 'Typed while busy');
+  assert.equal(field.value, 'Other');
+  key(field, { key: 'Enter' });
+  await act(async () => field.blur());
+  assert.equal(saved.length, 2, 'saved while pending');
+
+  // Error: the message is linked, and the field is invalid.
+  await view.rerender(h(EditableTitle, { id: 't', label: 'Title', value: 'Other', onSave, error: 'Too long' }));
+  const message = document.getElementById('t-error');
+  assert.equal(message?.textContent, 'Too long');
+  assert.equal(field.getAttribute('aria-describedby'), 't-error');
+  assert.equal(field.getAttribute('aria-invalid'), 'true');
+  assert.equal(view.container.querySelector('h1').contains(message), false, 'the message is in the heading');
+
+  await view.rerender(h(EditableTitle, { label: 'Title', value: 'Other', onSave, maxLength: 9 }));
+  assert.equal(view.container.querySelector('textarea').getAttribute('maxlength'), '9');
+
+  // Read-only is a PageHeading and nothing more.
+  await view.rerender(h(EditableTitle, { id: 'r', className: 'mine', label: 'Title', value: 'Closed', onSave, readOnly: true }));
+  const plain = view.container.querySelector('h1');
+  assert.equal(plain.outerHTML, '<h1 id="r" class="ekd-page-heading mine">Closed</h1>');
+  assert.equal(view.container.querySelector('textarea'), null);
+  await view.unmount();
+
+  const { readFileSync } = await import('node:fs');
+  const css = unscaleCss(readFileSync(new URL('../dist/styles/page-heading.css', import.meta.url), 'utf8'));
+  assert.match(css, /\.ekd-editable-title-input:hover\s*\{\s*border-color:\s*var\(--rule-control\)/);
+  assert.match(css, /prefers-reduced-motion[^{]*\{\s*\.ekd-editable-title-input\s*\{\s*transition:\s*none/);
 });
 
 // --- Dialog ---------------------------------------------------------------------

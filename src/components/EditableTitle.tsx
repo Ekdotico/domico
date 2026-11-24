@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
+import { forwardRef, useId, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { describedBy, errorId } from './Field.js';
 import { PageHeading } from './PageHeading.js';
 
@@ -88,6 +88,8 @@ export const EditableTitle = forwardRef<HTMLTextAreaElement, EditableTitleProps>
   { value, label, onSave, pending = false, error, maxLength, readOnly = false, id, className },
   ref,
 ) {
+  // The message of a refusal is tied to the field by an id of its own where the caller gives none.
+  const ownId = useId();
   const [draft, setDraft] = useState(value);
   const [seen, setSeen] = useState(value);
   if (value !== seen) {
@@ -122,8 +124,8 @@ export const EditableTitle = forwardRef<HTMLTextAreaElement, EditableTitleProps>
     }
   };
 
-  const fieldId = id;
-  const messageId = fieldId !== undefined ? errorId(fieldId) : undefined;
+  const fieldId = id ?? ownId;
+  const messageId = errorId(fieldId);
   const hasError = error != null;
 
   return (

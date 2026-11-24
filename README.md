@@ -638,9 +638,11 @@ margin: the space under it is the layout's.
 
 `EditableTitle` is the page heading, edited where it stands: the name of a
 document. It looks like `PageHeading` and has no box. A hairline shows on
-hover, the focus ring on focus and a danger hairline when `error` is set, each
-a border, so each survives forced colours. It is the page's one `h1`, with the
-field inside it, so the heading outline holds.
+hover, the focus ring on focus and a danger hairline when `error` is set. It is
+the page's one `h1`, with the field inside it, so the heading outline holds. In
+forced colours the field shows a border at rest, which is right: forced colours
+exist to show where a control is. The hover colour is lost there, and the focus
+ring and the danger border stay.
 
 | Prop | |
 |---|---|
@@ -648,7 +650,7 @@ field inside it, so the heading outline holds.
 | `label` | The accessible name. Required, with no default, and no placeholder or status text either. |
 | `onSave(value)` | On Enter and when focus leaves, only if the draft differs from `value`. May return a promise. |
 | `pending` | A save is in flight. Sets `aria-busy` and `aria-disabled`, ignores typing, Enter and Escape, and does not disable the field. |
-| `error` | The message, under the heading, named by `aria-describedby`, with `aria-invalid` on the field. |
+| `error` | The message, under the heading, named by `aria-describedby`, with `aria-invalid` on the field. The tie holds with no `id` given: the component makes one of its own. |
 | `maxLength` | The browser's own limit. |
 | `readOnly` | Draws a `PageHeading`, the same `h1`, with no field. |
 | `id`, `className` | `id` reaches the field, `className` the heading. |

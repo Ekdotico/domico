@@ -1604,6 +1604,14 @@ await it('EditableTitle saves on Enter and on blur when changed, reverts on Esca
   assert.equal(field.getAttribute('aria-invalid'), 'true');
   assert.equal(view.container.querySelector('h1').contains(message), false, 'the message is in the heading');
 
+  // With no id given, the message is still tied to the field, by an id of the component's own.
+  await view.rerender(h(EditableTitle, { label: 'Title', value: 'Other', onSave, error: 'Too long' }));
+  const ownField = view.container.querySelector('textarea');
+  const ownMessage = view.container.querySelector('.ekd-editable-title-error');
+  assert.ok(ownField.id && ownMessage.id, 'the field and its message each have an id');
+  assert.equal(ownField.getAttribute('aria-describedby'), ownMessage.id);
+  assert.equal(ownMessage.textContent, 'Too long');
+
   await view.rerender(h(EditableTitle, { label: 'Title', value: 'Other', onSave, maxLength: 9 }));
   assert.equal(view.container.querySelector('textarea').getAttribute('maxlength'), '9');
 

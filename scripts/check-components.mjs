@@ -5187,4 +5187,48 @@ await it('RequirementTable is the table, renders every string through renderText
   assert.match(css, /\.req-subtable thead th\s*\{[^}]*position:\s*static/);
 });
 
+// The text's headings are styled by a level the application sets, and look as
+// they did by tag. OLD is the heading and flow rules of the editor stylesheet
+// before `data-level` (released 0.x, by tag); an h1, h2 and h3 under it are
+// compared with an h2, h3 and h4 carrying level 1, 2 and 3 under the new
+// stylesheet, and with the new stylesheet's own h1, h2 and h3 with no level.
+// jsdom resolves the cascade and specificity but not `var()`, so each value is
+// the token it names: the themes change what a token holds, never which token
+// a rule names, so one comparison holds in every theme and mode.
+await it('A heading with data-level looks as the tag of that level always did', async () => {
+  const { readFileSync } = await import('node:fs');
+  const OLD = `
+.ekd-editor :where(p, h1, h2, h3, ul, ol, li, blockquote, hr, figure, pre, table) { margin: 0; }
+.ekd-editor > * + * { margin-block-start: var(--sp-4); }
+.ekd-editor > * + :where(h1, h2, h3) { margin-block-start: var(--sp-7); }
+.ekd-editor > :where(h1, h2, h3) + * { margin-block-start: var(--sp-3); }
+.ekd-editor > :where(p, h1, h2, h3, ul, ol, blockquote) { max-inline-size: var(--measure); }
+.ekd-editor :where(h1, h2, h3) { font-weight: var(--fw-semi); line-height: var(--lh-snug); letter-spacing: var(--tr-tight); color: var(--fg-1); }
+.ekd-editor :where(h1) { font-size: var(--fs-2xl); }
+.ekd-editor :where(h2) { font-size: var(--fs-xl); }
+.ekd-editor :where(h3) { font-size: var(--fs-lg); }
+.ekd-editor { font-family: var(--font-serif); }`;
+  const NEW = unscaleCss(readFileSync(new URL('../dist/styles/editor.css', import.meta.url), 'utf8'));
+  const props = ['font-size', 'line-height', 'font-weight', 'letter-spacing', 'color', 'font-family', 'margin-top', 'margin-bottom', 'margin-block-start', 'max-inline-size'];
+  const look = (css, tag, level) => {
+    const win = new JSDOM(
+      `<style>${css}</style><div class="ekd-editor"><p>a</p><${tag}${level ? ` data-level="${level}"` : ''} id="h">b</${tag}><p>c</p></div>`,
+    ).window;
+    const style = win.getComputedStyle(win.document.getElementById('h'));
+    const after = win.getComputedStyle(win.document.querySelector('p:last-child'));
+    return [...props.map((p) => style.getPropertyValue(p)), after.getPropertyValue('margin-block-start')].join('|');
+  };
+  for (const level of [1, 2, 3]) {
+    const before = look(OLD, `h${level}`);
+    assert.ok(before.includes('var(--fs-'), `the old rules gave h${level} no size`);
+    assert.equal(look(NEW, `h${level}`), before, `h${level} with no level no longer looks as it did`);
+    for (const tag of [`h${level + 1}`, `h${level}`, `h${level + 2}`, 'h1', 'h2', 'h3', 'h4'].filter((t) => t !== 'h5')) {
+      assert.equal(look(NEW, tag, level), before, `${tag} with data-level="${level}" does not look as h${level} did`);
+    }
+  }
+  // A list item of the table of contents, inside the document, is no heading.
+  const win = new JSDOM(`<style>${NEW}</style><div class="ekd-editor"><ul><li data-level="3" id="t">x</li></ul></div>`).window;
+  assert.equal(win.getComputedStyle(win.document.getElementById('t')).getPropertyValue('font-size'), 'var(--fs-md)', 'a data-level on a list item took a heading size');
+});
+
 console.log(`check:components — ${cases} cases: the a11y helpers, and the components' names, roles and focus, against jsdom`);

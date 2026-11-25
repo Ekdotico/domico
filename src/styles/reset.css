@@ -205,8 +205,12 @@ a:where(:not([class])[href^="#"][data-link-direction="up"])::after {
   }
 }
 
+/* The selection is the accent mixed 40% into the page, so it follows each theme and
+   stands 1.8:1 to 3.0:1 from the page (the quotation wash was 1.1:1 to 1.2:1),
+   with --fg-1 on it at 6.0:1 or more. A browser without color-mix keeps the wash. */
 ::selection {
   background: var(--hl-quote);
+  background: color-mix(in oklab, var(--accent) 40%, var(--bg-canvas));
   color: var(--fg-1);
 }
 

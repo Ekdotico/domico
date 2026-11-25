@@ -314,7 +314,7 @@ one is decoration, and a reader learning the interface learns the difference.
 
 | Token           | Role                                                    |
 | --------------- | ------------------------------------------------------- |
-| `--hl-quote`    | Quotation wash. Also the `::selection` background.      |
+| `--hl-quote`    | Quotation wash.                                         |
 | `--hl-citation` | Citation wash.                                          |
 | `--hl-warn`     | Caution wash under text.                                |
 | `--hl-danger`   | Error wash under text.                                  |

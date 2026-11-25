@@ -1715,6 +1715,8 @@
 }
 .ekd-editable-title-box::after {
   content: attr(data-value) " ";
+  /* An empty alternative: the copy only sizes the box, and is not read as part of the heading. */
+  content: attr(data-value) " " / "";
   visibility: hidden;
   pointer-events: none;
 }
@@ -3144,7 +3146,7 @@ button.ekd-sync-control:hover {
 }
 .ekd-editor :where(mark a) { color: inherit; }
 .ekd-editor :where(a mark) { color: var(--fg-1); }
-/* The selection is the reset's, --fg-1 on --hl-quote. Over a highlight that
+/* The selection is the reset's, --fg-1 on the accent mixed into the page. Over a highlight that
    would be one wash on another, a step apart, so there the selection is the
    accent and its ink. */
 .ekd-editor mark::selection,
@@ -3532,10 +3534,11 @@ mark .ekd-footnote-ref { color: inherit; }
   margin-block-start: var(--sp-7);
   padding-block-start: var(--sp-4);
   border-block-start: 1px solid var(--rule-strong);
-  max-inline-size: var(--measure);
   font-size: var(--fs-base);
 }
+/* The rule runs the width of the block, as a table or a divider does; the notes keep the measure. */
 .ekd-footnotes > ol {
+  max-inline-size: var(--measure);
   margin: 0;
   padding-inline-start: var(--sp-7);
   list-style: decimal;

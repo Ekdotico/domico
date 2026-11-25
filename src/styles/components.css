@@ -659,10 +659,13 @@
 .kv-list-inline {
   padding: 0;
 }
+/* The row answers to its own width, not the viewport's: the key keeps its
+   track and the value needs at least 240px, so a row narrower than both
+   (a 420px column on a wide screen) wraps the value under the key. */
 .kv-row {
-  display: grid;
-  grid-template-columns: calc(180px * var(--scale)) 1fr;
-  gap: var(--sp-1) calc(28px * var(--scale));
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(6px * var(--scale)) calc(28px * var(--scale));
   padding: calc(14px * var(--scale)) 0;
   border-bottom: 1px solid var(--rule-soft);
 }
@@ -675,9 +678,14 @@
   letter-spacing: var(--tr-label);
   color: var(--fg-3);
   margin: calc(4px * var(--scale)) 0 0;
-  align-self: start;
+  flex: 0 1 calc(180px * var(--scale));
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 .kv-val {
+  flex: 1 1 calc(240px * var(--scale));
+  min-width: 0;
+  overflow-wrap: break-word;
   font-family: var(--font-serif);
   font-size: var(--fs-md);
   line-height: var(--lh-prose);
@@ -686,12 +694,6 @@
 }
 .kv-val > p:first-child { margin-top: 0; }
 .kv-val > p:last-child  { margin-bottom: 0; }
-@media (max-width: 760px) {
-  .kv-row {
-    grid-template-columns: 1fr;
-    gap: calc(6px * var(--scale));
-  }
-}
 
 /* KV tone variants — opt-in semantic color washes per row.
    Use when the labels are categorical (e.g. persona attributes:
